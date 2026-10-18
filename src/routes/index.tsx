@@ -92,7 +92,7 @@ function Home() {
         <SectionHead eyebrow="تسوّق حسب التصنيف" title="تشكيلة واسعة من أجود الورود والزهور" />
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {categories.map((c) => (
-            <Link key={c.slug} to="/products" search={{ category: c.slug }} className="group relative aspect-[4/5] overflow-hidden rounded-2xl shadow-soft">
+            <Link key={c.slug} to="/products/" search={{ category: c.slug }} className="group relative aspect-[4/5] overflow-hidden rounded-2xl shadow-soft">
               <img src={c.image} alt={c.name} loading="lazy" width={816} height={816} className="size-full object-cover transition duration-500 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-forest/90 via-forest/10 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 flex items-center justify-between p-4">
