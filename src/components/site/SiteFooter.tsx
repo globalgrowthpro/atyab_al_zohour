@@ -41,7 +41,8 @@ export function SiteFooter() {
   );
 }
 
-function FooterCol({ title, links }: { title: string; links: [string, string][] }) {
+type To = "/" | "/products" | "/offers" | "/about" | "/contact" | "/services" | "/quote" | "/register";
+function FooterCol({ title, links }: { title: string; links: [To, string][] }) {
   return (
     <div>
       <h4 className="mb-4 text-lg !text-gold">{title}</h4>
