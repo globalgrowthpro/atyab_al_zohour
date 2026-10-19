@@ -23,7 +23,7 @@ export function SiteHeader() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate({ to: "/products/", search: { q: q || undefined } });
+    navigate({ to: "/products", search: { q: q || undefined } });
     setOpen(false);
   };
 

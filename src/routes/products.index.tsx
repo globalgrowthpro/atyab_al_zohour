@@ -3,9 +3,9 @@ import { PageBanner } from "@/components/site/PageBanner";
 import { ProductCard } from "@/components/site/ProductCard";
 import { products } from "@/lib/catalog";
 
-type S = { q?: string; category?: string };
+type S = { q?: string | undefined; category?: string | undefined };
 export const Route = createFileRoute("/products/")({
-  validateSearch: (s: Record<string, unknown>): S => ({ q: typeof s.q === "string" ? s.q : undefined, category: typeof s.category === "string" ? s.category : undefined }),
+  validateSearch: (s: Record<string, unknown>): S => ({ q: typeof s["q"] === "string" ? s["q"] : undefined, category: typeof s["category"] === "string" ? s["category"] : undefined }),
   head: () => ({ meta: [{ title: "المنتجات | أطيب الزهور" }, { name: "description", content: "كتالوج الورود والزهور بالجملة." }, { property: "og:title", content: "المنتجات | أطيب الزهور" }, { property: "og:description", content: "كتالوج الورود بالجملة." }] }),
   component: Products,
 });
