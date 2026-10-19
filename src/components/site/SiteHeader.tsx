@@ -23,7 +23,7 @@ export function SiteHeader() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate({ to: "/products/", search: { q: q || undefined } });
+    navigate({ to: "/products", search: { q: q || undefined } });
     setOpen(false);
   };
 
@@ -37,7 +37,6 @@ export function SiteHeader() {
             {siteConfig.email && <a href={`mailto:${siteConfig.email}`} className="hidden md:flex items-center gap-1.5"><Mail className="size-3.5 text-gold" />{siteConfig.email}</a>}
           </div>
           <div className="flex items-center gap-4">
-            <span className="hidden sm:inline opacity-80">العربية | EN</span>
             <Link to="/login" className="hover:text-gold">تسجيل الدخول</Link>
             <Link to="/register" className="rounded-full bg-rose px-3 py-1 font-bold text-rose-foreground">إنشاء حساب شركة</Link>
           </div>
