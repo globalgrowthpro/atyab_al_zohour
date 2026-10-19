@@ -1,0 +1,7 @@
+{
+  "css.lint.unknownAtRules": "ignore",
+  "files.associations": {
+    ".htaccess": "plaintext",
+    "*.htaccess": "plaintext"
+  }
+}

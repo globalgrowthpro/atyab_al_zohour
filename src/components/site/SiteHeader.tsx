@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { FileText, Mail, MapPin, Menu, Phone, Search, ShoppingCart, User, X } from "lucide-react";
-import logo from "@/assets/logo.png.asset.json";
+import logo from "@/assets/logo.png";
 import { siteConfig } from "@/lib/catalog";
 import { useCart } from "@/lib/cart";
 
@@ -38,7 +38,7 @@ export function SiteHeader() {
           </div>
           <div className="flex items-center gap-4">
             <Link to="/login" className="hover:text-gold">تسجيل الدخول</Link>
-            <Link to="/register" className="rounded-full bg-rose px-3 py-1 font-bold text-rose-foreground">إنشاء حساب شركة</Link>
+            <Link to="/register" className="rounded-full bg-rose px-3 py-1 font-bold text-rose-foreground">إنشاء حساب</Link>
           </div>
         </div>
       </div>
@@ -46,7 +46,7 @@ export function SiteHeader() {
       <div className="border-b bg-surface/95 backdrop-blur">
         <div className="container-x flex h-20 items-center gap-6">
           <Link to="/" className="shrink-0" aria-label="أطيب الزهور">
-            <img src={logo.url} alt="أطيب الزهور — ATYAB AL ZOHOUR" className="h-16 w-auto" />
+            <img src={logo} alt="أطيب الزهور — ATYAB AL ZOHOUR" className="h-16 w-auto" />
           </Link>
           <nav className="hidden xl:flex items-center gap-1">
             {nav.map((n) => (

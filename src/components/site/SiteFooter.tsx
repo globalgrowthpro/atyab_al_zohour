@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Mail, MapPin, Phone } from "lucide-react";
-import logo from "@/assets/logo.png.asset.json";
+import logo from "@/assets/logo.png";
 import { siteConfig } from "@/lib/catalog";
 
 export function SiteFooter() {
@@ -10,7 +10,7 @@ export function SiteFooter() {
       <div className="container-x grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-5">
         <div className="lg:col-span-2 space-y-4">
           <div className="inline-block rounded-2xl bg-cream p-3">
-            <img src={logo.url} alt="أطيب الزهور" className="h-20 w-auto" loading="lazy" />
+            <img src={logo} alt="أطيب الزهور" className="h-20 w-auto" loading="lazy" />
           </div>
           <p className="max-w-sm leading-8 opacity-85">
             أطيب الزهور — توريد الورود الطبيعية بالجملة للمحلات والفنادق والشركات ومنظمي المناسبات في المملكة العربية السعودية.

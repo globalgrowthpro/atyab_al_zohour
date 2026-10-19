@@ -39,7 +39,7 @@ const solutions = [
 ];
 const faqs = [
   ["ما هو الحد الأدنى للطلب؟", "يختلف الحد الأدنى حسب المنتج، ويظهر بوضوح على بطاقة كل منتج (مثل 10 باقات)."],
-  ["كيف أسجّل حساب شركة؟", "من خلال صفحة «إنشاء حساب شركة» بإدخال بيانات المنشأة والسجل التجاري، ويتم تفعيل الحساب بعد المراجعة."],
+  ["كيف أسجّل حساب شركة؟", "من خلال صفحة «إنشاء حساب» بإدخال بيانات المنشأة والسجل التجاري، ويتم تفعيل الحساب بعد المراجعة."],
   ["لماذا لا تظهر الأسعار؟", "أسعار الجملة خاصة بكل حساب تجاري، وتظهر بعد تسجيل الدخول والموافقة على الحساب."],
   ["هل يتوفر التوصيل لجميع المناطق؟", "نوصّل عبر مندوبي الشركة، وتُحدد مناطق ومواعيد التوصيل حسب الفرع الأقرب."],
   ["كيف أعرف توفر المنتج؟", "تظهر حالة التوفر على كل منتج، وقد تختلف الأصناف الموسمية حسب الموسم."],
@@ -54,7 +54,7 @@ function Home() {
         <img src={hero} alt="تنسيق ورود وردية طبيعية" width={1920} height={1088} className="absolute inset-0 size-full object-cover object-left" />
         <div className="absolute inset-0 bg-gradient-to-l from-cream via-cream/90 to-transparent" />
         <div className="container-x relative grid min-h-[620px] items-center py-20">
-          <div className="max-w-xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700">
             <span className="inline-block rounded-full bg-rose px-4 py-1.5 text-sm font-bold text-rose-foreground">توريد بالجملة للشركات</span>
             <h1 className="mt-6 text-5xl leading-[1.25] md:text-6xl">
               أطيب الزهور...
@@ -165,7 +165,7 @@ function Home() {
           <h2 className="text-3xl md:text-4xl !text-forest-foreground">ابدأ شراكتك التجارية مع أطيب الزهور</h2>
           <p className="mx-auto mt-4 max-w-xl text-forest-foreground/80">افتح حساب شركتك واحصل على أسعار جملة خاصة وطلبات متكررة بسهولة.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link to="/register" className="btn btn-rose">إنشاء حساب شركة</Link>
+            <Link to="/register" className="btn btn-rose">إنشاء حساب</Link>
             <Link to="/quote" className="btn btn-ghost-light">طلب عرض سعر</Link>
           </div>
         </div>

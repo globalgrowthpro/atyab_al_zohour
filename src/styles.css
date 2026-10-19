@@ -1,5 +1,4 @@
-@import "tailwindcss" source(none);
-@source "../src";
+@import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -95,9 +94,16 @@
 
 @utility container-x {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1440px;
   margin-inline: auto;
   padding-inline: 1.25rem;
+  @media (min-width: 768px) {
+    padding-inline: 2rem;
+  }
+  @media (min-width: 1536px) {
+    max-width: 1536px;
+    padding-inline: 2.5rem;
+  }
 }
 @utility bg-forest-gradient { background-image: var(--gradient-forest); }
 @utility gold-rule {
