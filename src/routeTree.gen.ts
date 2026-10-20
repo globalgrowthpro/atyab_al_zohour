@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CourierRouteImport } from './routes/courier'
@@ -20,6 +21,16 @@ import { Route as OffersRouteImport } from './routes/offers'
 import { Route as QuoteRouteImport } from './routes/quote'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ServicesRouteImport } from './routes/services'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminClientsRouteImport } from './routes/admin.clients'
+import { Route as AdminCouriersRouteImport } from './routes/admin.couriers'
+import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
+import { Route as AdminPricingRouteImport } from './routes/admin.pricing'
+import { Route as AdminProductsRouteImport } from './routes/admin.products'
+import { Route as AdminQuotesRouteImport } from './routes/admin.quotes'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as CourierIndexRouteImport } from './routes/courier.index'
 import { Route as CourierMapRouteImport } from './routes/courier.map'
 import { Route as CourierProfileRouteImport } from './routes/courier.profile'
@@ -41,6 +52,11 @@ const IndexRoute = IndexRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CategoriesRoute = CategoriesRouteImport.update({
@@ -87,6 +103,56 @@ const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
   path: '/services',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminClientsRoute = AdminClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCouriersRoute = AdminCouriersRouteImport.update({
+  id: '/couriers',
+  path: '/couriers',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOrdersRoute = AdminOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPricingRoute = AdminPricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProductsRoute = AdminProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminQuotesRoute = AdminQuotesRouteImport.update({
+  id: '/quotes',
+  path: '/quotes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSupportRoute = AdminSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => AdminRoute,
 } as any)
 const CourierIndexRoute = CourierIndexRouteImport.update({
   id: '/',
@@ -152,6 +218,7 @@ const ProductsSlugRoute = ProductsSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/categories': typeof CategoriesRoute
   '/contact': typeof ContactRoute
   '/courier': typeof CourierRouteWithChildren
@@ -161,6 +228,15 @@ export interface FileRoutesByFullPath {
   '/quote': typeof QuoteRoute
   '/register': typeof RegisterRoute
   '/services': typeof ServicesRoute
+  '/admin/clients': typeof AdminClientsRoute
+  '/admin/couriers': typeof AdminCouriersRoute
+  '/admin/orders': typeof AdminOrdersRoute
+  '/admin/pricing': typeof AdminPricingRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/quotes': typeof AdminQuotesRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/support': typeof AdminSupportRoute
   '/courier/map': typeof CourierMapRoute
   '/courier/profile': typeof CourierProfileRoute
   '/courier/support': typeof CourierSupportRoute
@@ -170,6 +246,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/support': typeof DashboardSupportRoute
   '/dashboard/track': typeof DashboardTrackRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/courier/': typeof CourierIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/products/': typeof ProductsIndexRoute
@@ -184,6 +261,15 @@ export interface FileRoutesByTo {
   '/quote': typeof QuoteRoute
   '/register': typeof RegisterRoute
   '/services': typeof ServicesRoute
+  '/admin/clients': typeof AdminClientsRoute
+  '/admin/couriers': typeof AdminCouriersRoute
+  '/admin/orders': typeof AdminOrdersRoute
+  '/admin/pricing': typeof AdminPricingRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/quotes': typeof AdminQuotesRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/support': typeof AdminSupportRoute
   '/courier/map': typeof CourierMapRoute
   '/courier/profile': typeof CourierProfileRoute
   '/courier/support': typeof CourierSupportRoute
@@ -193,6 +279,7 @@ export interface FileRoutesByTo {
   '/dashboard/support': typeof DashboardSupportRoute
   '/dashboard/track': typeof DashboardTrackRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/admin': typeof AdminIndexRoute
   '/courier': typeof CourierIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/products': typeof ProductsIndexRoute
@@ -201,6 +288,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/categories': typeof CategoriesRoute
   '/contact': typeof ContactRoute
   '/courier': typeof CourierRouteWithChildren
@@ -210,6 +298,15 @@ export interface FileRoutesById {
   '/quote': typeof QuoteRoute
   '/register': typeof RegisterRoute
   '/services': typeof ServicesRoute
+  '/admin/clients': typeof AdminClientsRoute
+  '/admin/couriers': typeof AdminCouriersRoute
+  '/admin/orders': typeof AdminOrdersRoute
+  '/admin/pricing': typeof AdminPricingRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/quotes': typeof AdminQuotesRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/support': typeof AdminSupportRoute
   '/courier/map': typeof CourierMapRoute
   '/courier/profile': typeof CourierProfileRoute
   '/courier/support': typeof CourierSupportRoute
@@ -219,6 +316,7 @@ export interface FileRoutesById {
   '/dashboard/support': typeof DashboardSupportRoute
   '/dashboard/track': typeof DashboardTrackRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/courier/': typeof CourierIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/products/': typeof ProductsIndexRoute
@@ -228,6 +326,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/admin'
     | '/categories'
     | '/contact'
     | '/courier'
@@ -237,6 +336,15 @@ export interface FileRouteTypes {
     | '/quote'
     | '/register'
     | '/services'
+    | '/admin/clients'
+    | '/admin/couriers'
+    | '/admin/orders'
+    | '/admin/pricing'
+    | '/admin/products'
+    | '/admin/quotes'
+    | '/admin/reports'
+    | '/admin/settings'
+    | '/admin/support'
     | '/courier/map'
     | '/courier/profile'
     | '/courier/support'
@@ -246,6 +354,7 @@ export interface FileRouteTypes {
     | '/dashboard/support'
     | '/dashboard/track'
     | '/products/$slug'
+    | '/admin/'
     | '/courier/'
     | '/dashboard/'
     | '/products/'
@@ -260,6 +369,15 @@ export interface FileRouteTypes {
     | '/quote'
     | '/register'
     | '/services'
+    | '/admin/clients'
+    | '/admin/couriers'
+    | '/admin/orders'
+    | '/admin/pricing'
+    | '/admin/products'
+    | '/admin/quotes'
+    | '/admin/reports'
+    | '/admin/settings'
+    | '/admin/support'
     | '/courier/map'
     | '/courier/profile'
     | '/courier/support'
@@ -269,6 +387,7 @@ export interface FileRouteTypes {
     | '/dashboard/support'
     | '/dashboard/track'
     | '/products/$slug'
+    | '/admin'
     | '/courier'
     | '/dashboard'
     | '/products'
@@ -276,6 +395,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/admin'
     | '/categories'
     | '/contact'
     | '/courier'
@@ -285,6 +405,15 @@ export interface FileRouteTypes {
     | '/quote'
     | '/register'
     | '/services'
+    | '/admin/clients'
+    | '/admin/couriers'
+    | '/admin/orders'
+    | '/admin/pricing'
+    | '/admin/products'
+    | '/admin/quotes'
+    | '/admin/reports'
+    | '/admin/settings'
+    | '/admin/support'
     | '/courier/map'
     | '/courier/profile'
     | '/courier/support'
@@ -294,6 +423,7 @@ export interface FileRouteTypes {
     | '/dashboard/support'
     | '/dashboard/track'
     | '/products/$slug'
+    | '/admin/'
     | '/courier/'
     | '/dashboard/'
     | '/products/'
@@ -302,6 +432,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  AdminRoute: typeof AdminRouteWithChildren
   CategoriesRoute: typeof CategoriesRoute
   ContactRoute: typeof ContactRoute
   CourierRoute: typeof CourierRouteWithChildren
@@ -329,6 +460,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/categories': {
@@ -393,6 +531,76 @@ declare module '@tanstack/react-router' {
       fullPath: '/services'
       preLoaderRoute: typeof ServicesRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/clients': {
+      id: '/admin/clients'
+      path: '/clients'
+      fullPath: '/admin/clients'
+      preLoaderRoute: typeof AdminClientsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/couriers': {
+      id: '/admin/couriers'
+      path: '/couriers'
+      fullPath: '/admin/couriers'
+      preLoaderRoute: typeof AdminCouriersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/orders': {
+      id: '/admin/orders'
+      path: '/orders'
+      fullPath: '/admin/orders'
+      preLoaderRoute: typeof AdminOrdersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pricing': {
+      id: '/admin/pricing'
+      path: '/pricing'
+      fullPath: '/admin/pricing'
+      preLoaderRoute: typeof AdminPricingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/products': {
+      id: '/admin/products'
+      path: '/products'
+      fullPath: '/admin/products'
+      preLoaderRoute: typeof AdminProductsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/quotes': {
+      id: '/admin/quotes'
+      path: '/quotes'
+      fullPath: '/admin/quotes'
+      preLoaderRoute: typeof AdminQuotesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/support': {
+      id: '/admin/support'
+      path: '/support'
+      fullPath: '/admin/support'
+      preLoaderRoute: typeof AdminSupportRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/courier/': {
       id: '/courier/'
@@ -481,6 +689,34 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminClientsRoute: typeof AdminClientsRoute
+  AdminCouriersRoute: typeof AdminCouriersRoute
+  AdminOrdersRoute: typeof AdminOrdersRoute
+  AdminPricingRoute: typeof AdminPricingRoute
+  AdminProductsRoute: typeof AdminProductsRoute
+  AdminQuotesRoute: typeof AdminQuotesRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminSupportRoute: typeof AdminSupportRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminClientsRoute: AdminClientsRoute,
+  AdminCouriersRoute: AdminCouriersRoute,
+  AdminOrdersRoute: AdminOrdersRoute,
+  AdminPricingRoute: AdminPricingRoute,
+  AdminProductsRoute: AdminProductsRoute,
+  AdminQuotesRoute: AdminQuotesRoute,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminSupportRoute: AdminSupportRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 interface CourierRouteChildren {
   CourierMapRoute: typeof CourierMapRoute
   CourierProfileRoute: typeof CourierProfileRoute
@@ -523,6 +759,7 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  AdminRoute: AdminRouteWithChildren,
   CategoriesRoute: CategoriesRoute,
   ContactRoute: ContactRoute,
   CourierRoute: CourierRouteWithChildren,
