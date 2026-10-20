@@ -26,7 +26,7 @@ export type AdminOrder = {
   items: number;
   total: number;
   status: OrderStatus;
-  courier?: string;
+  courier?: string | undefined;
 };
 
 export const adminOrders: AdminOrder[] = [
