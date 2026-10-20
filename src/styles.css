@@ -169,3 +169,29 @@
   font-size: 0.9rem;
   &::before, &::after { content: ""; width: 1.75rem; height: 1px; background: var(--gold); }
 }
+
+/* Customer delivery progress: a connected horizontal sequence, vertical on small screens. */
+.client-stepper { display: flex; padding-block: 8px; }
+.client-step { position: relative; flex: 1; min-width: 0; text-align: center; }
+.client-step:not(:last-child)::after { content: ""; position: absolute; top: 21px; inset-inline-start: calc(50% + 24px); width: calc(100% - 48px); height: 2px; background: var(--border); }
+.client-step.is-complete:not(:last-child)::after { background: var(--primary); }
+.client-step-icon { position: relative; z-index: 1; display: grid; place-items: center; width: 44px; height: 44px; margin: 0 auto 16px; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); color: var(--muted-foreground); }
+.client-step.is-complete .client-step-icon { color: white; background: var(--primary); border-color: var(--primary); }
+.client-step.is-current .client-step-icon { border: 2px solid var(--primary); color: var(--primary); background: var(--surface); box-shadow: 0 0 0 5px color-mix(in oklab, var(--primary) 9%, transparent); }
+.client-step.is-current.is-complete .client-step-icon { color: white; background: var(--primary); }
+.client-step h4 { font-size: 12px; font-weight: 700; line-height: 1.6; }
+.client-step p { margin-top: 6px; font-size: 10px; color: var(--muted-foreground); line-height: 1.6; }
+.client-step.is-current h4 { color: var(--primary); }
+.client-map-marker > span { display: grid; place-items: center; width: 40px; height: 40px; color: white; border: 3px solid white; border-radius: 14px; box-shadow: 0 3px 14px #183a3440; }
+.client-map-marker svg { width: 23px; height: 23px; }
+.leaflet-container { font-family: Tajawal, sans-serif; }
+.leaflet-container .leaflet-control-attribution { font-size: 10px; }
+@media (max-width: 639px) {
+  .client-stepper { flex-direction: column; gap: 0; }
+  .client-step { display: flex; gap: 18px; text-align: start; padding-bottom: 26px; }
+  .client-step:last-child { padding-bottom: 0; }
+  .client-step-icon { flex-shrink: 0; margin: 0; width: 40px; height: 40px; }
+  .client-step-copy { padding-top: 2px; }
+  .client-step h4 { font-size: 13px; }
+  .client-step:not(:last-child)::after { top: 43px; inset-inline-start: 19px; width: 2px; height: calc(100% - 46px); }
+}

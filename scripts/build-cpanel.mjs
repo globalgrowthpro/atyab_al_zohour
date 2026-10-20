@@ -32,6 +32,16 @@ const routes = [
   "/quote",
   "/login",
   "/register",
+  "/dashboard",
+  "/dashboard/orders",
+  "/dashboard/track",
+  "/dashboard/support",
+  "/dashboard/profile",
+  "/courier",
+  "/courier/tasks",
+  "/courier/map",
+  "/courier/support",
+  "/courier/profile",
   // Product details pages
   "/products/red-naomi-rose",
   "/products/pink-rose",
@@ -50,10 +60,13 @@ for (const route of routes) {
     const res = await server.fetch(req);
     const html = await res.text();
 
-    const targetSubdir = route === "/" ? clientDir : path.join(clientDir, ...route.split("/").filter(Boolean));
+    const targetSubdir =
+      route === "/" ? clientDir : path.join(clientDir, ...route.split("/").filter(Boolean));
     fs.mkdirSync(targetSubdir, { recursive: true });
     fs.writeFileSync(path.join(targetSubdir, "index.html"), html, "utf-8");
-    console.log(`  ✓ Prerendered: ${route} -> ${path.relative(clientDir, path.join(targetSubdir, "index.html"))}`);
+    console.log(
+      `  ✓ Prerendered: ${route} -> ${path.relative(clientDir, path.join(targetSubdir, "index.html"))}`,
+    );
   } catch (err) {
     console.error(`  ✗ Failed to prerender ${route}:`, err.message);
   }
@@ -169,5 +182,7 @@ console.log("  ✓ Created: dist-cpanel/.htaccess");
 const files = fs.readdirSync(outputDir);
 console.log(`\n🎉 [5/5] Success! 'dist-cpanel/' is ready for upload.`);
 console.log(`   Contents: ${files.join(", ")}`);
-console.log(`   To deploy Static Site: Upload all contents of 'dist-cpanel/' to 'public_html/' on cPanel/hPanel.`);
+console.log(
+  `   To deploy Static Site: Upload all contents of 'dist-cpanel/' to 'public_html/' on cPanel/hPanel.`,
+);
 console.log(`   To deploy Node.js SSR: Run 'node server.js' via cPanel Setup Node.js App.`);

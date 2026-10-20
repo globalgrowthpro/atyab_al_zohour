@@ -1,4 +1,18 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { products } from "./catalog";
+
+export function normalizeCart(value: unknown): CartLine[] {
+  if (!Array.isArray(value)) return [];
+  const result = new Map<string, number>();
+  for (const line of value) {
+    if (!line || typeof line !== "object") continue;
+    const p = products.find((p) => p.slug === line.slug && p.available);
+    if (!p || typeof line.qty !== "number" || !Number.isSafeInteger(line.qty) || line.qty < 1)
+      continue;
+    result.set(p.slug, Math.min(9999, Math.max(p.moq, (result.get(p.slug) ?? 0) + line.qty)));
+  }
+  return Array.from(result, ([slug, qty]) => ({ slug, qty }));
+}
 
 export type CartLine = { slug: string; qty: number };
 type Ctx = {
@@ -15,28 +29,44 @@ const KEY = "atyab-cart";
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([]);
+  const [ready, setReady] = useState(false);
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) setLines(JSON.parse(raw));
-    } catch {}
+      if (raw) setLines(normalizeCart(JSON.parse(raw)));
+    } catch {
+      // Ignore corrupt or inaccessible saved data and start with an empty cart.
+    }
+    setReady(true);
   }, []);
   useEffect(() => {
-    localStorage.setItem(KEY, JSON.stringify(lines));
-  }, [lines]);
+    if (ready) {
+      try {
+        localStorage.setItem(KEY, JSON.stringify(lines));
+      } catch {
+        /* Cart remains usable when storage is unavailable. */
+      }
+    }
+  }, [lines, ready]);
 
   const add = (slug: string, qty: number) =>
     setLines((ls) => {
-      const f = ls.find((l) => l.slug === slug);
-      return f ? ls.map((l) => (l.slug === slug ? { ...l, qty: l.qty + qty } : l)) : [...ls, { slug, qty }];
+      return normalizeCart([...ls, { slug, qty }]);
     });
   const setQty = (slug: string, qty: number) =>
-    setLines((ls) => ls.map((l) => (l.slug === slug ? { ...l, qty: Math.max(1, qty) } : l)));
+    setLines((ls) => normalizeCart(ls.map((l) => (l.slug === slug ? { ...l, qty } : l))));
   const remove = (slug: string) => setLines((ls) => ls.filter((l) => l.slug !== slug));
 
   return (
     <CartContext.Provider
-      value={{ lines, count: lines.reduce((s, l) => s + l.qty, 0), add, setQty, remove, clear: () => setLines([]) }}
+      value={{
+        lines,
+        count: lines.reduce((s, l) => s + l.qty, 0),
+        add,
+        setQty,
+        remove,
+        clear: () => setLines([]),
+      }}
     >
       {children}
     </CartContext.Provider>

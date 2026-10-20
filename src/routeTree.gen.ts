@@ -13,11 +13,23 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CourierRouteImport } from './routes/courier'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as QuoteRouteImport } from './routes/quote'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ServicesRouteImport } from './routes/services'
+import { Route as CourierIndexRouteImport } from './routes/courier.index'
+import { Route as CourierMapRouteImport } from './routes/courier.map'
+import { Route as CourierProfileRouteImport } from './routes/courier.profile'
+import { Route as CourierSupportRouteImport } from './routes/courier.support'
+import { Route as CourierTasksRouteImport } from './routes/courier.tasks'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
+import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
+import { Route as DashboardSupportRouteImport } from './routes/dashboard.support'
+import { Route as DashboardTrackRouteImport } from './routes/dashboard.track'
 import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
 
@@ -39,6 +51,16 @@ const CategoriesRoute = CategoriesRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CourierRoute = CourierRouteImport.update({
+  id: '/courier',
+  path: '/courier',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -66,6 +88,56 @@ const ServicesRoute = ServicesRouteImport.update({
   path: '/services',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CourierIndexRoute = CourierIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CourierRoute,
+} as any)
+const CourierMapRoute = CourierMapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => CourierRoute,
+} as any)
+const CourierProfileRoute = CourierProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => CourierRoute,
+} as any)
+const CourierSupportRoute = CourierSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => CourierRoute,
+} as any)
+const CourierTasksRoute = CourierTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => CourierRoute,
+} as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardOrdersRoute = DashboardOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardProfileRoute = DashboardProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSupportRoute = DashboardSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardTrackRoute = DashboardTrackRouteImport.update({
+  id: '/track',
+  path: '/track',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const ProductsIndexRoute = ProductsIndexRouteImport.update({
   id: '/products/',
   path: '/products/',
@@ -82,12 +154,24 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/categories': typeof CategoriesRoute
   '/contact': typeof ContactRoute
+  '/courier': typeof CourierRouteWithChildren
+  '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
   '/quote': typeof QuoteRoute
   '/register': typeof RegisterRoute
   '/services': typeof ServicesRoute
+  '/courier/map': typeof CourierMapRoute
+  '/courier/profile': typeof CourierProfileRoute
+  '/courier/support': typeof CourierSupportRoute
+  '/courier/tasks': typeof CourierTasksRoute
+  '/dashboard/orders': typeof DashboardOrdersRoute
+  '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/support': typeof DashboardSupportRoute
+  '/dashboard/track': typeof DashboardTrackRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/courier/': typeof CourierIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/products/': typeof ProductsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -100,7 +184,17 @@ export interface FileRoutesByTo {
   '/quote': typeof QuoteRoute
   '/register': typeof RegisterRoute
   '/services': typeof ServicesRoute
+  '/courier/map': typeof CourierMapRoute
+  '/courier/profile': typeof CourierProfileRoute
+  '/courier/support': typeof CourierSupportRoute
+  '/courier/tasks': typeof CourierTasksRoute
+  '/dashboard/orders': typeof DashboardOrdersRoute
+  '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/support': typeof DashboardSupportRoute
+  '/dashboard/track': typeof DashboardTrackRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/courier': typeof CourierIndexRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/products': typeof ProductsIndexRoute
 }
 export interface FileRoutesById {
@@ -109,12 +203,24 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/categories': typeof CategoriesRoute
   '/contact': typeof ContactRoute
+  '/courier': typeof CourierRouteWithChildren
+  '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
   '/quote': typeof QuoteRoute
   '/register': typeof RegisterRoute
   '/services': typeof ServicesRoute
+  '/courier/map': typeof CourierMapRoute
+  '/courier/profile': typeof CourierProfileRoute
+  '/courier/support': typeof CourierSupportRoute
+  '/courier/tasks': typeof CourierTasksRoute
+  '/dashboard/orders': typeof DashboardOrdersRoute
+  '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/support': typeof DashboardSupportRoute
+  '/dashboard/track': typeof DashboardTrackRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/courier/': typeof CourierIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/products/': typeof ProductsIndexRoute
 }
 export interface FileRouteTypes {
@@ -124,12 +230,24 @@ export interface FileRouteTypes {
     | '/about'
     | '/categories'
     | '/contact'
+    | '/courier'
+    | '/dashboard'
     | '/login'
     | '/offers'
     | '/quote'
     | '/register'
     | '/services'
+    | '/courier/map'
+    | '/courier/profile'
+    | '/courier/support'
+    | '/courier/tasks'
+    | '/dashboard/orders'
+    | '/dashboard/profile'
+    | '/dashboard/support'
+    | '/dashboard/track'
     | '/products/$slug'
+    | '/courier/'
+    | '/dashboard/'
     | '/products/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -142,7 +260,17 @@ export interface FileRouteTypes {
     | '/quote'
     | '/register'
     | '/services'
+    | '/courier/map'
+    | '/courier/profile'
+    | '/courier/support'
+    | '/courier/tasks'
+    | '/dashboard/orders'
+    | '/dashboard/profile'
+    | '/dashboard/support'
+    | '/dashboard/track'
     | '/products/$slug'
+    | '/courier'
+    | '/dashboard'
     | '/products'
   id:
     | '__root__'
@@ -150,12 +278,24 @@ export interface FileRouteTypes {
     | '/about'
     | '/categories'
     | '/contact'
+    | '/courier'
+    | '/dashboard'
     | '/login'
     | '/offers'
     | '/quote'
     | '/register'
     | '/services'
+    | '/courier/map'
+    | '/courier/profile'
+    | '/courier/support'
+    | '/courier/tasks'
+    | '/dashboard/orders'
+    | '/dashboard/profile'
+    | '/dashboard/support'
+    | '/dashboard/track'
     | '/products/$slug'
+    | '/courier/'
+    | '/dashboard/'
     | '/products/'
   fileRoutesById: FileRoutesById
 }
@@ -164,6 +304,8 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   CategoriesRoute: typeof CategoriesRoute
   ContactRoute: typeof ContactRoute
+  CourierRoute: typeof CourierRouteWithChildren
+  DashboardRoute: typeof DashboardRouteWithChildren
   LoginRoute: typeof LoginRoute
   OffersRoute: typeof OffersRoute
   QuoteRoute: typeof QuoteRoute
@@ -203,6 +345,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/courier': {
+      id: '/courier'
+      path: '/courier'
+      fullPath: '/courier'
+      preLoaderRoute: typeof CourierRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -238,6 +394,76 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/courier/': {
+      id: '/courier/'
+      path: '/'
+      fullPath: '/courier/'
+      preLoaderRoute: typeof CourierIndexRouteImport
+      parentRoute: typeof CourierRoute
+    }
+    '/courier/map': {
+      id: '/courier/map'
+      path: '/map'
+      fullPath: '/courier/map'
+      preLoaderRoute: typeof CourierMapRouteImport
+      parentRoute: typeof CourierRoute
+    }
+    '/courier/profile': {
+      id: '/courier/profile'
+      path: '/profile'
+      fullPath: '/courier/profile'
+      preLoaderRoute: typeof CourierProfileRouteImport
+      parentRoute: typeof CourierRoute
+    }
+    '/courier/support': {
+      id: '/courier/support'
+      path: '/support'
+      fullPath: '/courier/support'
+      preLoaderRoute: typeof CourierSupportRouteImport
+      parentRoute: typeof CourierRoute
+    }
+    '/courier/tasks': {
+      id: '/courier/tasks'
+      path: '/tasks'
+      fullPath: '/courier/tasks'
+      preLoaderRoute: typeof CourierTasksRouteImport
+      parentRoute: typeof CourierRoute
+    }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/orders': {
+      id: '/dashboard/orders'
+      path: '/orders'
+      fullPath: '/dashboard/orders'
+      preLoaderRoute: typeof DashboardOrdersRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/profile': {
+      id: '/dashboard/profile'
+      path: '/profile'
+      fullPath: '/dashboard/profile'
+      preLoaderRoute: typeof DashboardProfileRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/support': {
+      id: '/dashboard/support'
+      path: '/support'
+      fullPath: '/dashboard/support'
+      preLoaderRoute: typeof DashboardSupportRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/track': {
+      id: '/dashboard/track'
+      path: '/track'
+      fullPath: '/dashboard/track'
+      preLoaderRoute: typeof DashboardTrackRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/products/': {
       id: '/products/'
       path: '/products'
@@ -255,11 +481,52 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface CourierRouteChildren {
+  CourierMapRoute: typeof CourierMapRoute
+  CourierProfileRoute: typeof CourierProfileRoute
+  CourierSupportRoute: typeof CourierSupportRoute
+  CourierTasksRoute: typeof CourierTasksRoute
+  CourierIndexRoute: typeof CourierIndexRoute
+}
+
+const CourierRouteChildren: CourierRouteChildren = {
+  CourierMapRoute: CourierMapRoute,
+  CourierProfileRoute: CourierProfileRoute,
+  CourierSupportRoute: CourierSupportRoute,
+  CourierTasksRoute: CourierTasksRoute,
+  CourierIndexRoute: CourierIndexRoute,
+}
+
+const CourierRouteWithChildren =
+  CourierRoute._addFileChildren(CourierRouteChildren)
+
+interface DashboardRouteChildren {
+  DashboardOrdersRoute: typeof DashboardOrdersRoute
+  DashboardProfileRoute: typeof DashboardProfileRoute
+  DashboardSupportRoute: typeof DashboardSupportRoute
+  DashboardTrackRoute: typeof DashboardTrackRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardOrdersRoute: DashboardOrdersRoute,
+  DashboardProfileRoute: DashboardProfileRoute,
+  DashboardSupportRoute: DashboardSupportRoute,
+  DashboardTrackRoute: DashboardTrackRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   CategoriesRoute: CategoriesRoute,
   ContactRoute: ContactRoute,
+  CourierRoute: CourierRouteWithChildren,
+  DashboardRoute: DashboardRouteWithChildren,
   LoginRoute: LoginRoute,
   OffersRoute: OffersRoute,
   QuoteRoute: QuoteRoute,
