@@ -23,9 +23,25 @@ function Orders() {
     if (next) { update(id, { status: next }); toast.success(`تم تحديث ${id} إلى: ${orderStatusLabel[next]}`); }
   };
 
+  const counts = flow.map((s) => ({ s, n: orders.filter((o) => o.status === s).length }));
+  const totalValue = orders.filter((o) => o.status !== "cancelled").reduce((sum, o) => sum + o.total, 0);
+
   return (
     <>
       <PageTitle title="الطلبات" desc="تابع الطلبات وحدّث حالتها وعيّن المندوب." />
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        <div className="rounded-2xl border bg-card p-4 shadow-soft">
+          <p className="text-xs text-muted-foreground">قيمة الطلبات</p>
+          <p className="mt-1 text-lg font-extrabold text-forest">{sar(totalValue)}</p>
+        </div>
+        {counts.map(({ s, n }) => (
+          <button key={s} type="button" onClick={() => setStatus(status === s ? "all" : s)}
+            className={`rounded-2xl border p-4 text-start shadow-soft transition hover:-translate-y-0.5 ${status === s ? "border-primary bg-primary/5" : "bg-card"}`}>
+            <p className="text-xs text-muted-foreground">{orderStatusLabel[s]}</p>
+            <p className="mt-1 text-lg font-extrabold text-forest">{n}</p>
+          </button>
+        ))}
+      </div>
       <Panel>
         <Toolbar q={q} setQ={setQ} placeholder="ابحث برقم الطلب أو العميل أو المدينة">
           <FilterChips value={status} onChange={setStatus} options={[["all", "الكل"], ...(Object.entries(orderStatusLabel) as [OrderStatus, string][])]} />

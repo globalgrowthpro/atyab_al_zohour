@@ -14,9 +14,19 @@ function Quotes() {
     toast.success(`${id}: ${quoteStatusLabel[s]}`);
   };
   const list = quotes.filter((q) => status === "all" || q.status === status);
+  const sent = quotes.filter((q) => q.status === "sent").length;
+  const accepted = quotes.filter((q) => q.status === "accepted").length;
+  const decided = quotes.filter((q) => q.status === "accepted" || q.status === "rejected").length;
+  const rate = decided ? Math.round((accepted / decided) * 100) : 0;
   return (
     <>
       <PageTitle title="طلبات عروض الأسعار" desc="راجع الطلبات وأرسل العروض للعملاء." />
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">بانتظار التسعير</p><p className="mt-1 text-xl font-extrabold text-rose">{quotes.filter((q) => q.status === "pending").length}</p></div>
+        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">عروض مرسلة</p><p className="mt-1 text-xl font-extrabold text-forest">{sent}</p></div>
+        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">عروض مقبولة</p><p className="mt-1 text-xl font-extrabold text-primary">{accepted}</p></div>
+        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">معدل القبول</p><p className="mt-1 text-xl font-extrabold text-forest">{rate}%</p></div>
+      </div>
       <div className="mb-4"><FilterChips value={status} onChange={setStatus} options={[["all", "الكل"], ...(Object.entries(quoteStatusLabel) as [QuoteStatus, string][])]} /></div>
       <div className="grid gap-4 md:grid-cols-2">
         {list.map((q) => (
