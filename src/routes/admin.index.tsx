@@ -65,7 +65,7 @@ function Overview() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={categoryShare} dataKey="value" nameKey="name" innerRadius={52} outerRadius={78} paddingAngle={3} strokeWidth={0}>
-                    {categoryShare.map((c, i) => <Cell key={c.name} fill={pieColors[i % pieColors.length]} />)}
+                    {categoryShare.map((c, i) => <Cell key={c.name} fill={pieColors[i % pieColors.length] ?? "#0B4D33"} />)}
                   </Pie>
                   <Tooltip formatter={(v) => [`${v}%`, "الحصة"]} contentStyle={{ borderRadius: 12, border: "1px solid #E5E7EB", fontFamily: "Tajawal" }} />
                 </PieChart>
