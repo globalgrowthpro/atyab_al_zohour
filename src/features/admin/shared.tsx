@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Search } from "lucide-react";
+import { Search, TrendingDown, TrendingUp } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Tone } from "./data";
 
