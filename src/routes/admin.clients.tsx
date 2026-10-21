@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { adminClients, clientStatusLabel, clientStatusTone, tierLabel, type ClientStatus, type PriceTier } from "@/features/admin/data";
-import { Badge, DataTable, FilterChips, PageTitle, Panel, Toolbar } from "@/features/admin/shared";
+import { Badge, DataTable, FilterChips, Meter, PageTitle, Panel, Toolbar } from "@/features/admin/shared";
 
 export const Route = createFileRoute("/admin/clients")({ component: Clients });
 
@@ -15,9 +15,22 @@ function Clients() {
     toast.success(msg);
   };
   const list = clients.filter((c) => (status === "all" || c.status === status) && (c.name + c.city + c.type).includes(q.trim()));
+  const tiers = (Object.keys(tierLabel) as PriceTier[]).map((t) => ({ t, n: clients.filter((c) => c.tier === t).length }));
+  const maxTier = Math.max(1, ...tiers.map((x) => x.n));
   return (
     <>
       <PageTitle title="حسابات العملاء" desc="وافق على الحسابات الجديدة وحدد فئة السعر لكل عميل." />
+      <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">إجمالي الحسابات</p><p className="mt-1 text-xl font-extrabold text-forest">{clients.length}</p></div>
+        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">مفعّلة</p><p className="mt-1 text-xl font-extrabold text-primary">{clients.filter((c) => c.status === "active").length}</p></div>
+        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">بانتظار الموافقة</p><p className="mt-1 text-xl font-extrabold text-rose">{clients.filter((c) => c.status === "pending").length}</p></div>
+        <div className="rounded-2xl border bg-card p-4 shadow-soft">
+          <p className="mb-2 text-xs text-muted-foreground">توزيع فئات الأسعار</p>
+          <div className="space-y-2">
+            {tiers.map(({ t, n }) => <Meter key={t} label={`فئة ${t}`} value={String(n)} pct={n / maxTier} tone={t === "A" ? "bg-gold" : t === "B" ? "bg-rose" : "bg-primary"} />)}
+          </div>
+        </div>
+      </div>
       <Panel>
         <Toolbar q={q} setQ={setQ} placeholder="ابحث باسم المنشأة أو المدينة">
           <FilterChips value={status} onChange={setStatus} options={[["all", "الكل"], ...(Object.entries(clientStatusLabel) as [ClientStatus, string][])]} />

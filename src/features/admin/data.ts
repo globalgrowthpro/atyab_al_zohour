@@ -105,3 +105,32 @@ export const weeklySales = [
 ];
 
 export const sar = (n: number) => `${n.toLocaleString("en-US")} ر.س`;
+
+// Hourly order volume for today (demo).
+export const hourlyOrders = [
+  { h: "8ص", orders: 2 }, { h: "9ص", orders: 4 }, { h: "10ص", orders: 7 }, { h: "11ص", orders: 6 },
+  { h: "12م", orders: 9 }, { h: "1م", orders: 12 }, { h: "2م", orders: 10 }, { h: "3م", orders: 8 },
+  { h: "4م", orders: 11 }, { h: "5م", orders: 14 }, { h: "6م", orders: 9 }, { h: "7م", orders: 5 },
+];
+
+// Sales share by category (demo).
+export const categoryShare = [
+  { name: "ورد جوري", value: 34 },
+  { name: "زنابق", value: 18 },
+  { name: "قرنفل", value: 12 },
+  { name: "كريز", value: 10 },
+  { name: "جبسوفيليا", value: 9 },
+  { name: "تنسيقات موسمية", value: 9 },
+  { name: "خضرة وتزيين", value: 8 },
+];
+
+// Latest activity feed (demo).
+export type AdminActivity = { id: string; icon: "order" | "client" | "quote" | "courier" | "ticket"; text: string; time: string };
+export const adminActivity: AdminActivity[] = [
+  { id: "A1", icon: "order", text: "طلب جديد ORD-1048 من متجر نسمة الورد بقيمة 4,850 ر.س", time: "قبل 12 دقيقة" },
+  { id: "A2", icon: "client", text: "حساب جديد بانتظار الموافقة: مطعم ريحان", time: "قبل 40 دقيقة" },
+  { id: "A3", icon: "courier", text: "سالم القحطاني أنهى تسليم ORD-1044", time: "قبل ساعة" },
+  { id: "A4", icon: "quote", text: "عرض سعر QT-311 بانتظار التسعير — قاعة الفخامة", time: "قبل ساعتين" },
+  { id: "A5", icon: "ticket", text: "تذكرة دعم جديدة TK-91: تأخر طلب ORD-1047", time: "قبل 3 ساعات" },
+  { id: "A6", icon: "order", text: "تم تسليم ORD-1043 إلى منتجع البحر الأحمر", time: "أمس" },
+];
