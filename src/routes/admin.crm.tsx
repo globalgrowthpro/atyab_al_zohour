@@ -46,7 +46,7 @@ const trend = [
   { m: "مايو", v: 38000 }, { m: "يونيو", v: 42000 }, { m: "يوليو", v: 51000 },
   { m: "أغسطس", v: 47000 }, { m: "سبتمبر", v: 63000 }, { m: "أكتوبر", v: 74700 },
 ];
-const pieColors = ["var(--color-primary)", "var(--color-rose)", "var(--color-gold)", "var(--color-forest)", "var(--color-muted-foreground)"];
+const pieColors: string[] = ["var(--color-primary)", "var(--color-rose)", "var(--color-gold)", "var(--color-forest)", "var(--color-muted-foreground)"];
 const initials = (s: string) => s.replace(/^(أ\.|شركة|متجر|مطعم|فندق|قاعة|منتجع|مقهى)\s*/, "").slice(0, 2);
 
 function Avatar({ name }: { name: string }) {
@@ -124,12 +124,12 @@ function Crm() {
           <div className="flex items-center gap-4 p-5">
             <div className="size-36 shrink-0" dir="ltr">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart><Pie data={sources} dataKey="value" innerRadius={42} outerRadius={64} paddingAngle={3}>{sources.map((s, i) => <Cell key={s.name} fill={pieColors[i % pieColors.length]} />)}</Pie><Tooltip /></PieChart>
+                <PieChart><Pie data={sources} dataKey="value" innerRadius={42} outerRadius={64} paddingAngle={3}>{sources.map((s, i) => <Cell key={s.name} fill={pieColors[i % pieColors.length] ?? ""} />)}</Pie><Tooltip /></PieChart>
               </ResponsiveContainer>
             </div>
             <ul className="flex-1 space-y-2 text-sm">
               {sources.map((s, i) => (
-                <li key={s.name} className="flex items-center gap-2"><span className="size-2.5 rounded-full" style={{ background: pieColors[i % pieColors.length] }} /><span className="flex-1">{s.name}</span><span className="font-bold text-forest">{s.value}</span></li>
+                <li key={s.name} className="flex items-center gap-2"><span className="size-2.5 rounded-full" style={{ background: pieColors[i % pieColors.length] ?? "" }} /><span className="flex-1">{s.name}</span><span className="font-bold text-forest">{s.value}</span></li>
               ))}
             </ul>
           </div>
