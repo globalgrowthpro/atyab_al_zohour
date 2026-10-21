@@ -29,7 +29,10 @@ import { Route as AdminPricingRouteImport } from './routes/admin.pricing'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminQuotesRouteImport } from './routes/admin.quotes'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminSecurityRouteImport } from './routes/admin.security'
+import { Route as AdminSeoRouteImport } from './routes/admin.seo'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminSmtpRouteImport } from './routes/admin.smtp'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as CourierIndexRouteImport } from './routes/courier.index'
 import { Route as CourierMapRouteImport } from './routes/courier.map'
@@ -144,9 +147,24 @@ const AdminReportsRoute = AdminReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSecurityRoute = AdminSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSeoRoute = AdminSeoRouteImport.update({
+  id: '/seo',
+  path: '/seo',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSmtpRoute = AdminSmtpRouteImport.update({
+  id: '/smtp',
+  path: '/smtp',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminSupportRoute = AdminSupportRouteImport.update({
@@ -235,7 +253,10 @@ export interface FileRoutesByFullPath {
   '/admin/products': typeof AdminProductsRoute
   '/admin/quotes': typeof AdminQuotesRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/security': typeof AdminSecurityRoute
+  '/admin/seo': typeof AdminSeoRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/smtp': typeof AdminSmtpRoute
   '/admin/support': typeof AdminSupportRoute
   '/courier/map': typeof CourierMapRoute
   '/courier/profile': typeof CourierProfileRoute
@@ -268,7 +289,10 @@ export interface FileRoutesByTo {
   '/admin/products': typeof AdminProductsRoute
   '/admin/quotes': typeof AdminQuotesRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/security': typeof AdminSecurityRoute
+  '/admin/seo': typeof AdminSeoRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/smtp': typeof AdminSmtpRoute
   '/admin/support': typeof AdminSupportRoute
   '/courier/map': typeof CourierMapRoute
   '/courier/profile': typeof CourierProfileRoute
@@ -305,7 +329,10 @@ export interface FileRoutesById {
   '/admin/products': typeof AdminProductsRoute
   '/admin/quotes': typeof AdminQuotesRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/security': typeof AdminSecurityRoute
+  '/admin/seo': typeof AdminSeoRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/smtp': typeof AdminSmtpRoute
   '/admin/support': typeof AdminSupportRoute
   '/courier/map': typeof CourierMapRoute
   '/courier/profile': typeof CourierProfileRoute
@@ -343,7 +370,10 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/quotes'
     | '/admin/reports'
+    | '/admin/security'
+    | '/admin/seo'
     | '/admin/settings'
+    | '/admin/smtp'
     | '/admin/support'
     | '/courier/map'
     | '/courier/profile'
@@ -376,7 +406,10 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/quotes'
     | '/admin/reports'
+    | '/admin/security'
+    | '/admin/seo'
     | '/admin/settings'
+    | '/admin/smtp'
     | '/admin/support'
     | '/courier/map'
     | '/courier/profile'
@@ -412,7 +445,10 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/quotes'
     | '/admin/reports'
+    | '/admin/security'
+    | '/admin/seo'
     | '/admin/settings'
+    | '/admin/smtp'
     | '/admin/support'
     | '/courier/map'
     | '/courier/profile'
@@ -588,11 +624,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminReportsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/security': {
+      id: '/admin/security'
+      path: '/security'
+      fullPath: '/admin/security'
+      preLoaderRoute: typeof AdminSecurityRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/seo': {
+      id: '/admin/seo'
+      path: '/seo'
+      fullPath: '/admin/seo'
+      preLoaderRoute: typeof AdminSeoRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/settings': {
       id: '/admin/settings'
       path: '/settings'
       fullPath: '/admin/settings'
       preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/smtp': {
+      id: '/admin/smtp'
+      path: '/smtp'
+      fullPath: '/admin/smtp'
+      preLoaderRoute: typeof AdminSmtpRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/support': {
@@ -697,7 +754,10 @@ interface AdminRouteChildren {
   AdminProductsRoute: typeof AdminProductsRoute
   AdminQuotesRoute: typeof AdminQuotesRoute
   AdminReportsRoute: typeof AdminReportsRoute
+  AdminSecurityRoute: typeof AdminSecurityRoute
+  AdminSeoRoute: typeof AdminSeoRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminSmtpRoute: typeof AdminSmtpRoute
   AdminSupportRoute: typeof AdminSupportRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -710,7 +770,10 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminProductsRoute: AdminProductsRoute,
   AdminQuotesRoute: AdminQuotesRoute,
   AdminReportsRoute: AdminReportsRoute,
+  AdminSecurityRoute: AdminSecurityRoute,
+  AdminSeoRoute: AdminSeoRoute,
   AdminSettingsRoute: AdminSettingsRoute,
+  AdminSmtpRoute: AdminSmtpRoute,
   AdminSupportRoute: AdminSupportRoute,
   AdminIndexRoute: AdminIndexRoute,
 }

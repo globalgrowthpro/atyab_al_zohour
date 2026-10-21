@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { BarChart3, ClipboardList, FileText, Headset, LayoutDashboard, Package, Settings, ShieldCheck, Tags, Truck, Users } from "lucide-react";
+import { BarChart3, Lock, Mail, SearchCheck, ClipboardList, FileText, Headset, LayoutDashboard, Package, Settings, ShieldCheck, Tags, Truck, Users } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -24,6 +24,9 @@ const navigation = [
   ["/admin/couriers", "المندوبون", Truck],
   ["/admin/support", "تذاكر الدعم", Headset],
   ["/admin/reports", "التقارير", BarChart3],
+  ["/admin/smtp", "البريد SMTP", Mail],
+  ["/admin/security", "الأمان", Lock],
+  ["/admin/seo", "SEO · AEO · GEO", SearchCheck],
   ["/admin/settings", "الإعدادات", Settings],
 ] as const;
 
