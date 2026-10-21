@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  useLocation,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
@@ -86,6 +87,8 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { pathname } = useLocation();
+  const isPanel = pathname === "/admin" || pathname.startsWith("/admin/");
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
@@ -93,7 +96,7 @@ function RootComponent() {
         <main className="min-h-[60vh]">
           <Outlet />
         </main>
-        <SiteFooter />
+        {!isPanel && <SiteFooter />}
         <Toaster position="top-center" richColors />
       </CartProvider>
     </QueryClientProvider>
