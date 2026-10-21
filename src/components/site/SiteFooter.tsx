@@ -33,6 +33,8 @@ export function SiteFooter() {
           <p>© {new Date().getFullYear()} أطيب الزهور. جميع الحقوق محفوظة.</p>
           <div className="flex flex-wrap gap-4">
             <span>سياسة الخصوصية</span><span>الشروط والأحكام</span><span>سياسة التوصيل</span><span>سياسة الإرجاع والمطالبات</span>
+            <Link to="/admin" className="hover:text-gold">لوحة الإدارة</Link>
+            <Link to="/courier" className="hover:text-gold">لوحة المندوب</Link>
           </div>
           <p dir="ltr">Developed by {siteConfig.developer}</p>
         </div>
