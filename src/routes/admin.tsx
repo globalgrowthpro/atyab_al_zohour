@@ -42,7 +42,6 @@ function AdminLayout() {
         </nav>
         <div className="min-w-0"><Outlet /></div>
       </div>
-      </div>
     </section>
   );
 }
