@@ -61,7 +61,7 @@ export function AdminHeader() {
         <span className="hidden text-[11px] text-muted-foreground md:block">أطيب الزهور — إدارة الطلبات والعملاء والمنتجات</span>
       </span>
     </div>
-    <div ref={searchRef} className="order-3 w-full md:order-none md:w-auto md:min-w-[200px] md:flex-1">
+    <div ref={searchRef} className="relative order-3 w-full md:order-none md:w-auto md:min-w-[200px] md:flex-1">
       <div className="flex h-11 items-center gap-3 rounded-md border bg-muted/50 px-3 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10">
         <Search className="size-4 shrink-0 text-muted-foreground" />
         <input aria-label="البحث الشامل" role="combobox" aria-expanded={open} aria-controls="admin-search-results" aria-autocomplete="list" aria-activedescendant={open && results[active] ? `admin-search-${active}` : undefined}
