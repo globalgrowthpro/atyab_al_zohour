@@ -1,6 +1,8 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { useState } from "react";
-import { BarChart3, Handshake, Home, Lock, Mail, PanelRightClose, PanelRightOpen, SearchCheck, ClipboardList, FileText, Headset, LayoutDashboard, Package, Settings, Tags, Truck, Users } from "lucide-react";
+import { Home, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { adminNavigation as navigation } from "@/features/admin/navigation";
+import { AdminHeader } from "@/features/admin/header";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -15,30 +17,14 @@ export const Route = createFileRoute("/admin")({
   component: AdminLayout,
 });
 
-const navigation = [
-  ["/admin", "نظرة عامة", LayoutDashboard],
-  ["/admin/orders", "الطلبات", ClipboardList],
-  ["/admin/quotes", "عروض الأسعار", FileText],
-  ["/admin/products", "المنتجات والمخزون", Package],
-  ["/admin/pricing", "قوائم الأسعار", Tags],
-  ["/admin/clients", "حسابات العملاء", Users],
-  ["/admin/crm", "إدارة العملاء CRM", Handshake],
-  ["/admin/couriers", "المندوبون", Truck],
-  ["/admin/support", "تذاكر الدعم", Headset],
-  ["/admin/reports", "التقارير", BarChart3],
-  ["/admin/smtp", "البريد SMTP", Mail],
-  ["/admin/security", "الأمان", Lock],
-  ["/admin/seo", "SEO · AEO · GEO", SearchCheck],
-  ["/admin/settings", "الإعدادات", Settings],
-] as const;
-
 function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   return (
     <section className="container-x py-7 md:py-8">
       <div className="bg-admin-canvas rounded-3xl border px-4 py-6 shadow-soft md:px-7 md:py-8">
+      <AdminHeader />
       <div className={`grid items-start gap-6 transition-[grid-template-columns] ${collapsed ? "lg:grid-cols-[72px_minmax(0,1fr)]" : "lg:grid-cols-[220px_minmax(0,1fr)]"}`}>
-        <nav aria-label="أقسام لوحة الإدارة" className="flex gap-2 overflow-x-auto rounded-2xl border bg-admin-side p-3 shadow-soft lg:sticky lg:top-6 lg:flex-col lg:overflow-visible">
+        <nav aria-label="أقسام لوحة الإدارة" className="flex min-w-0 gap-2 overflow-x-auto rounded-2xl border bg-admin-side p-3 shadow-soft lg:sticky lg:top-6 lg:flex-col lg:overflow-visible">
           <button type="button" onClick={() => setCollapsed((c) => !c)} aria-label={collapsed ? "توسيع القائمة" : "طي القائمة"} title={collapsed ? "توسيع القائمة" : "طي القائمة"}
             className="hidden items-center gap-3 rounded-xl border border-dashed px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-muted lg:flex">
             {collapsed ? <PanelRightOpen className="size-5" /> : <><PanelRightClose className="size-5" />طي القائمة</>}
