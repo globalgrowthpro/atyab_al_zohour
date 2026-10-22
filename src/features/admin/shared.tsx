@@ -96,12 +96,22 @@ export function FilterChips<T extends string>({ value, onChange, options }: { va
   );
 }
 
+export type KpiColor = "forest" | "rose" | "gold" | "sage";
+const kpiColor: Record<KpiColor, { icon: string; bar: string }> = {
+  forest: { icon: "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground", bar: "bg-primary" },
+  rose: { icon: "bg-blush text-rose group-hover:bg-rose group-hover:text-primary-foreground", bar: "bg-rose" },
+  gold: { icon: "bg-gold/15 text-gold group-hover:bg-gold group-hover:text-forest", bar: "bg-gold" },
+  sage: { icon: "bg-sage/15 text-sage group-hover:bg-sage group-hover:text-primary-foreground", bar: "bg-sage" },
+};
+
 // KPI card with icon, trend chip and optional hint — the main dashboard metric.
-export function KpiCard({ icon: Icon, label, value, trend, trendUp, hint }: { icon: LucideIcon; label: string; value: string; trend?: string; trendUp?: boolean; hint?: string }) {
+export function KpiCard({ icon: Icon, label, value, trend, trendUp, hint, color = "forest" }: { icon: LucideIcon; label: string; value: string; trend?: string; trendUp?: boolean; hint?: string; color?: KpiColor }) {
+  const c = kpiColor[color];
   return (
-    <div className="group rounded-2xl border bg-card p-5 shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift">
+    <div className="group relative overflow-hidden rounded-2xl border bg-card p-5 shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift">
+      <span className={`absolute inset-x-0 top-0 h-1 ${c.bar}`} />
       <div className="flex items-center justify-between">
-        <span className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground"><Icon className="size-5" /></span>
+        <span className={`grid size-11 place-items-center rounded-xl transition ${c.icon}`}><Icon className="size-5" /></span>
         {trend && (
           <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${trendUp ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"}`}>
             {trendUp ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />}{trend}

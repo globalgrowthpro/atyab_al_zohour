@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { BarChart3, Handshake, Lock, Mail, SearchCheck, ClipboardList, FileText, Headset, LayoutDashboard, Package, Settings, Tags, Truck, Users } from "lucide-react";
+import { useState } from "react";
+import { BarChart3, Handshake, Lock, Mail, PanelRightClose, PanelRightOpen, SearchCheck, ClipboardList, FileText, Headset, LayoutDashboard, Package, Settings, Tags, Truck, Users } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -32,6 +33,7 @@ const navigation = [
 ] as const;
 
 function AdminLayout() {
+  const [collapsed, setCollapsed] = useState(false);
   return (
     <section className="container-x py-7 md:py-8">
       <div className="mb-5">
@@ -39,13 +41,17 @@ function AdminLayout() {
         <h1 className="mt-2 text-3xl">لوحة الإدارة</h1>
         <p className="mt-2 text-sm text-muted-foreground">تابع الطلبات والعملاء والمخزون والتوصيل من مكان واحد.</p>
       </div>
-      <div className="grid items-start gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <nav aria-label="أقسام لوحة الإدارة" className="flex gap-2 overflow-x-auto rounded-2xl border bg-card p-3 shadow-soft lg:sticky lg:top-40 lg:flex-col">
+      <div className={`grid items-start gap-6 transition-[grid-template-columns] ${collapsed ? "lg:grid-cols-[72px_minmax(0,1fr)]" : "lg:grid-cols-[220px_minmax(0,1fr)]"}`}>
+        <nav aria-label="أقسام لوحة الإدارة" className="flex gap-2 overflow-x-auto rounded-2xl border bg-card p-3 shadow-soft lg:sticky lg:top-40 lg:flex-col lg:overflow-visible">
+          <button type="button" onClick={() => setCollapsed((c) => !c)} aria-label={collapsed ? "توسيع القائمة" : "طي القائمة"} title={collapsed ? "توسيع القائمة" : "طي القائمة"}
+            className="hidden items-center gap-3 rounded-xl border border-dashed px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-muted lg:flex">
+            {collapsed ? <PanelRightOpen className="size-5" /> : <><PanelRightClose className="size-5" />طي القائمة</>}
+          </button>
           {navigation.map(([to, label, Icon]) => (
-            <Link key={to} to={to} activeOptions={{ exact: to === "/admin" }}
+            <Link key={to} to={to} activeOptions={{ exact: to === "/admin" }} title={label}
               activeProps={{ className: "!bg-primary !text-primary-foreground" }}
               className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-xl px-4 py-3 text-sm font-bold text-forest hover:bg-muted">
-              <Icon className="size-5" />{label}
+              <Icon className="size-5 shrink-0" /><span className={collapsed ? "lg:hidden" : ""}>{label}</span>
             </Link>
           ))}
         </nav>
