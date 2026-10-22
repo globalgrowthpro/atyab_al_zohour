@@ -20,8 +20,7 @@ export const Route = createFileRoute("/admin")({
 function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   return (
-    <section className="container-x py-7 md:py-8">
-      <div className="bg-admin-canvas rounded-3xl border px-4 py-6 shadow-soft md:px-7 md:py-8">
+    <section className="w-full bg-admin-canvas px-4 py-5 md:px-6 lg:px-8">
       <AdminHeader />
       <div className={`grid items-start gap-6 transition-[grid-template-columns] ${collapsed ? "lg:grid-cols-[72px_minmax(0,1fr)]" : "lg:grid-cols-[220px_minmax(0,1fr)]"}`}>
         <nav aria-label="أقسام لوحة الإدارة" className="flex min-w-0 gap-2 overflow-x-auto rounded-2xl border bg-admin-side p-3 shadow-soft lg:sticky lg:top-6 lg:flex-col lg:overflow-visible">
@@ -42,7 +41,6 @@ function AdminLayout() {
           </Link>
         </nav>
         <div className="min-w-0"><Outlet /></div>
-      </div>
       </div>
     </section>
   );

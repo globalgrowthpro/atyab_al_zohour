@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ChevronDown, Search, X, LogOut, Settings, UserRound, ArrowUpLeft, Clock3 } from "lucide-react";
+import { ChevronDown, Search, X, LogOut, Settings, UserRound, ArrowUpLeft, Clock3, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -54,6 +54,13 @@ export function AdminHeader() {
   const dismissSearch = () => { setOpen(false); setQuery(""); setActive(0); };
 
   return <header aria-label="شريط الإدارة" className="relative z-30 mb-6 flex flex-wrap items-center gap-4 rounded-lg border bg-surface px-4 py-3 shadow-soft md:px-5">
+    <div className="order-1 flex shrink-0 items-center gap-3 md:order-none">
+      <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><Sparkles className="size-5" /></span>
+      <span className="min-w-0 whitespace-nowrap">
+        <span className="block text-sm font-bold text-forest md:text-base">مرحبًا بك في لوحة الإدارة</span>
+        <span className="hidden text-[11px] text-muted-foreground md:block">أطيب الزهور — إدارة الطلبات والعملاء والمنتجات</span>
+      </span>
+    </div>
     <div ref={searchRef} className="relative order-3 w-full md:order-none md:w-auto md:min-w-[200px] md:flex-1">
       <div className="flex h-11 items-center gap-3 rounded-md border bg-muted/50 px-3 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10">
         <Search className="size-4 shrink-0 text-muted-foreground" />
