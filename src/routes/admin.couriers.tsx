@@ -14,16 +14,16 @@ function Couriers() {
     <>
       <PageTitle title="المندوبون" desc="حالة فريق التوصيل وإنجاز مهام اليوم." />
       <div className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">في جولة الآن</p><p className="mt-1 text-xl font-extrabold text-forest">{onRoute} من {adminCouriers.length}</p></div>
-        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">مهام اليوم</p><p className="mt-1 text-xl font-extrabold text-forest">{doneTasks} / {totalTasks}</p></div>
-        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">نسبة الإنجاز</p><p className="mt-1 text-xl font-extrabold text-primary">{totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0}%</p></div>
-        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">متوسط التقييم</p><p className="mt-1 flex items-center gap-1 text-xl font-extrabold text-forest"><Star className="size-5 fill-gold text-gold" />{avgRating}</p></div>
+        <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">في جولة الآن</p><p className="mt-1 text-xl font-extrabold text-forest">{onRoute} من {adminCouriers.length}</p></div>
+        <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">مهام اليوم</p><p className="mt-1 text-xl font-extrabold text-forest">{doneTasks} / {totalTasks}</p></div>
+        <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">نسبة الإنجاز</p><p className="mt-1 text-xl font-extrabold text-primary">{totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0}%</p></div>
+        <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">متوسط التقييم</p><p className="mt-1 flex items-center gap-1 text-xl font-extrabold text-forest"><Star className="size-5 fill-gold text-gold" />{avgRating}</p></div>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {adminCouriers.map((c) => {
           const pct = c.today ? Math.round((c.done / c.today) * 100) : 0;
           return (
-            <article key={c.id} className="rounded-2xl border bg-card p-5 shadow-soft">
+            <article key={c.id} className="rounded-2xl border bg-admin-panel p-5 shadow-soft">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <span className="grid size-12 place-items-center rounded-full bg-primary/10 text-primary"><Truck className="size-6" /></span>

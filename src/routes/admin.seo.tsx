@@ -50,7 +50,7 @@ function Seo() {
               </Grid>
               <div className="px-5 pb-5">
                 <p className="mb-2 text-xs font-bold text-muted-foreground">معاينة في نتائج البحث</p>
-                <div className="rounded-xl border bg-background p-4">
+                <div className="rounded-xl border bg-surface p-4">
                   <p className="text-xs text-muted-foreground" dir="ltr">atyab-flowers.com</p>
                   <p className="mt-1 text-lg font-bold text-primary">{title}</p>
                   <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
@@ -93,7 +93,7 @@ function Seo() {
             <Panel title="إجابات مختصرة للأسئلة الشائعة" action={<button type="button" onClick={() => toast.success("تمت إضافة سؤال (تجريبي)")} className="text-xs font-bold text-primary">+ سؤال جديد</button>}>
               <div className="space-y-4 p-5">
                 {["ما الحد الأدنى للطلب بالجملة؟", "هل يتوفر توصيل مبرد؟", "كيف أحصل على أسعار الجملة؟"].map((q) => (
-                  <div key={q} className="rounded-xl border bg-background p-4">
+                  <div key={q} className="rounded-xl border bg-surface p-4">
                     <Field label="السؤال" defaultValue={q} />
                     <div className="mt-3 grid"><Area label="الإجابة المختصرة (40–60 كلمة)" placeholder="اكتب إجابة مباشرة وواضحة" /></div>
                   </div>

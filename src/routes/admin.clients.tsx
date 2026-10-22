@@ -21,10 +21,10 @@ function Clients() {
     <>
       <PageTitle title="حسابات العملاء" desc="وافق على الحسابات الجديدة وحدد فئة السعر لكل عميل." />
       <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">إجمالي الحسابات</p><p className="mt-1 text-xl font-extrabold text-forest">{clients.length}</p></div>
-        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">مفعّلة</p><p className="mt-1 text-xl font-extrabold text-primary">{clients.filter((c) => c.status === "active").length}</p></div>
-        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">بانتظار الموافقة</p><p className="mt-1 text-xl font-extrabold text-rose">{clients.filter((c) => c.status === "pending").length}</p></div>
-        <div className="rounded-2xl border bg-card p-4 shadow-soft">
+        <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">إجمالي الحسابات</p><p className="mt-1 text-xl font-extrabold text-forest">{clients.length}</p></div>
+        <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">مفعّلة</p><p className="mt-1 text-xl font-extrabold text-primary">{clients.filter((c) => c.status === "active").length}</p></div>
+        <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">بانتظار الموافقة</p><p className="mt-1 text-xl font-extrabold text-rose">{clients.filter((c) => c.status === "pending").length}</p></div>
+        <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft">
           <p className="mb-2 text-xs text-muted-foreground">توزيع فئات الأسعار</p>
           <div className="space-y-2">
             {tiers.map(({ t, n }) => <Meter key={t} label={`فئة ${t}`} value={String(n)} pct={n / maxTier} tone={t === "A" ? "bg-gold" : t === "B" ? "bg-rose" : "bg-primary"} />)}
@@ -42,7 +42,7 @@ function Clients() {
               <td>{c.type}</td><td>{c.city}</td><td>{c.orders}</td>
               <td>
                 <select aria-label={`فئة ${c.name}`} value={c.tier} onChange={(e) => patch(c.id, { tier: e.target.value as PriceTier }, "تم تحديث فئة السعر")}
-                  className="h-9 rounded-lg border bg-background px-2 text-xs">
+                  className="h-9 rounded-lg border bg-surface px-2 text-xs">
                   {(Object.keys(tierLabel) as PriceTier[]).map((t) => <option key={t} value={t}>{tierLabel[t]}</option>)}
                 </select>
               </td>

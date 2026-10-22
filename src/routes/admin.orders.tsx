@@ -30,7 +30,7 @@ function Orders() {
     <>
       <PageTitle title="الطلبات" desc="تابع الطلبات وحدّث حالتها وعيّن المندوب." />
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        <div className="rounded-2xl border bg-card p-4 shadow-soft">
+        <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft">
           <p className="text-xs text-muted-foreground">قيمة الطلبات</p>
           <p className="mt-1 text-lg font-extrabold text-forest">{sar(totalValue)}</p>
         </div>
@@ -57,7 +57,7 @@ function Orders() {
               <td>
                 <select aria-label={`مندوب ${o.id}`} value={o.courier ?? ""} disabled={o.status === "cancelled" || o.status === "delivered"}
                   onChange={(e) => { update(o.id, { courier: e.target.value || undefined }); toast.success("تم تعيين المندوب"); }}
-                  className="h-9 rounded-lg border bg-background px-2 text-xs">
+                  className="h-9 rounded-lg border bg-surface px-2 text-xs">
                   <option value="">— غير معيّن —</option>
                   {adminCouriers.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>

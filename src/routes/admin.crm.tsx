@@ -161,7 +161,7 @@ function Crm() {
                   <div className="space-y-2 px-3 pb-3">
                     {col.map((d) => (
                       <div key={d.id} role="button" tabIndex={0} onClick={() => setSel(d)} onKeyDown={(e) => e.key === "Enter" && setSel(d)}
-                        className="cursor-pointer rounded-xl border bg-card p-3 shadow-soft transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lift">
+                        className="cursor-pointer rounded-xl border bg-admin-panel p-3 shadow-soft transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lift">
                         <div className="flex items-start gap-2.5">
                           <Avatar name={d.company} />
                           <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-forest">{d.company}</p><p className="truncate text-xs text-muted-foreground">{d.contact} · {d.type}</p></div>
