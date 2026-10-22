@@ -24,7 +24,7 @@ function AdminLayout() {
       <div className="bg-admin-canvas rounded-3xl border px-4 py-6 shadow-soft md:px-7 md:py-8">
       <AdminHeader />
       <div className={`grid items-start gap-6 transition-[grid-template-columns] ${collapsed ? "lg:grid-cols-[72px_minmax(0,1fr)]" : "lg:grid-cols-[220px_minmax(0,1fr)]"}`}>
-        <nav aria-label="أقسام لوحة الإدارة" className="flex gap-2 overflow-x-auto rounded-2xl border bg-admin-side p-3 shadow-soft lg:sticky lg:top-6 lg:flex-col lg:overflow-visible">
+        <nav aria-label="أقسام لوحة الإدارة" className="flex min-w-0 gap-2 overflow-x-auto rounded-2xl border bg-admin-side p-3 shadow-soft lg:sticky lg:top-6 lg:flex-col lg:overflow-visible">
           <button type="button" onClick={() => setCollapsed((c) => !c)} aria-label={collapsed ? "توسيع القائمة" : "طي القائمة"} title={collapsed ? "توسيع القائمة" : "طي القائمة"}
             className="hidden items-center gap-3 rounded-xl border border-dashed px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-muted lg:flex">
             {collapsed ? <PanelRightOpen className="size-5" /> : <><PanelRightClose className="size-5" />طي القائمة</>}
