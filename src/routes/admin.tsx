@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { useState } from "react";
-import { BarChart3, Handshake, Lock, Mail, PanelRightClose, PanelRightOpen, SearchCheck, ClipboardList, FileText, Headset, LayoutDashboard, Package, Settings, Tags, Truck, Users } from "lucide-react";
+import { BarChart3, Handshake, Home, Lock, Mail, PanelRightClose, PanelRightOpen, SearchCheck, ClipboardList, FileText, Headset, LayoutDashboard, Package, Settings, Tags, Truck, Users } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -50,6 +50,10 @@ function AdminLayout() {
               <Icon className="size-5 shrink-0" /><span className={collapsed ? "lg:hidden" : ""}>{label}</span>
             </Link>
           ))}
+          <Link to="/" title="العودة للموقع"
+            className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-xl border border-dashed px-4 py-3 text-sm font-bold text-muted-foreground hover:bg-muted">
+            <Home className="size-5 shrink-0" /><span className={collapsed ? "lg:hidden" : ""}>العودة للموقع</span>
+          </Link>
         </nav>
         <div className="min-w-0"><Outlet /></div>
       </div>
