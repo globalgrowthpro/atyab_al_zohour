@@ -92,7 +92,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
-        <SiteHeader />
+        {!isPanel && <SiteHeader />}
         <main className="min-h-[60vh]">
           <Outlet />
         </main>
