@@ -30,10 +30,10 @@ function Overview() {
     <div className="space-y-6">
       {/* KPI row */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard icon={TrendingUp} label="مبيعات الأسبوع" value={sar(revenue)} trend="+12%" trendUp hint="مقارنة بالأسبوع الماضي" />
-        <KpiCard icon={ClipboardList} label="طلبات قيد التنفيذ" value={String(active)} trend={`${adminOrders.length} إجمالي`} trendUp />
-        <KpiCard icon={FileText} label="عروض بانتظار التسعير" value={String(pendingQuotes)} trend="تحتاج إجراء" trendUp={false} />
-        <KpiCard icon={Users} label="حسابات بانتظار الموافقة" value={String(pendingClients.length)} trend="تحتاج إجراء" trendUp={false} />
+        <KpiCard color="forest" icon={TrendingUp} label="مبيعات الأسبوع" value={sar(revenue)} trend="+12%" trendUp hint="مقارنة بالأسبوع الماضي" />
+        <KpiCard color="rose" icon={ClipboardList} label="طلبات قيد التنفيذ" value={String(active)} trend={`${adminOrders.length} إجمالي`} trendUp />
+        <KpiCard color="gold" icon={FileText} label="عروض بانتظار التسعير" value={String(pendingQuotes)} trend="تحتاج إجراء" trendUp={false} />
+        <KpiCard color="sage" icon={Users} label="حسابات بانتظار الموافقة" value={String(pendingClients.length)} trend="تحتاج إجراء" trendUp={false} />
       </div>
 
       {/* Sales area chart + category donut */}
