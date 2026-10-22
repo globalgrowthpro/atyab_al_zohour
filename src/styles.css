@@ -195,3 +195,21 @@
   .client-step h4 { font-size: 13px; }
   .client-step:not(:last-child)::after { top: 43px; inset-inline-start: 19px; width: 2px; height: calc(100% - 46px); }
 }
+
+/* Admin panel: layered background surfaces so cards, tables and charts read clearly. */
+@utility bg-admin-canvas {
+  background-color: var(--cream);
+  background-image:
+    radial-gradient(46rem 24rem at 100% -6rem, color-mix(in oklab, var(--blush) 60%, transparent), transparent 68%),
+    radial-gradient(40rem 22rem at -8rem 105%, color-mix(in oklab, var(--sage) 24%, transparent), transparent 66%),
+    linear-gradient(165deg, oklch(0.985 0.008 160), var(--cream) 55%);
+}
+@utility bg-admin-side {
+  background-image: linear-gradient(180deg, var(--surface), oklch(0.985 0.006 160));
+}
+@utility bg-admin-panel {
+  background-image: linear-gradient(180deg, var(--surface), oklch(0.994 0.004 90));
+}
+@utility bg-admin-head {
+  background-image: linear-gradient(90deg, color-mix(in oklab, var(--primary) 8%, var(--surface)), var(--surface));
+}
