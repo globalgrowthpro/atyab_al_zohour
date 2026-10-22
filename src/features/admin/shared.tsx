@@ -74,7 +74,7 @@ export function DataTable({ head, children, empty }: { head: string[]; children:
 export function Toolbar({ q, setQ, placeholder, children }: { q: string; setQ: (v: string) => void; placeholder: string; children?: ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-3 border-b p-4">
-      <label className="flex h-10 min-w-[220px] flex-1 items-center gap-2 rounded-xl border bg-background px-3">
+      <label className="flex h-10 min-w-[220px] flex-1 items-center gap-2 rounded-xl border bg-surface px-3">
         <Search className="size-4 text-muted-foreground" />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={placeholder} className="w-full bg-transparent text-sm outline-none" />
       </label>
