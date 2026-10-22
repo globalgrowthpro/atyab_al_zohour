@@ -22,15 +22,15 @@ function Quotes() {
     <>
       <PageTitle title="طلبات عروض الأسعار" desc="راجع الطلبات وأرسل العروض للعملاء." />
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">بانتظار التسعير</p><p className="mt-1 text-xl font-extrabold text-rose">{quotes.filter((q) => q.status === "pending").length}</p></div>
-        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">عروض مرسلة</p><p className="mt-1 text-xl font-extrabold text-forest">{sent}</p></div>
-        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">عروض مقبولة</p><p className="mt-1 text-xl font-extrabold text-primary">{accepted}</p></div>
-        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">معدل القبول</p><p className="mt-1 text-xl font-extrabold text-forest">{rate}%</p></div>
+        <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">بانتظار التسعير</p><p className="mt-1 text-xl font-extrabold text-rose">{quotes.filter((q) => q.status === "pending").length}</p></div>
+        <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">عروض مرسلة</p><p className="mt-1 text-xl font-extrabold text-forest">{sent}</p></div>
+        <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">عروض مقبولة</p><p className="mt-1 text-xl font-extrabold text-primary">{accepted}</p></div>
+        <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">معدل القبول</p><p className="mt-1 text-xl font-extrabold text-forest">{rate}%</p></div>
       </div>
       <div className="mb-4"><FilterChips value={status} onChange={setStatus} options={[["all", "الكل"], ...(Object.entries(quoteStatusLabel) as [QuoteStatus, string][])]} /></div>
       <div className="grid gap-4 md:grid-cols-2">
         {list.map((q) => (
-          <article key={q.id} className="rounded-2xl border bg-card p-5 shadow-soft">
+          <article key={q.id} className="rounded-2xl border bg-admin-panel p-5 shadow-soft">
             <div className="flex items-start justify-between gap-3">
               <div><p className="text-xs text-muted-foreground" dir="ltr">{q.id} · {q.date}</p><h3 className="mt-1 text-lg">{q.client}</h3></div>
               <Badge tone={quoteStatusTone[q.status]}>{quoteStatusLabel[q.status]}</Badge>

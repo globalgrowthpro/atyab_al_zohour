@@ -16,9 +16,9 @@ function Support() {
     <>
       <PageTitle title="تذاكر الدعم" desc="استفسارات وطلبات العملاء." />
       <div className="mb-4 grid grid-cols-3 gap-3">
-        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">مفتوحة</p><p className="mt-1 text-xl font-extrabold text-rose">{open}</p></div>
-        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">تم الرد</p><p className="mt-1 text-xl font-extrabold text-forest">{answered}</p></div>
-        <div className="rounded-2xl border bg-card p-4 shadow-soft"><p className="text-xs text-muted-foreground">مغلقة</p><p className="mt-1 text-xl font-extrabold text-muted-foreground">{closed}</p></div>
+        <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">مفتوحة</p><p className="mt-1 text-xl font-extrabold text-rose">{open}</p></div>
+        <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">تم الرد</p><p className="mt-1 text-xl font-extrabold text-forest">{answered}</p></div>
+        <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">مغلقة</p><p className="mt-1 text-xl font-extrabold text-muted-foreground">{closed}</p></div>
       </div>
       <Panel>
         <DataTable head={["التذكرة", "العميل", "الموضوع", "التاريخ", "الحالة", ""]}>

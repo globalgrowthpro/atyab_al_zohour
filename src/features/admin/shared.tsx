@@ -30,7 +30,7 @@ export function PageTitle({ title, desc, action }: { title: string; desc?: strin
 
 export function StatCard({ icon: Icon, label, value, hint }: { icon: LucideIcon; label: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-2xl border bg-card p-5 shadow-soft">
+    <div className="rounded-2xl border bg-admin-panel p-5 shadow-soft">
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground">{label}</span>
         <span className="grid size-10 place-items-center rounded-xl bg-blush text-rose"><Icon className="size-5" /></span>
@@ -43,9 +43,9 @@ export function StatCard({ icon: Icon, label, value, hint }: { icon: LucideIcon;
 
 export function Panel({ title, action, children }: { title?: string; action?: ReactNode; children: ReactNode }) {
   return (
-    <div className="rounded-2xl border bg-card shadow-soft">
+    <div className="rounded-2xl border bg-admin-panel shadow-soft">
       {title && (
-        <div className="flex items-center justify-between border-b px-5 py-4">
+        <div className="flex items-center justify-between border-b bg-admin-head px-5 py-4">
           <h3 className="text-base">{title}</h3>
           {action}
         </div>
@@ -60,7 +60,7 @@ export function DataTable({ head, children, empty }: { head: string[]; children:
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-sm">
         <thead>
-          <tr className="border-b bg-muted/40 text-start text-xs text-muted-foreground">
+          <tr className="border-b bg-admin-head text-start text-xs text-muted-foreground">
             {head.map((h) => <th key={h} className="px-4 py-3 text-start font-bold">{h}</th>)}
           </tr>
         </thead>
@@ -74,7 +74,7 @@ export function DataTable({ head, children, empty }: { head: string[]; children:
 export function Toolbar({ q, setQ, placeholder, children }: { q: string; setQ: (v: string) => void; placeholder: string; children?: ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-3 border-b p-4">
-      <label className="flex h-10 min-w-[220px] flex-1 items-center gap-2 rounded-xl border bg-background px-3">
+      <label className="flex h-10 min-w-[220px] flex-1 items-center gap-2 rounded-xl border bg-surface px-3">
         <Search className="size-4 text-muted-foreground" />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={placeholder} className="w-full bg-transparent text-sm outline-none" />
       </label>
@@ -108,7 +108,7 @@ const kpiColor: Record<KpiColor, { icon: string; bar: string }> = {
 export function KpiCard({ icon: Icon, label, value, trend, trendUp, hint, color = "forest" }: { icon: LucideIcon; label: string; value: string; trend?: string; trendUp?: boolean; hint?: string; color?: KpiColor }) {
   const c = kpiColor[color];
   return (
-    <div className="group relative overflow-hidden rounded-2xl border bg-card p-5 shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift">
+    <div className="group relative overflow-hidden rounded-2xl border bg-admin-panel p-5 shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift">
       <span className={`absolute inset-x-0 top-0 h-1 ${c.bar}`} />
       <div className="flex items-center justify-between">
         <span className={`grid size-11 place-items-center rounded-xl transition ${c.icon}`}><Icon className="size-5" /></span>
