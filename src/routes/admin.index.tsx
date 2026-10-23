@@ -5,7 +5,7 @@ import {
   adminActivity, adminClients, adminCouriers, adminOrders, adminQuotes, categoryShare, hourlyOrders,
   orderStatusLabel, orderStatusTone, sar, weeklySales, type AdminActivity,
 } from "@/features/admin/data";
-import { Badge, DataTable, KpiCard, Panel, Radial } from "@/features/admin/shared";
+import { Badge, DataTable, ExportButton, KpiCard, Panel, Radial } from "@/features/admin/shared";
 import { products } from "@/lib/catalog";
 
 export const Route = createFileRoute("/admin/")({ component: Overview });
@@ -138,7 +138,7 @@ function Overview() {
             })}
           </ul>
         </Panel>
-        <Panel title="أحدث الطلبات" action={<Link to="/admin/orders" className="text-sm font-bold text-rose">عرض الكل</Link>}>
+        <Panel title="أحدث الطلبات" action={<div className="flex items-center gap-3"><ExportButton file="latest-orders" sheet="أحدث الطلبات" rows={() => adminOrders.slice(0, 5).map((o) => ({ "رقم الطلب": o.id, "العميل": o.client, "المدينة": o.city, "الإجمالي (ر.س)": o.total, "الحالة": orderStatusLabel[o.status] }))} /><Link to="/admin/orders" className="text-sm font-bold text-rose">عرض الكل</Link></div>}>
           <DataTable head={["رقم الطلب", "العميل", "المدينة", "الإجمالي", "الحالة"]}>
             {adminOrders.slice(0, 5).map((o) => (
               <tr key={o.id}>
