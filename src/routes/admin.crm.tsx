@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, CalendarClock, CheckCircle2, Handshake, KanbanSquare, List, Mail, MapPin, Phone, Target, TrendingUp, UserPlus, Users, X } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { sar, type Tone } from "@/features/admin/data";
-import { Badge, DataTable, KpiCard, PageTitle, Panel, Toolbar } from "@/features/admin/shared";
+import { Badge, DataTable, KpiCard, PageTitle, Panel, Toolbar, ExportButton, SelectFilter, uniq } from "@/features/admin/shared";
 
 export const Route = createFileRoute("/admin/crm")({
   head: () => ({ meta: [{ title: "إدارة علاقات العملاء | لوحة الإدارة" }, { name: "description", content: "مسار المبيعات والعملاء المحتملين ومهام المتابعة." }] }),
@@ -56,6 +56,9 @@ function Avatar({ name }: { name: string }) {
 function Crm() {
   const [deals, setDeals] = useState(initialDeals);
   const [q, setQ] = useState("");
+  const [stageF, setStageF] = useState("all");
+  const [ownerF, setOwnerF] = useState("all");
+  const [sourceF, setSourceF] = useState("all");
   const [view, setView] = useState<"board" | "list">("board");
   const [sel, setSel] = useState<Deal | null>(null);
   const [done, setDone] = useState<string[]>([]);
@@ -72,7 +75,7 @@ function Crm() {
     toast.success("تمت إضافة عميل محتمل");
   };
 
-  const list = deals.filter((d) => (d.company + d.contact + d.type + d.city).includes(q.trim()));
+  const list = deals.filter((d) => (stageF === "all" || d.stage === stageF) && (ownerF === "all" || d.owner === ownerF) && (sourceF === "all" || d.source === sourceF) && (d.company + d.contact + d.type + d.city).includes(q.trim()));
   const open = deals.filter((d) => d.stage !== "won" && d.stage !== "lost");
   const won = deals.filter((d) => d.stage === "won");
   const closed = won.length + deals.filter((d) => d.stage === "lost").length;
@@ -145,7 +148,12 @@ function Crm() {
             ))}
           </div>
         </div>
-        <Toolbar q={q} setQ={setQ} placeholder="ابحث باسم المنشأة أو جهة التواصل أو المدينة" />
+        <Toolbar q={q} setQ={setQ} placeholder="ابحث باسم المنشأة أو جهة التواصل أو المدينة">
+          <SelectFilter label="المرحلة" value={stageF} onChange={setStageF} options={stages.map((s) => [s, stageLabel[s]] as [string, string])} />
+          <SelectFilter label="المسؤول" value={ownerF} onChange={setOwnerF} options={uniq(deals.map((d) => d.owner))} />
+          <SelectFilter label="المصدر" value={sourceF} onChange={setSourceF} options={uniq(deals.map((d) => d.source))} />
+          <ExportButton file="crm-deals" sheet="الصفقات" rows={() => list.map((d) => ({ "الرقم": d.id, "المنشأة": d.company, "جهة التواصل": d.contact, "النوع": d.type, "المدينة": d.city, "القيمة (ر.س)": d.value, "المرحلة": stageLabel[d.stage], "الاحتمال %": stageProb[d.stage], "المسؤول": d.owner, "المتابعة القادمة": d.next, "المصدر": d.source }))} />
+        </Toolbar>
 
         {view === "board" ? (
           <div className="flex gap-3 overflow-x-auto p-4">

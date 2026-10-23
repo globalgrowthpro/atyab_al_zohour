@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { adminClients, clientStatusLabel, clientStatusTone, tierLabel, type ClientStatus, type PriceTier } from "@/features/admin/data";
-import { Badge, DataTable, FilterChips, Meter, PageTitle, Panel, Toolbar } from "@/features/admin/shared";
+import { Badge, DataTable, FilterChips, Meter, PageTitle, Panel, Toolbar, ExportButton, SelectFilter, uniq } from "@/features/admin/shared";
 
 export const Route = createFileRoute("/admin/clients")({ component: Clients });
 
@@ -10,11 +10,14 @@ function Clients() {
   const [clients, setClients] = useState(adminClients);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<ClientStatus | "all">("all");
+  const [city, setCity] = useState("all");
+  const [type, setType] = useState("all");
+  const [tier, setTier] = useState("all");
   const patch = (id: string, v: Partial<(typeof clients)[number]>, msg: string) => {
     setClients((all) => all.map((c) => (c.id === id ? { ...c, ...v } : c)));
     toast.success(msg);
   };
-  const list = clients.filter((c) => (status === "all" || c.status === status) && (c.name + c.city + c.type).includes(q.trim()));
+  const list = clients.filter((c) => (status === "all" || c.status === status) && (city === "all" || c.city === city) && (type === "all" || c.type === type) && (tier === "all" || c.tier === tier) && (c.name + c.city + c.type).includes(q.trim()));
   const tiers = (Object.keys(tierLabel) as PriceTier[]).map((t) => ({ t, n: clients.filter((c) => c.tier === t).length }));
   const maxTier = Math.max(1, ...tiers.map((x) => x.n));
   return (
@@ -34,6 +37,10 @@ function Clients() {
       <Panel>
         <Toolbar q={q} setQ={setQ} placeholder="ابحث باسم المنشأة أو المدينة">
           <FilterChips value={status} onChange={setStatus} options={[["all", "الكل"], ...(Object.entries(clientStatusLabel) as [ClientStatus, string][])]} />
+          <SelectFilter label="النوع" value={type} onChange={setType} options={uniq(clients.map((c) => c.type))} />
+          <SelectFilter label="المدينة" value={city} onChange={setCity} options={uniq(clients.map((c) => c.city))} />
+          <SelectFilter label="الفئة" value={tier} onChange={setTier} options={Object.entries(tierLabel)} />
+          <ExportButton file="clients" sheet="العملاء" rows={() => list.map((c) => ({ "الرقم": c.id, "المنشأة": c.name, "السجل التجاري": c.cr, "النوع": c.type, "المدينة": c.city, "الطلبات": c.orders, "فئة السعر": tierLabel[c.tier], "الحالة": clientStatusLabel[c.status] }))} />
         </Toolbar>
         <DataTable head={["المنشأة", "النوع", "المدينة", "الطلبات", "فئة السعر", "الحالة", ""]} empty={list.length === 0}>
           {list.map((c) => (
