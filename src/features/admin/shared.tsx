@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { FileSpreadsheet, Search, TrendingDown, TrendingUp } from "lucide-react";
-import type { ReactNode } from "react";
+import { Children, useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import type { Tone } from "./data";
 import { exportToExcel, type ExportRow } from "./export";
@@ -83,18 +83,46 @@ export function Panel({ title, action, children }: { title?: string; action?: Re
   );
 }
 
+export const PAGE_SIZES = [10, 25, 50, 100, 250] as const;
+
 export function DataTable({ head, children, empty }: { head: string[]; children: ReactNode; empty?: boolean }) {
+  const rows = Children.toArray(children);
+  const [size, setSize] = useState(25);
+  const [page, setPage] = useState(1);
+  const pages = Math.max(1, Math.ceil(rows.length / size));
+  const cur = Math.min(page, pages);
+  useEffect(() => { if (page > pages) setPage(pages); }, [page, pages]);
+  const shown = rows.slice((cur - 1) * size, cur * size);
+  const showPager = rows.length > PAGE_SIZES[0];
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[640px] text-sm">
-        <thead>
-          <tr className="border-b bg-admin-head text-start text-xs text-muted-foreground">
-            {head.map((h) => <th key={h} className="px-4 py-3 text-start font-bold">{h}</th>)}
-          </tr>
-        </thead>
-        <tbody className="[&>tr]:border-b [&>tr:last-child]:border-0 [&_td]:px-4 [&_td]:py-3">{children}</tbody>
-      </table>
-      {empty && <p className="p-8 text-center text-sm text-muted-foreground">لا توجد نتائج مطابقة.</p>}
+    <div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead>
+            <tr className="border-b bg-admin-head text-start text-xs text-muted-foreground">
+              {head.map((h) => <th key={h} className="px-4 py-3 text-start font-bold">{h}</th>)}
+            </tr>
+          </thead>
+          <tbody className="[&>tr]:border-b [&>tr:last-child]:border-0 [&_td]:px-4 [&_td]:py-3">{shown}</tbody>
+        </table>
+        {empty && <p className="p-8 text-center text-sm text-muted-foreground">لا توجد نتائج مطابقة.</p>}
+      </div>
+      {showPager && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t p-3 text-xs text-muted-foreground">
+          <label className="flex items-center gap-2">
+            عدد الصفوف
+            <select aria-label="عدد الصفوف" value={size} onChange={(e) => { setSize(Number(e.target.value)); setPage(1); }} className="h-8 rounded-lg border bg-surface px-2 text-foreground">
+              {PAGE_SIZES.map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </label>
+          <span>{(cur - 1) * size + 1}–{Math.min(cur * size, rows.length)} من {rows.length}</span>
+          <div className="flex items-center gap-1">
+            <button type="button" onClick={() => setPage(cur - 1)} disabled={cur <= 1} className="h-8 rounded-lg border bg-surface px-3 font-bold text-forest disabled:opacity-40">السابق</button>
+            <span className="px-2">صفحة {cur} / {pages}</span>
+            <button type="button" onClick={() => setPage(cur + 1)} disabled={cur >= pages} className="h-8 rounded-lg border bg-surface px-3 font-bold text-forest disabled:opacity-40">التالي</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
