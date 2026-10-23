@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { adminCouriers, adminOrders, orderStatusLabel, orderStatusTone, sar, type OrderStatus } from "@/features/admin/data";
-import { Badge, DataTable, FilterChips, PageTitle, Panel, Toolbar } from "@/features/admin/shared";
+import { Badge, DataTable, FilterChips, PageTitle, Panel, Toolbar, ExportButton, SelectFilter, uniq } from "@/features/admin/shared";
 
 export const Route = createFileRoute("/admin/orders")({ component: Orders });
 
@@ -12,9 +12,11 @@ function Orders() {
   const [orders, setOrders] = useState(adminOrders);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<OrderStatus | "all">("all");
+  const [city, setCity] = useState("all");
+  const [courier, setCourier] = useState("all");
   const list = useMemo(
-    () => orders.filter((o) => (status === "all" || o.status === status) && (o.id + o.client + o.city).includes(q.trim())),
-    [orders, q, status],
+    () => orders.filter((o) => (status === "all" || o.status === status) && (city === "all" || o.city === city) && (courier === "all" || (courier === "none" ? !o.courier : o.courier === courier)) && (o.id + o.client + o.city).includes(q.trim())),
+    [orders, q, status, city, courier],
   );
   const update = (id: string, patch: Partial<(typeof orders)[number]>) =>
     setOrders((all) => all.map((o) => (o.id === id ? { ...o, ...patch } : o)));
@@ -45,6 +47,9 @@ function Orders() {
       <Panel>
         <Toolbar q={q} setQ={setQ} placeholder="ابحث برقم الطلب أو العميل أو المدينة">
           <FilterChips value={status} onChange={setStatus} options={[["all", "الكل"], ...(Object.entries(orderStatusLabel) as [OrderStatus, string][])]} />
+          <SelectFilter label="المدينة" value={city} onChange={setCity} options={uniq(orders.map((o) => o.city))} />
+          <SelectFilter label="المندوب" value={courier} onChange={setCourier} options={[["none", "غير معيّن"], ...adminCouriers.map((c) => [c.name, c.name] as [string, string])]} />
+          <ExportButton file="orders" sheet="الطلبات" rows={() => list.map((o) => ({ "رقم الطلب": o.id, "العميل": o.client, "المدينة": o.city, "التاريخ": o.date, "الأصناف": o.items, "الإجمالي (ر.س)": o.total, "المندوب": o.courier ?? "", "الحالة": orderStatusLabel[o.status] }))} />
         </Toolbar>
         <DataTable head={["رقم الطلب", "العميل", "التاريخ", "الأصناف", "الإجمالي", "المندوب", "الحالة", ""]} empty={list.length === 0}>
           {list.map((o) => (

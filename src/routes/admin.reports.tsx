@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { adminOrders, orderStatusLabel, orderStatusTone, sar, weeklySales, type OrderStatus } from "@/features/admin/data";
-import { Badge, Meter, PageTitle, Panel } from "@/features/admin/shared";
+import { useState } from "react";
+import { Badge, ExportButton, Meter, PageTitle, Panel, SelectFilter, uniq } from "@/features/admin/shared";
 
 export const Route = createFileRoute("/admin/reports")({ component: Reports });
 
@@ -10,11 +11,14 @@ const statusColors: Record<OrderStatus, string> = {
 };
 
 function Reports() {
-  const done = adminOrders.filter((o) => o.status !== "cancelled");
+  const [city, setCity] = useState("all");
+  const [status, setStatus] = useState("all");
+  const orders = adminOrders.filter((o) => (city === "all" || o.city === city) && (status === "all" || o.status === status));
+  const done = orders.filter((o) => o.status !== "cancelled");
   const byClient = Object.entries(done.reduce<Record<string, number>>((m, o) => ({ ...m, [o.client]: (m[o.client] ?? 0) + o.total }), {})).sort((a, b) => b[1] - a[1]);
   const byCity = Object.entries(done.reduce<Record<string, number>>((m, o) => ({ ...m, [o.city]: (m[o.city] ?? 0) + o.total }), {})).sort((a, b) => b[1] - a[1]);
   const byStatus = (Object.keys(orderStatusLabel) as OrderStatus[])
-    .map((s) => ({ status: s, name: orderStatusLabel[s], count: adminOrders.filter((o) => o.status === s).length }))
+    .map((s) => ({ status: s, name: orderStatusLabel[s], count: orders.filter((o) => o.status === s).length }))
     .filter((x) => x.count > 0);
   const top = byClient[0]?.[1] ?? 1;
   const topCity = byCity[0]?.[1] ?? 1;
@@ -22,7 +26,15 @@ function Reports() {
 
   return (
     <>
-      <PageTitle title="التقارير" desc="ملخص أداء المبيعات (بيانات تجريبية)." />
+      <PageTitle title="التقارير" desc="ملخص أداء المبيعات (بيانات تجريبية)." action={<div className="flex flex-wrap gap-2">
+        <SelectFilter label="المدينة" value={city} onChange={setCity} options={uniq(adminOrders.map((o) => o.city))} />
+        <SelectFilter label="الحالة" value={status} onChange={setStatus} options={Object.entries(orderStatusLabel)} />
+        <ExportButton file="sales-report" sheet="تقرير المبيعات" rows={() => [
+          ...byClient.map(([name, v]) => ({ "النوع": "عميل", "الاسم": name, "المبيعات (ر.س)": v })),
+          ...byCity.map(([name, v]) => ({ "النوع": "مدينة", "الاسم": name, "المبيعات (ر.س)": v })),
+          ...byStatus.map((x) => ({ "النوع": "حالة", "الاسم": x.name, "المبيعات (ر.س)": x.count })),
+        ]} />
+      </div>} />
       <div className="grid gap-6 xl:grid-cols-2">
         <Panel title="مقارنة المبيعات اليومية" action={<span className="text-xs text-muted-foreground">آخر 7 أيام</span>}>
           <div className="h-64 p-4" dir="ltr">

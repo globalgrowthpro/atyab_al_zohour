@@ -2,18 +2,19 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { adminQuotes, quoteStatusLabel, quoteStatusTone, type QuoteStatus } from "@/features/admin/data";
-import { Badge, FilterChips, PageTitle } from "@/features/admin/shared";
+import { Badge, ExportButton, FilterChips, PageTitle, Toolbar } from "@/features/admin/shared";
 
 export const Route = createFileRoute("/admin/quotes")({ component: Quotes });
 
 function Quotes() {
   const [quotes, setQuotes] = useState(adminQuotes);
   const [status, setStatus] = useState<QuoteStatus | "all">("all");
+  const [q, setQ] = useState("");
   const set = (id: string, s: QuoteStatus) => {
     setQuotes((all) => all.map((q) => (q.id === id ? { ...q, status: s } : q)));
     toast.success(`${id}: ${quoteStatusLabel[s]}`);
   };
-  const list = quotes.filter((q) => status === "all" || q.status === status);
+  const list = quotes.filter((x) => (status === "all" || x.status === status) && (x.id + x.client + x.contact + x.note).includes(q.trim()));
   const sent = quotes.filter((q) => q.status === "sent").length;
   const accepted = quotes.filter((q) => q.status === "accepted").length;
   const decided = quotes.filter((q) => q.status === "accepted" || q.status === "rejected").length;
@@ -27,7 +28,10 @@ function Quotes() {
         <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">عروض مقبولة</p><p className="mt-1 text-xl font-extrabold text-primary">{accepted}</p></div>
         <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">معدل القبول</p><p className="mt-1 text-xl font-extrabold text-forest">{rate}%</p></div>
       </div>
-      <div className="mb-4"><FilterChips value={status} onChange={setStatus} options={[["all", "الكل"], ...(Object.entries(quoteStatusLabel) as [QuoteStatus, string][])]} /></div>
+      <div className="mb-4 rounded-2xl border bg-admin-panel shadow-soft"><Toolbar q={q} setQ={setQ} placeholder="ابحث برقم الطلب أو العميل">
+        <FilterChips value={status} onChange={setStatus} options={[["all", "الكل"], ...(Object.entries(quoteStatusLabel) as [QuoteStatus, string][])]} />
+        <ExportButton file="quotes" sheet="عروض الأسعار" rows={() => list.map((x) => ({ "الرقم": x.id, "التاريخ": x.date, "العميل": x.client, "المسؤول": x.contact, "الأصناف": x.items, "الملاحظة": x.note, "الحالة": quoteStatusLabel[x.status] }))} />
+      </Toolbar></div>
       <div className="grid gap-4 md:grid-cols-2">
         {list.map((q) => (
           <article key={q.id} className="rounded-2xl border bg-admin-panel p-5 shadow-soft">

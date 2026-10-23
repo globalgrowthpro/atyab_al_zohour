@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import type { FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { Badge, DataTable, PageTitle, Panel } from "@/features/admin/shared";
+import { Badge, DataTable, ExportButton, PageTitle, Panel, SelectFilter, uniq } from "@/features/admin/shared";
 import { Field, Grid, Select, Toggle } from "@/features/admin/form";
 
 export const Route = createFileRoute("/admin/security")({ component: Security });
@@ -19,6 +19,8 @@ const log = [
 ] as const;
 
 function Security() {
+  const [user, setUser] = useState("all");
+  const logList = log.filter((r) => user === "all" || r[1] === user);
   const save = (e: FormEvent) => { e.preventDefault(); toast.success("تم حفظ إعدادات الأمان (تجريبي)"); };
   return (
     <>
@@ -59,9 +61,9 @@ function Security() {
             ))}
           </DataTable>
         </Panel>
-        <Panel title="سجل النشاط">
+        <Panel title="سجل النشاط" action={<div className="flex gap-2"><SelectFilter label="المستخدم" value={user} onChange={setUser} options={uniq(log.map((r) => r[1]))} /><ExportButton file="activity-log" sheet="سجل النشاط" rows={() => logList.map(([t, u, e]) => ({ "الوقت": t, "المستخدم": u, "الحدث": e }))} /></div>}>
           <DataTable head={["الوقت", "المستخدم", "الحدث"]}>
-            {log.map(([t, u, e, tone]) => (
+            {logList.map(([t, u, e, tone]) => (
               <tr key={t + e}><td dir="ltr" className="text-end">{t}</td><td>{u}</td><td><Badge tone={tone}>{e}</Badge></td></tr>
             ))}
           </DataTable>

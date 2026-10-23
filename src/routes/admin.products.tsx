@@ -1,16 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { categoryOf, productImage, products } from "@/lib/catalog";
+import { categories, categoryOf, productImage, products } from "@/lib/catalog";
 import { sar } from "@/features/admin/data";
-import { Badge, DataTable, PageTitle, Panel, Toolbar } from "@/features/admin/shared";
+import { Badge, DataTable, PageTitle, Panel, Toolbar, ExportButton, SelectFilter } from "@/features/admin/shared";
 
 export const Route = createFileRoute("/admin/products")({ component: Products });
 
 function Products() {
   const [items, setItems] = useState(() => products.map((p) => ({ ...p })));
   const [q, setQ] = useState("");
-  const list = useMemo(() => items.filter((p) => (p.name + p.sku + p.en).toLowerCase().includes(q.trim().toLowerCase())), [items, q]);
+  const [cat, setCat] = useState("all");
+  const [avail, setAvail] = useState("all");
+  const list = useMemo(() => items.filter((p) => (cat === "all" || p.category === cat) && (avail === "all" || (avail === "yes") === p.available) && (p.name + p.sku + p.en).toLowerCase().includes(q.trim().toLowerCase())), [items, q, cat, avail]);
   const patch = (slug: string, v: Partial<(typeof items)[number]>) => setItems((all) => all.map((p) => (p.slug === slug ? { ...p, ...v } : p)));
 
   return (
@@ -18,7 +20,11 @@ function Products() {
       <PageTitle title="المنتجات والمخزون" desc={`${items.length} منتج · ${items.filter((p) => !p.available).length} غير متوفر`}
         action={<button onClick={() => toast("إضافة المنتجات ستتوفر عند ربط النظام")} className="btn btn-primary !h-10 !px-5 text-sm">إضافة منتج</button>} />
       <Panel>
-        <Toolbar q={q} setQ={setQ} placeholder="ابحث بالاسم أو رمز المنتج" />
+        <Toolbar q={q} setQ={setQ} placeholder="ابحث بالاسم أو رمز المنتج">
+          <SelectFilter label="التصنيف" value={cat} onChange={setCat} options={categories.map((c) => [c.slug, c.name] as [string, string])} />
+          <SelectFilter label="التوفر" value={avail} onChange={setAvail} options={[["yes", "متوفر"], ["no", "غير متوفر"]]} />
+          <ExportButton file="products" sheet="المنتجات" rows={() => list.map((p) => ({ "المنتج": p.name, "الرمز": p.sku, "التصنيف": categoryOf(p.category)?.name ?? p.category, "الحد الأدنى": `${p.moq} ${p.unit}`, "السعر الأساسي (ر.س)": p.price, "التوفر": p.available ? "متوفر" : "غير متوفر" }))} />
+        </Toolbar>
         <DataTable head={["المنتج", "التصنيف", "الحد الأدنى", "السعر الأساسي", "التوفر"]} empty={list.length === 0}>
           {list.map((p) => (
             <tr key={p.slug}>
