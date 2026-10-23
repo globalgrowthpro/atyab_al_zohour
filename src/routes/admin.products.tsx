@@ -41,7 +41,7 @@ function Products() {
     if (editing === "new") {
       const base = items[0] ?? products[0];
       if (!base) return;
-      setItems((all) => [{ ...base, ...values, slug: `new-${Date.now()}`, en: "", badge: undefined } as Item, ...all]);
+      setItems((all) => [{ ...base, ...values, slug: `new-${Date.now()}`, en: "" }, ...all]);
       toast.success("تمت إضافة المنتج");
     } else if (editing) {
       patch(editing, values);
