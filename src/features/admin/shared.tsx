@@ -1,7 +1,35 @@
 import type { LucideIcon } from "lucide-react";
-import { Search, TrendingDown, TrendingUp } from "lucide-react";
+import { FileSpreadsheet, Search, TrendingDown, TrendingUp } from "lucide-react";
 import type { ReactNode } from "react";
+import { toast } from "sonner";
 import type { Tone } from "./data";
+import { exportToExcel, type ExportRow } from "./export";
+
+// Downloads the given (already filtered) rows as an Excel file.
+export function ExportButton({ file, sheet, rows }: { file: string; sheet: string; rows: () => ExportRow[] }) {
+  return (
+    <button type="button" onClick={() => {
+      const data = rows();
+      if (!data.length) { toast.error("لا توجد بيانات للتصدير"); return; }
+      exportToExcel(file, sheet, data);
+      toast.success(`تم تصدير ${data.length} سجل إلى Excel`);
+    }} className="inline-flex h-10 items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-4 text-xs font-bold text-primary hover:bg-primary hover:text-primary-foreground">
+      <FileSpreadsheet className="size-4" />تصدير Excel
+    </button>
+  );
+}
+
+// Compact labelled dropdown filter for toolbars.
+export function SelectFilter({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: [string, string][] }) {
+  return (
+    <select aria-label={label} value={value} onChange={(e) => onChange(e.target.value)} className="h-10 rounded-xl border bg-surface px-3 text-xs font-bold text-forest">
+      <option value="all">{label}: الكل</option>
+      {options.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+    </select>
+  );
+}
+
+export const uniq = (xs: string[]) => [...new Set(xs)].map((x) => [x, x] as [string, string]);
 
 const toneClass: Record<Tone, string> = {
   rose: "bg-blush text-rose",
