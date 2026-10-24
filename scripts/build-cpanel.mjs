@@ -180,9 +180,29 @@ console.log("  ✓ Created: dist-cpanel/.htaccess");
 
 // Step 5: Verify dist-cpanel ready
 const files = fs.readdirSync(outputDir);
-console.log(`\n🎉 [5/5] Success! 'dist-cpanel/' is ready for upload.`);
+console.log(`\n🎉 [5/6] Static files packaged into 'dist-cpanel/'.`);
 console.log(`   Contents: ${files.join(", ")}`);
-console.log(
-  `   To deploy Static Site: Upload all contents of 'dist-cpanel/' to 'public_html/' on cPanel/hPanel.`,
-);
-console.log(`   To deploy Node.js SSR: Run 'node server.js' via cPanel Setup Node.js App.`);
+
+// Step 6: Create dist-cpanel.zip for 1-click cPanel File Manager upload
+console.log(`\n📦 [6/6] Creating 'dist-cpanel.zip' for 1-click cPanel File Manager upload...`);
+const zipFile = path.join(rootDir, "dist-cpanel.zip");
+try {
+  if (process.platform === "win32") {
+    execSync(
+      `powershell -NoProfile -Command "Compress-Archive -Path dist-cpanel\\* -DestinationPath dist-cpanel.zip -Force"`,
+      { cwd: rootDir, stdio: "inherit" },
+    );
+  } else {
+    execSync(`zip -r dist-cpanel.zip dist-cpanel/*`, { cwd: rootDir, stdio: "inherit" });
+  }
+  const zipSize = (fs.statSync(zipFile).size / (1024 * 1024)).toFixed(2);
+  console.log(`  ✓ Created: dist-cpanel.zip (${zipSize} MB)`);
+} catch (e) {
+  console.log(`  ⚠ Notice: Could not create zip archive automatically (${e.message})`);
+}
+
+console.log(`\n🚀 All build files are ready!`);
+console.log(`   1. Fast upload: Drag & drop 'dist-cpanel.zip' into 'public_html/' and click 'Extract'.`);
+console.log(`   2. Or folder: Upload all contents of 'dist-cpanel/' into 'public_html/'.`);
+console.log(`   3. Node.js SSR: Run 'node server.js' via cPanel Setup Node.js App.`);
+

@@ -5,7 +5,7 @@ import { siteConfig } from "@/lib/catalog";
 
 export function SiteFooter() {
   return (
-    <footer className="bg-forest text-forest-foreground">
+    <footer className="hidden md:block bg-forest text-forest-foreground">
       <div className="gold-rule" />
       <div className="container-x grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-5">
         <div className="lg:col-span-2 space-y-4">

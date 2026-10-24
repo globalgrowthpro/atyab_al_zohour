@@ -9,13 +9,15 @@ export function QtyStepper({
   value,
   onChange,
   min = 1,
+  className = "",
 }: {
   value: number;
   onChange: (n: number) => void;
   min?: number;
+  className?: string;
 }) {
   return (
-    <div className="inline-flex h-9 items-center rounded-lg border border-border/80 bg-surface px-1 shadow-xs">
+    <div className={`inline-flex h-9 items-center justify-between rounded-full border border-border/80 bg-surface px-1.5 shadow-2xs ${className}`}>
       <button
         type="button"
         aria-label="إنقاص"
@@ -24,11 +26,11 @@ export function QtyStepper({
           e.stopPropagation();
           onChange(Math.max(min, value - 1));
         }}
-        className="grid size-7 place-items-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-30"
+        className="grid size-6 place-items-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-25 active:scale-90"
       >
         <Minus className="size-3.5" />
       </button>
-      <span className="w-7 text-center text-xs font-bold text-foreground">{value}</span>
+      <span className="min-w-6 px-1 text-center text-xs font-bold font-mono text-foreground">{value}</span>
       <button
         type="button"
         aria-label="زيادة"
@@ -37,7 +39,7 @@ export function QtyStepper({
           e.stopPropagation();
           onChange(Math.min(9999, value + 1));
         }}
-        className="grid size-7 place-items-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-30"
+        className="grid size-6 place-items-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-25 active:scale-90"
       >
         <Plus className="size-3.5" />
       </button>
@@ -220,17 +222,24 @@ export function ProductCard({
           <span className="text-[11px] text-muted-foreground">/ {p.priceUnit}</span>
         </div>
 
-        {/* Action Row: Stepper + Add to Cart */}
-        <div className="mt-3 flex items-center gap-1.5 pt-2 border-t border-border/50">
-          <QtyStepper value={qty} onChange={setQty} min={p.moq || 1} />
+        {/* Action Row: Stepper + Circular Cart Button */}
+        <div className="mt-2.5 flex items-center justify-between gap-2 pt-2 border-t border-border/50">
+          <div className="flex-1 min-w-0">
+            <QtyStepper value={qty} onChange={setQty} min={p.moq || 1} className="w-full" />
+          </div>
           <button
             type="button"
             onClick={handleAddToCart}
             disabled={!p.available}
-            className="flex-1 inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-rose px-2.5 text-xs font-bold text-white transition hover:bg-rose/90 hover:shadow-xs active:scale-95 disabled:opacity-40"
+            aria-label="أضف إلى السلة"
+            title="أضف إلى السلة"
+            className="size-9 shrink-0 aspect-square rounded-full bg-rose text-white grid place-items-center shadow-xs transition-all duration-200 hover:bg-rose/90 hover:scale-105 active:scale-90 disabled:opacity-40"
           >
-            {isAdded ? <Check className="size-3.5" /> : <ShoppingCart className="size-3.5" />}
-            <span>{isAdded ? "تمت" : "أضف إلى السلة"}</span>
+            {isAdded ? (
+              <Check className="size-4 animate-in zoom-in-75 duration-150" />
+            ) : (
+              <ShoppingCart className="size-4" />
+            )}
           </button>
         </div>
       </div>

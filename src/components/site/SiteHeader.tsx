@@ -29,7 +29,8 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50">
-      <div className="bg-forest text-forest-foreground text-[13px]">
+      {/* Top Header Bar (Location, Contact, Login) - Hidden on mobile view */}
+      <div className="hidden md:block bg-forest text-forest-foreground text-[13px]">
         <div className="container-x flex h-10 items-center justify-between gap-4">
           <div className="flex items-center gap-5">
             <span className="flex items-center gap-1.5">
@@ -124,7 +125,7 @@ export function SiteHeader() {
             </Link>
             <button
               onClick={() => setOpen(!open)}
-              className="xl:hidden grid size-10 place-items-center rounded-full hover:bg-muted"
+              className="hidden md:grid xl:hidden size-10 place-items-center rounded-full hover:bg-muted"
               aria-label="القائمة"
             >
               {open ? <X className="size-5" /> : <Menu className="size-5" />}
@@ -132,7 +133,7 @@ export function SiteHeader() {
           </div>
         </div>
         {open && (
-          <div className="xl:hidden border-t bg-surface">
+          <div className="hidden md:block xl:hidden border-t bg-surface">
             <div className="container-x py-4 space-y-1">
               <form
                 onSubmit={submit}

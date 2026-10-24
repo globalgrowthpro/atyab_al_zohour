@@ -13,4 +13,7 @@ export default defineConfig({
     }),
     viteReact(),
   ],
+  optimizeDeps: {
+    include: ["react-is", "recharts"],
+  },
 });

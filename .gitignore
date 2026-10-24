@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 dist-cpanel
+dist-cpanel.zip
+*.zip
 .output
 .vinxi
 .tanstack/**

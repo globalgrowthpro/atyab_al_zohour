@@ -15,6 +15,7 @@ import appCss from "../styles.css?url";
 import { CartProvider } from "@/lib/cart";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { MobileBottomNav } from "@/components/site/MobileBottomNav";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -93,10 +94,11 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <CartProvider>
         {!isPanel && <SiteHeader />}
-        <main className="min-h-[60vh]">
+        <main className="min-h-[60vh] pb-24 md:pb-0">
           <Outlet />
         </main>
         {!isPanel && <SiteFooter />}
+        {!isPanel && <MobileBottomNav />}
         <Toaster position="top-center" richColors />
       </CartProvider>
     </QueryClientProvider>

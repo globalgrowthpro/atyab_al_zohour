@@ -45,12 +45,14 @@ function AboutPage() {
       <section className="bg-muted/60">
         <div className="container-x py-16">
           <div className="mb-10 text-center"><span className="eyebrow">قيمنا</span><h2 className="mt-3 text-3xl">ما يميزنا</h2></div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3.5 sm:gap-6 lg:grid-cols-4">
             {values.map(({ icon: Icon, title, text }) => (
-              <div key={title} className="rounded-2xl bg-card p-6 text-center shadow-soft">
-                <div className="mx-auto mb-4 grid size-14 place-items-center rounded-full bg-accent text-primary"><Icon className="size-7" /></div>
-                <h3 className="text-xl">{title}</h3>
-                <p className="mt-2 leading-7 text-muted-foreground">{text}</p>
+              <div key={title} className="rounded-2xl bg-card p-4 sm:p-6 text-center shadow-soft">
+                <div className="mx-auto mb-3 sm:mb-4 grid size-11 sm:size-14 place-items-center rounded-full bg-accent text-primary">
+                  <Icon className="size-5 sm:size-7" />
+                </div>
+                <h3 className="text-sm sm:text-xl font-bold">{title}</h3>
+                <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm leading-5 sm:leading-7 text-muted-foreground">{text}</p>
               </div>
             ))}
           </div>
