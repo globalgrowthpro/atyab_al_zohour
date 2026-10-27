@@ -10,6 +10,7 @@ export function ImageSlider({ images, alt, slug }: { images: string[]; alt: stri
   const boxRef = useRef<HTMLDivElement | null>(null);
   const [hovered, setHovered] = useState(false);
   const [userPaused, setUserPaused] = useState(false);
+  const [touchHold, setTouchHold] = useState(false);
   const [onScreen, setOnScreen] = useState(true);
   const [reduced, setReduced] = useState(false);
   const [nonce, setNonce] = useState(0);
@@ -46,7 +47,7 @@ export function ImageSlider({ images, alt, slug }: { images: string[]; alt: stri
 
   // Advance on its own, starting at a different moment per product.
   useEffect(() => {
-    if (n < 2 || paused || !onScreen || reduced) return;
+    if (n < 2 || hovered || userPaused || touchHold || !onScreen || reduced) return;
     let tick: ReturnType<typeof setInterval> | undefined;
     const offset = (slug.length * 357 + (slug.charCodeAt(0) || 0) * 41) % STEP_MS;
     const kick = setTimeout(() => {
@@ -56,19 +57,17 @@ export function ImageSlider({ images, alt, slug }: { images: string[]; alt: stri
       clearTimeout(kick);
       if (tick) clearInterval(tick);
     };
-  }, [n, paused, onScreen, reduced, slug, nonce]);
+  }, [n, hovered, userPaused, touchHold, onScreen, reduced, slug, nonce]);
 
   return (
     <div
       ref={boxRef}
       className="relative size-full"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocusCapture={() => setPaused(true)}
-      onBlurCapture={() => setPaused(false)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       onTouchStart={(e) => {
         touchX.current = e.touches[0]?.clientX ?? null;
-        setPaused(true);
+        setTouchHold(true);
       }}
       onTouchEnd={(e) => {
         if (touchX.current != null) {
@@ -76,7 +75,7 @@ export function ImageSlider({ images, alt, slug }: { images: string[]; alt: stri
           if (Math.abs(dx) > 40) go(dx < 0 ? -1 : 1);
           touchX.current = null;
         }
-        setTimeout(() => setPaused(false), 2500);
+        setTimeout(() => setTouchHold(false), 2500);
       }}
     >
       <Link to="/products/$slug" params={{ slug }} className="block size-full overflow-hidden">
