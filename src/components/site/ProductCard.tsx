@@ -2,8 +2,9 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Heart, Minus, Plus, ShoppingCart, Check } from "lucide-react";
 import { toast } from "sonner";
-import { productImage, type Product } from "@/lib/catalog";
+import { productImages, type Product } from "@/lib/catalog";
 import { useCart } from "@/lib/cart";
+import { ImageSlider } from "./ImageSlider";
 
 export function QtyStepper({
   value,
@@ -78,20 +79,8 @@ export function ProductCard({
   if (layout === "list") {
     return (
       <article className="group relative flex flex-col sm:flex-row overflow-hidden rounded-2xl border border-border/70 bg-card p-3 shadow-xs transition-all duration-300 hover:shadow-soft hover:border-rose/30">
-        <Link
-          to="/products/$slug"
-          params={{ slug: p.slug }}
-          className="relative block aspect-square sm:w-48 sm:shrink-0 overflow-hidden rounded-xl bg-muted"
-        >
-          <img
-            src={productImage(p)}
-            alt={p.name}
-            loading="lazy"
-            onError={(e) => {
-              e.currentTarget.src = "/flowers/red-rose.jpg";
-            }}
-            className="size-full object-cover transition duration-500 group-hover:scale-105"
-          />
+        <div className="relative block aspect-square sm:w-48 sm:shrink-0 overflow-hidden rounded-xl bg-muted">
+          <ImageSlider images={productImages(p)} alt={p.name} slug={p.slug} />
           {p.badge && (
             <span
               className={`absolute top-2.5 start-2.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold shadow-xs ${
@@ -105,7 +94,7 @@ export function ProductCard({
               {p.badge}
             </span>
           )}
-        </Link>
+        </div>
 
         <div className="flex flex-1 flex-col justify-between p-3 sm:px-5">
           <div className="flex items-start justify-between gap-2">
@@ -162,17 +151,7 @@ export function ProductCard({
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card p-2.5 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-rose/30 hover:shadow-soft">
       {/* Top Image Box */}
       <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-muted">
-        <Link to="/products/$slug" params={{ slug: p.slug }} className="block size-full">
-          <img
-            src={productImage(p)}
-            alt={p.name}
-            loading="lazy"
-            onError={(e) => {
-              e.currentTarget.src = "/flowers/red-rose.jpg";
-            }}
-            className="size-full object-cover transition duration-500 group-hover:scale-105"
-          />
-        </Link>
+        <ImageSlider images={productImages(p)} alt={p.name} slug={p.slug} />
 
         {/* Badge (Top Right in RTL) */}
         {p.badge && (

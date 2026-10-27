@@ -61,6 +61,7 @@ export type Product = {
   priceUnit: string;
   badge?: "الأكثر مبيعاً" | "جديد" | "مميز" | string;
   image?: string;
+  images?: string[];
   salesCount?: number;
 };
 
@@ -1133,3 +1134,21 @@ export const products: Product[] = [
 export const categoryOf = (slug: string) => categories.find((c) => c.slug === slug);
 export const productImage = (p: Product) => p.image || categoryOf(p.category)?.image || roses;
 
+
+const galleryPool = [
+  "/flowers/red-rose.jpg", "/flowers/pink-rose.jpg", "/flowers/white-rose.jpg", "/flowers/mixed-roses.jpg",
+  "/flowers/yellow-rose.jpg", "/flowers/orange-rose.jpg", "/flowers/spray-pink.jpg", "/flowers/spray-red.jpg",
+  "/flowers/tulips.jpg", "/flowers/lilies.jpg", "/flowers/peonies.jpg", "/flowers/gypsophila.jpg",
+];
+
+/** All images for a product. Uses `images` when supplied; otherwise sample placeholders until real photos arrive. */
+export const productImages = (p: Product): string[] => {
+  const list = [productImage(p), ...(p.images ?? [])];
+  if (!p.images?.length) {
+    const cat = categoryOf(p.category)?.image;
+    if (cat) list.push(cat);
+    const seed = p.sku.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+    list.push(galleryPool[seed % galleryPool.length]!, galleryPool[(seed + 5) % galleryPool.length]!);
+  }
+  return Array.from(new Set(list.filter(Boolean)));
+};
