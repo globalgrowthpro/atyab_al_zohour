@@ -8,7 +8,8 @@ export function ImageSlider({ images, alt, slug }: { images: string[]; alt: stri
   const [i, setI] = useState(0);
   const touchX = useRef<number | null>(null);
   const boxRef = useRef<HTMLDivElement | null>(null);
-  const [paused, setPaused] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [userPaused, setUserPaused] = useState(false);
   const [onScreen, setOnScreen] = useState(true);
   const [reduced, setReduced] = useState(false);
   const [nonce, setNonce] = useState(0);
