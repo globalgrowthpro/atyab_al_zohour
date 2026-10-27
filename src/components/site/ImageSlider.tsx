@@ -118,16 +118,16 @@ export function ImageSlider({ images, alt, slug }: { images: string[]; alt: stri
           </button>
           <button
             type="button"
-            aria-label={paused ? "تشغيل العرض التلقائي" : "إيقاف العرض التلقائي"}
-            title={paused ? "تشغيل العرض التلقائي" : "إيقاف العرض التلقائي"}
+            aria-label={userPaused ? "تشغيل العرض التلقائي" : "إيقاف العرض التلقائي"}
+            title={userPaused ? "تشغيل العرض التلقائي" : "إيقاف العرض التلقائي"}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setPaused((v) => !v);
+              setUserPaused((v) => !v);
             }}
-            className="absolute top-2 end-2 grid size-6 place-items-center rounded-full bg-card/85 text-muted-foreground shadow-sm backdrop-blur transition hover:text-rose focus:opacity-100 max-md:opacity-100 max-md:hidden"
+            className="absolute bottom-2 end-2 grid size-6 place-items-center rounded-full bg-card/90 text-muted-foreground opacity-0 shadow-sm backdrop-blur transition hover:text-rose group-hover:opacity-100 focus:opacity-100 max-md:hidden"
           >
-            {paused ? <Play className="size-3" /> : <Pause className="size-3" />}
+            {userPaused ? <Play className="size-3" /> : <Pause className="size-3" />}
           </button>
           <div className="absolute inset-x-0 bottom-2 flex justify-center gap-1.5">
             {images.map((src, k) => (
