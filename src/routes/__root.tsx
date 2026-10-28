@@ -89,7 +89,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { pathname } = useLocation();
-  const isPanel = pathname === "/admin" || pathname.startsWith("/admin/");
+  const isPanel = pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/courier" || pathname.startsWith("/courier/");
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
