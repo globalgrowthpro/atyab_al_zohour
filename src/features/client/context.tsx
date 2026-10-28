@@ -7,6 +7,9 @@ type ClientContextValue = {
   save: (data: ClientData) => Promise<boolean>;
   notice: string;
   error: string;
+  loading: boolean;
+  loadFailed: boolean;
+  retry: () => void;
 };
 const ClientContext = createContext<ClientContextValue | null>(null);
 export function useClientData() {
@@ -56,39 +59,10 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       setSaving(false);
     }
   }
-  if (loading)
-    return (
-      <div className="rounded-3xl border bg-card p-12 text-center" role="status">
-        جارٍ تحميل بيانات التجربة…
-      </div>
-    );
-  if (loadFailed)
-    return (
-      <div className="space-y-4 rounded-3xl border bg-card p-8">
-        <p role="alert">{error}</p>
-        <div className="flex flex-wrap gap-3">
-          <button className="btn btn-primary" onClick={() => void load()}>
-            إعادة المحاولة
-          </button>
-          <button
-            className="btn btn-outline"
-            disabled={saving}
-            onClick={() => {
-              if (
-                window.confirm(
-                  "سيتم استبدال بيانات التجربة المحفوظة على هذا المتصفح ببيانات فارغة. متابعة؟",
-                )
-              )
-                void save(emptyClientData());
-            }}
-          >
-            بدء تجربة فارغة
-          </button>
-        </div>
-      </div>
-    );
   return (
-    <ClientContext.Provider value={{ data, saving, save, notice, error }}>
+    <ClientContext.Provider
+      value={{ data, saving, save, notice, error, loading, loadFailed, retry: load }}
+    >
       {children}
     </ClientContext.Provider>
   );
