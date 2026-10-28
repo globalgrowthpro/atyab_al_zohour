@@ -13,6 +13,7 @@ import {
 import { orderStatus, type ClientOrder } from "./data";
 import { StatusBadge, EmptyState } from "./shared";
 import { orderAddress, orderAmount, orderQuantity, formatOrderDate } from "./order-presentation";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function OrdersView({
   orders,
@@ -21,7 +22,9 @@ export function OrdersView({
   orders: ClientOrder[];
   onDetails: (order: ClientOrder) => void;
 }) {
-  const [view, setView] = useState<"table" | "grid">("table");
+  const mobile = useIsMobile();
+  const [chosenView, setView] = useState<"table" | "grid" | null>(null);
+  const view = chosenView ?? (mobile ? "grid" : "table");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
   const filtered = [...orders]

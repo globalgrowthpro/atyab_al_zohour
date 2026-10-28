@@ -88,6 +88,8 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    /* Guard: wide tables/grids must scroll inside their containers, never expand the page (mobile viewport). */
+    overflow-x: clip;
   }
   h1, h2, h3, h4 { font-family: var(--font-display); color: var(--color-forest); font-weight: 800; }
 }
