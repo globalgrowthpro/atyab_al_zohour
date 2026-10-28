@@ -19,7 +19,7 @@ function CourierLayout() {
         <div className="grid items-start gap-6 lg:grid-cols-[210px_minmax(0,1fr)]">
           <nav
             aria-label="أقسام لوحة المندوب"
-            className="flex gap-2 overflow-x-auto rounded-2xl border bg-admin-side p-3 shadow-soft lg:sticky lg:top-6 lg:flex-col"
+            className="hidden gap-2 rounded-2xl border bg-admin-side p-3 shadow-soft lg:sticky lg:top-6 lg:flex lg:flex-col"
           >
             {courierNavigation.map(([to, label, Icon]) => (
               <Link
@@ -38,10 +38,27 @@ function CourierLayout() {
               العودة للموقع
             </Link>
           </nav>
-          <div className="min-w-0">
+          <div className="min-w-0 pb-20 lg:pb-0">
             <CourierContent />
           </div>
         </div>
+        <nav
+          aria-label="تنقل لوحة المندوب السريع"
+          className="fixed inset-x-0 bottom-0 z-40 flex border-t bg-admin-side/95 px-1 pb-[env(safe-area-inset-bottom)] shadow-lift backdrop-blur lg:hidden"
+        >
+          {courierNavigation.map(([to, label, Icon]) => (
+            <Link
+              key={to}
+              to={to}
+              activeOptions={{ exact: to === "/courier" }}
+              activeProps={{ className: "!text-primary" }}
+              className="flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-bold text-muted-foreground transition-colors hover:text-forest"
+            >
+              <Icon className="size-5" />
+              <span className="leading-none">{label}</span>
+            </Link>
+          ))}
+        </nav>
       </section>
     </CourierProvider>
   );
