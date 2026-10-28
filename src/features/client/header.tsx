@@ -51,18 +51,18 @@ function DigitalClock() {
     ? Intl.DateTimeFormat("ar", { timeZoneName: "short" }).formatToParts(now).find((p) => p.type === "timeZoneName")?.value
     : "—";
   return (
-    <div className="flex shrink-0 items-center gap-3 border-s border-white/20 ps-4" aria-label="التاريخ والوقت الحالي">
+    <div className="flex shrink-0 items-center gap-3 sm:border-s sm:border-white/20 sm:ps-4" aria-label="التاريخ والوقت الحالي">
       <Clock3 className="hidden size-4 text-emerald-300 xl:block" />
       <div className="text-center">
         <time
           dateTime={now?.toISOString()}
           dir="ltr"
-          className="block min-w-[112px] font-mono text-xl font-bold tabular-nums leading-7 text-white"
+          className="block min-w-[76px] font-mono text-base font-bold tabular-nums leading-6 text-white sm:min-w-[112px] sm:text-xl sm:leading-7"
         >
           {time}
         </time>
-        <p className="whitespace-nowrap text-[11px] text-white/80">{date}</p>
-        <p className="text-[10px] text-emerald-300/80">{zone}</p>
+        <p className="hidden whitespace-nowrap text-[11px] text-white/80 sm:block">{date}</p>
+        <p className="hidden text-[10px] text-emerald-300/80 sm:block">{zone}</p>
       </div>
     </div>
   );
@@ -117,11 +117,13 @@ export function ClientHeader() {
       className="relative z-30 mb-6 flex flex-wrap items-center gap-4 rounded-2xl border border-emerald-950/40 bg-gradient-to-r from-[#062619] via-[#0B3D2A] to-[#072418] px-4 py-3 shadow-xl text-white md:px-5"
     >
       <div className="order-1 flex shrink-0 items-center gap-3.5 md:order-none">
-        <img
-          src={logo}
-          alt="أطيب الزهور"
-          className="h-13 w-13 sm:h-15 sm:w-15 shrink-0 object-contain drop-shadow-md select-none transition-transform hover:scale-105"
-        />
+        <Link to="/" aria-label="العودة للموقع" className="shrink-0">
+          <img
+            src={logo}
+            alt="أطيب الزهور"
+            className="h-13 w-13 sm:h-15 sm:w-15 shrink-0 object-contain drop-shadow-md select-none transition-transform hover:scale-105"
+          />
+        </Link>
         <span className="min-w-0 whitespace-nowrap">
           <span className="block text-sm font-bold text-white md:text-base">مرحبًا بك في لوحة العميل</span>
           <span className="hidden text-[11px] text-emerald-200/80 md:block">
