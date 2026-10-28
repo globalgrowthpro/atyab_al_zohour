@@ -13,6 +13,7 @@ import {
 import { orderStatus, type ClientOrder } from "./data";
 import { StatusBadge, EmptyState } from "./shared";
 import { orderAddress, orderAmount, orderQuantity, formatOrderDate } from "./order-presentation";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function OrdersView({
   orders,
