@@ -22,7 +22,9 @@ export function OrdersView({
   orders: ClientOrder[];
   onDetails: (order: ClientOrder) => void;
 }) {
-  const [view, setView] = useState<"table" | "grid">("table");
+  const mobile = useIsMobile();
+  const [chosenView, setView] = useState<"table" | "grid" | null>(null);
+  const view = chosenView ?? (mobile ? "grid" : "table");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
   const filtered = [...orders]
