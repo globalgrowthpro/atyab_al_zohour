@@ -1,17 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useClientData } from "@/features/client/context";
 import { profileSchema } from "@/features/client/data";
 export const Route = createFileRoute("/dashboard/profile")({ component: ProfilePage });
 export function ProfilePage() {
-  const { data, save, saving, loading } = useClientData();
+  const { loading } = useClientData();
+  // Wait for saved details so the form opens already filled in.
+  if (loading) {
+    return <p className="text-sm text-muted-foreground">جارٍ تحميل البيانات…</p>;
+  }
+  return <ProfileForm />;
+}
+
+function ProfileForm() {
+  const { data, save, saving } = useClientData();
   const [profile, setProfile] = useState(data.profile);
   const [error, setError] = useState("");
-  // Fill the form with the saved details once they finish loading.
-  useEffect(() => {
-    if (!loading) setProfile(data.profile);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
   async function submit(event: FormEvent) {
     event.preventDefault();
     const result = profileSchema.safeParse(profile);
