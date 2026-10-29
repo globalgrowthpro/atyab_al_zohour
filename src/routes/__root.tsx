@@ -149,6 +149,23 @@ function RootComponent() {
     pathname.startsWith("/courier/") ||
     pathname === "/dashboard" ||
     pathname.startsWith("/dashboard/");
+
+  useEffect(() => {
+    // Page rendered fine: reset the server error page's auto-retry counter.
+    try {
+      sessionStorage.removeItem("atyab:auto-retry");
+    } catch {
+      /* storage unavailable */
+    }
+    // Vite fires this when a page file can no longer be fetched after an update.
+    const onPreloadError = (event: Event) => {
+      event.preventDefault();
+      reloadOnce();
+    };
+    window.addEventListener("vite:preloadError", onPreloadError);
+    return () => window.removeEventListener("vite:preloadError", onPreloadError);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
