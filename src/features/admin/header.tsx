@@ -5,7 +5,9 @@ import logo from "@/assets/nav-logo.png";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ThemeToggle } from "./theme";
 import { adminNavigation } from "./navigation";
+
 import { adminClients, adminOrders, adminQuotes, adminCouriers, adminTickets } from "./data";
 import { products } from "@/lib/catalog";
 
@@ -131,7 +133,9 @@ export function AdminHeader() {
       </div>
       <DigitalClock />
       <div className="ms-auto flex items-center gap-2 md:ms-0">
+        <ThemeToggle />
         <DropdownMenu dir="rtl">
+
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-auto gap-3 px-2 py-1.5 text-white hover:bg-white/10 hover:text-white rounded-xl" aria-label="قائمة المستخدم">
               <Avatar className="size-10 border-2 border-white/20 shadow-xs">

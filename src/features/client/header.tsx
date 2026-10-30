@@ -25,6 +25,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ThemeToggle } from "@/features/admin/theme";
+
 import { useClientData } from "./context";
 import { orderStatus } from "./data";
 
@@ -219,7 +221,9 @@ export function ClientHeader() {
       </div>
       <DigitalClock />
       <div className="ms-auto flex items-center gap-2 md:ms-0">
+        <ThemeToggle />
         <DropdownMenu dir="rtl">
+
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"

@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, ClipboardList, FileText, Package, TrendingUp, Truck, Users } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useChartTheme } from "@/features/admin/theme";
+
 import {
   adminActivity, adminClients, adminCouriers, adminOrders, adminQuotes, categoryShare, hourlyOrders,
   orderStatusLabel, orderStatusTone, sar, weeklySales, type AdminActivity,
@@ -10,14 +12,15 @@ import { products } from "@/lib/catalog";
 
 export const Route = createFileRoute("/admin/")({ component: Overview });
 
-const pieColors = ["#0B4D33", "#E7547A", "#D4AF37", "#4E8F6E", "#063321", "#B23A5E", "#8A7A3A"];
-
 const activityIcon: Record<AdminActivity["icon"], typeof ClipboardList> = {
+
   order: ClipboardList, client: Users, quote: FileText, courier: Truck, ticket: AlertTriangle,
 };
 
 function Overview() {
+  const chart = useChartTheme();
   const revenue = weeklySales.reduce((s, d) => s + d.total, 0);
+
   const active = adminOrders.filter((o) => !["delivered", "cancelled"].includes(o.status)).length;
   const delivered = adminOrders.filter((o) => o.status === "delivered").length;
   const pendingClients = adminClients.filter((c) => c.status === "pending");
@@ -44,17 +47,18 @@ function Overview() {
               <AreaChart data={weeklySales} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
                 <defs>
                   <linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0B4D33" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#0B4D33" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor={chart.line} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={chart.line} stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                <XAxis dataKey="day" tick={{ fontSize: 12, fill: "#6B7280" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#6B7280" }} axisLine={false} tickLine={false} width={48}
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
+                <XAxis dataKey="day" tick={{ fontSize: 12, fill: chart.tick }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} width={48}
                   tickFormatter={(v: number) => `${Math.round(v / 1000)}k`} />
                 <Tooltip formatter={(v) => [sar(Number(v)), "المبيعات"]} labelStyle={{ fontWeight: 700 }}
-                  contentStyle={{ borderRadius: 12, border: "1px solid #E5E7EB", fontFamily: "Tajawal" }} />
-                <Area type="monotone" dataKey="total" stroke="#0B4D33" strokeWidth={2.5} fill="url(#salesFill)" />
+                  contentStyle={chart.tooltip} />
+                <Area type="monotone" dataKey="total" stroke={chart.line} strokeWidth={2.5} fill="url(#salesFill)" />
+
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -65,16 +69,17 @@ function Overview() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={categoryShare} dataKey="value" nameKey="name" innerRadius={52} outerRadius={78} paddingAngle={3} strokeWidth={0}>
-                    {categoryShare.map((c, i) => <Cell key={c.name} fill={pieColors[i % pieColors.length] ?? "#0B4D33"} />)}
+                    {categoryShare.map((c, i) => <Cell key={c.name} fill={chart.pieColors[i % chart.pieColors.length] ?? chart.line} />)}
                   </Pie>
-                  <Tooltip formatter={(v) => [`${v}%`, "الحصة"]} contentStyle={{ borderRadius: 12, border: "1px solid #E5E7EB", fontFamily: "Tajawal" }} />
+                  <Tooltip formatter={(v) => [`${v}%`, "الحصة"]} contentStyle={chart.tooltip} />
+
                 </PieChart>
               </ResponsiveContainer>
             </div>
             <ul className="grid w-full grid-cols-2 gap-x-4 gap-y-2 text-xs">
               {categoryShare.map((c, i) => (
                 <li key={c.name} className="flex items-center gap-2">
-                  <span className="size-2.5 shrink-0 rounded-full" style={{ background: pieColors[i % pieColors.length] }} />
+                  <span className="size-2.5 shrink-0 rounded-full" style={{ background: chart.pieColors[i % chart.pieColors.length] }} />
                   <span className="truncate">{c.name}</span>
                   <span className="ms-auto font-bold text-forest">{c.value}%</span>
                 </li>
@@ -90,11 +95,12 @@ function Overview() {
           <div className="h-52 p-4" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={hourlyOrders} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                <XAxis dataKey="h" tick={{ fontSize: 11, fill: "#6B7280" }} axisLine={false} tickLine={false} interval={1} />
-                <YAxis tick={{ fontSize: 11, fill: "#6B7280" }} axisLine={false} tickLine={false} width={28} />
-                <Tooltip formatter={(v) => [v, "طلبات"]} contentStyle={{ borderRadius: 12, border: "1px solid #E5E7EB", fontFamily: "Tajawal" }} />
-                <Bar dataKey="orders" radius={[6, 6, 0, 0]} fill="#E7547A" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
+                <XAxis dataKey="h" tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} interval={1} />
+                <YAxis tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} width={28} />
+                <Tooltip formatter={(v) => [v, "طلبات"]} contentStyle={chart.tooltip} />
+                <Bar dataKey="orders" radius={[6, 6, 0, 0]} fill={chart.rose} />
+
               </BarChart>
             </ResponsiveContainer>
           </div>

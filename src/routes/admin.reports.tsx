@@ -1,16 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useChartTheme } from "@/features/admin/theme";
+
 import { adminOrders, orderStatusLabel, orderStatusTone, sar, weeklySales, type OrderStatus } from "@/features/admin/data";
 import { useState } from "react";
 import { Badge, ExportButton, Meter, PageTitle, Panel, SelectFilter, uniq } from "@/features/admin/shared";
 
 export const Route = createFileRoute("/admin/reports")({ component: Reports });
 
-const statusColors: Record<OrderStatus, string> = {
-  new: "#E7547A", preparing: "#D4AF37", ready: "#4E8F6E", shipping: "#0B4D33", delivered: "#9CA3AF", cancelled: "#DC2626",
-};
-
 function Reports() {
+  const chart = useChartTheme();
+  const statusColors: Record<OrderStatus, string> = {
+    new: "#E7547A", preparing: "#D4AF37", ready: chart.sage, shipping: chart.line, delivered: "#9CA3AF", cancelled: "#DC2626",
+  };
+
   const [city, setCity] = useState("all");
   const [status, setStatus] = useState("all");
   const orders = adminOrders.filter((o) => (city === "all" || o.city === city) && (status === "all" || o.status === status));
@@ -40,13 +43,14 @@ function Reports() {
           <div className="h-64 p-4" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weeklySales} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                <XAxis dataKey="day" tick={{ fontSize: 12, fill: "#6B7280" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#6B7280" }} axisLine={false} tickLine={false} width={48}
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
+                <XAxis dataKey="day" tick={{ fontSize: 12, fill: chart.tick }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} width={48}
                   tickFormatter={(v: number) => `${Math.round(v / 1000)}k`} />
-                <Tooltip formatter={(v) => [sar(Number(v)), "المبيعات"]} contentStyle={{ borderRadius: 12, border: "1px solid #E5E7EB", fontFamily: "Tajawal" }} />
+                <Tooltip formatter={(v) => [sar(Number(v)), "المبيعات"]} contentStyle={chart.tooltip} />
                 <Bar dataKey="total" radius={[8, 8, 0, 0]}>
-                  {weeklySales.map((d) => <Cell key={d.day} fill={d.total === Math.max(...weeklySales.map((x) => x.total)) ? "#E7547A" : "#0B4D33"} />)}
+                  {weeklySales.map((d) => <Cell key={d.day} fill={d.total === Math.max(...weeklySales.map((x) => x.total)) ? chart.rose : chart.line} />)}
+
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -60,7 +64,7 @@ function Reports() {
                   <Pie data={byStatus} dataKey="count" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={3} strokeWidth={0}>
                     {byStatus.map((s) => <Cell key={s.status} fill={statusColors[s.status]} />)}
                   </Pie>
-                  <Tooltip formatter={(v) => [v, "طلبات"]} contentStyle={{ borderRadius: 12, border: "1px solid #E5E7EB", fontFamily: "Tajawal" }} />
+                  <Tooltip formatter={(v) => [v, "طلبات"]} contentStyle={chart.tooltip} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -77,12 +81,13 @@ function Reports() {
           <div className="h-56 p-4" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={cityData} layout="vertical" margin={{ top: 4, right: 12, left: 12, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11, fill: "#6B7280" }} axisLine={false} tickLine={false}
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false}
                   tickFormatter={(v: number) => `${Math.round(v / 1000)}k`} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: "#374151" }} axisLine={false} tickLine={false} width={64} />
-                <Tooltip formatter={(v) => [sar(Number(v)), "المبيعات"]} contentStyle={{ borderRadius: 12, border: "1px solid #E5E7EB", fontFamily: "Tajawal" }} />
-                <Bar dataKey="total" radius={[0, 8, 8, 0]} fill="#4E8F6E" />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: chart.tickStrong }} axisLine={false} tickLine={false} width={64} />
+                <Tooltip formatter={(v) => [sar(Number(v)), "المبيعات"]} contentStyle={chart.tooltip} />
+                <Bar dataKey="total" radius={[0, 8, 8, 0]} fill={chart.sage} />
+
               </BarChart>
             </ResponsiveContainer>
           </div>

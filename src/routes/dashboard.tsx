@@ -1,6 +1,8 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { Home } from "lucide-react";
 import { ClientHeader, clientNavigation } from "@/features/client/header";
+import { useAdminThemeClass } from "@/features/admin/theme";
+
 import { ClientProvider, useClientData } from "@/features/client/context";
 import { emptyClientData } from "@/features/client/data";
 
@@ -15,7 +17,9 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function DashboardLayout() {
+  useAdminThemeClass();
   return (
+
     <ClientProvider>
       <section className="w-full bg-admin-canvas px-4 py-5 md:px-6 lg:px-8 min-h-screen">
         <ClientHeader />

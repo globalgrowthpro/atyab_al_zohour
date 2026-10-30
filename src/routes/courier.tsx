@@ -1,6 +1,8 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { Home } from "lucide-react";
 import { CourierHeader, courierNavigation } from "@/features/courier/header";
+import { useAdminThemeClass } from "@/features/admin/theme";
+
 import { CourierProvider, useCourier } from "@/features/courier/context";
 export const Route = createFileRoute("/courier")({
   head: () => ({
@@ -12,7 +14,9 @@ export const Route = createFileRoute("/courier")({
   component: CourierLayout,
 });
 function CourierLayout() {
+  useAdminThemeClass();
   return (
+
     <CourierProvider>
       <section className="w-full bg-admin-canvas px-4 py-5 md:px-6 lg:px-8 min-h-screen">
         <CourierHeader />
