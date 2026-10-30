@@ -74,6 +74,15 @@
   --input: oklch(0.92 0.004 265);
   --ring: var(--primary);
 
+  --admin-canvas-image:
+    radial-gradient(46rem 24rem at 100% -6rem, color-mix(in oklab, var(--blush) 60%, transparent), transparent 68%),
+    radial-gradient(40rem 22rem at -8rem 105%, color-mix(in oklab, var(--sage) 24%, transparent), transparent 66%),
+    linear-gradient(165deg, oklch(0.985 0.008 160), var(--cream) 55%);
+  --admin-side-image: linear-gradient(180deg, var(--surface), oklch(0.985 0.006 160));
+  --admin-panel-image: linear-gradient(180deg, var(--surface), oklch(0.994 0.004 90));
+  --admin-head-image: linear-gradient(90deg, color-mix(in oklab, var(--primary) 8%, var(--surface)), var(--surface));
+
+
   --gradient-forest: linear-gradient(135deg, var(--forest), var(--primary));
   --gradient-gold: linear-gradient(90deg, transparent, var(--gold), transparent);
   --shadow-soft: 0 10px 30px -12px color-mix(in oklab, var(--forest) 18%, transparent);
