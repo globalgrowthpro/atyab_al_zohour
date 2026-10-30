@@ -47,6 +47,8 @@ import { Route as DashboardSupportRouteImport } from './routes/dashboard.support
 import { Route as DashboardTrackRouteImport } from './routes/dashboard.track'
 import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
+import { Route as AdminClientsIndexRouteImport } from './routes/admin.clients.index'
+import { Route as AdminClientsClientIdRouteImport } from './routes/admin.clients.$clientId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -238,6 +240,16 @@ const ProductsSlugRoute = ProductsSlugRouteImport.update({
   path: '/products/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminClientsIndexRoute = AdminClientsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminClientsRoute,
+} as any)
+const AdminClientsClientIdRoute = AdminClientsClientIdRouteImport.update({
+  id: '/$clientId',
+  path: '/$clientId',
+  getParentRoute: () => AdminClientsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -252,7 +264,7 @@ export interface FileRoutesByFullPath {
   '/quote': typeof QuoteRoute
   '/register': typeof RegisterRoute
   '/services': typeof ServicesRoute
-  '/admin/clients': typeof AdminClientsRoute
+  '/admin/clients': typeof AdminClientsRouteWithChildren
   '/admin/couriers': typeof AdminCouriersRoute
   '/admin/crm': typeof AdminCrmRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -278,6 +290,8 @@ export interface FileRoutesByFullPath {
   '/courier/': typeof CourierIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/products/': typeof ProductsIndexRoute
+  '/admin/clients/$clientId': typeof AdminClientsClientIdRoute
+  '/admin/clients/': typeof AdminClientsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -289,7 +303,6 @@ export interface FileRoutesByTo {
   '/quote': typeof QuoteRoute
   '/register': typeof RegisterRoute
   '/services': typeof ServicesRoute
-  '/admin/clients': typeof AdminClientsRoute
   '/admin/couriers': typeof AdminCouriersRoute
   '/admin/crm': typeof AdminCrmRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -315,6 +328,8 @@ export interface FileRoutesByTo {
   '/courier': typeof CourierIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/products': typeof ProductsIndexRoute
+  '/admin/clients/$clientId': typeof AdminClientsClientIdRoute
+  '/admin/clients': typeof AdminClientsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -330,7 +345,7 @@ export interface FileRoutesById {
   '/quote': typeof QuoteRoute
   '/register': typeof RegisterRoute
   '/services': typeof ServicesRoute
-  '/admin/clients': typeof AdminClientsRoute
+  '/admin/clients': typeof AdminClientsRouteWithChildren
   '/admin/couriers': typeof AdminCouriersRoute
   '/admin/crm': typeof AdminCrmRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -356,6 +371,8 @@ export interface FileRoutesById {
   '/courier/': typeof CourierIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/products/': typeof ProductsIndexRoute
+  '/admin/clients/$clientId': typeof AdminClientsClientIdRoute
+  '/admin/clients/': typeof AdminClientsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -398,6 +415,8 @@ export interface FileRouteTypes {
     | '/courier/'
     | '/dashboard/'
     | '/products/'
+    | '/admin/clients/$clientId'
+    | '/admin/clients/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -409,7 +428,6 @@ export interface FileRouteTypes {
     | '/quote'
     | '/register'
     | '/services'
-    | '/admin/clients'
     | '/admin/couriers'
     | '/admin/crm'
     | '/admin/orders'
@@ -435,6 +453,8 @@ export interface FileRouteTypes {
     | '/courier'
     | '/dashboard'
     | '/products'
+    | '/admin/clients/$clientId'
+    | '/admin/clients'
   id:
     | '__root__'
     | '/'
@@ -475,6 +495,8 @@ export interface FileRouteTypes {
     | '/courier/'
     | '/dashboard/'
     | '/products/'
+    | '/admin/clients/$clientId'
+    | '/admin/clients/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -762,11 +784,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/clients/': {
+      id: '/admin/clients/'
+      path: '/'
+      fullPath: '/admin/clients/'
+      preLoaderRoute: typeof AdminClientsIndexRouteImport
+      parentRoute: typeof AdminClientsRoute
+    }
+    '/admin/clients/$clientId': {
+      id: '/admin/clients/$clientId'
+      path: '/$clientId'
+      fullPath: '/admin/clients/$clientId'
+      preLoaderRoute: typeof AdminClientsClientIdRouteImport
+      parentRoute: typeof AdminClientsRoute
+    }
   }
 }
 
+interface AdminClientsRouteChildren {
+  AdminClientsClientIdRoute: typeof AdminClientsClientIdRoute
+  AdminClientsIndexRoute: typeof AdminClientsIndexRoute
+}
+
+const AdminClientsRouteChildren: AdminClientsRouteChildren = {
+  AdminClientsClientIdRoute: AdminClientsClientIdRoute,
+  AdminClientsIndexRoute: AdminClientsIndexRoute,
+}
+
+const AdminClientsRouteWithChildren = AdminClientsRoute._addFileChildren(
+  AdminClientsRouteChildren,
+)
+
 interface AdminRouteChildren {
-  AdminClientsRoute: typeof AdminClientsRoute
+  AdminClientsRoute: typeof AdminClientsRouteWithChildren
   AdminCouriersRoute: typeof AdminCouriersRoute
   AdminCrmRoute: typeof AdminCrmRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
@@ -783,7 +833,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
-  AdminClientsRoute: AdminClientsRoute,
+  AdminClientsRoute: AdminClientsRouteWithChildren,
   AdminCouriersRoute: AdminCouriersRoute,
   AdminCrmRoute: AdminCrmRoute,
   AdminOrdersRoute: AdminOrdersRoute,
