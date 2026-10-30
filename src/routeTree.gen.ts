@@ -49,6 +49,7 @@ import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
 import { Route as AdminClientsIndexRouteImport } from './routes/admin.clients.index'
 import { Route as AdminClientsClientIdRouteImport } from './routes/admin.clients.$clientId'
+import { Route as AdminCouriersIndexRouteImport } from './routes/admin.couriers.index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -250,6 +251,11 @@ const AdminClientsClientIdRoute = AdminClientsClientIdRouteImport.update({
   path: '/$clientId',
   getParentRoute: () => AdminClientsRoute,
 } as any)
+const AdminCouriersIndexRoute = AdminCouriersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminCouriersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -265,7 +271,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/services': typeof ServicesRoute
   '/admin/clients': typeof AdminClientsRouteWithChildren
-  '/admin/couriers': typeof AdminCouriersRoute
+  '/admin/couriers': typeof AdminCouriersRouteWithChildren
   '/admin/crm': typeof AdminCrmRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/pricing': typeof AdminPricingRoute
@@ -292,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/products/': typeof ProductsIndexRoute
   '/admin/clients/$clientId': typeof AdminClientsClientIdRoute
   '/admin/clients/': typeof AdminClientsIndexRoute
+  '/admin/couriers/': typeof AdminCouriersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -303,7 +310,6 @@ export interface FileRoutesByTo {
   '/quote': typeof QuoteRoute
   '/register': typeof RegisterRoute
   '/services': typeof ServicesRoute
-  '/admin/couriers': typeof AdminCouriersRoute
   '/admin/crm': typeof AdminCrmRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/pricing': typeof AdminPricingRoute
@@ -330,6 +336,7 @@ export interface FileRoutesByTo {
   '/products': typeof ProductsIndexRoute
   '/admin/clients/$clientId': typeof AdminClientsClientIdRoute
   '/admin/clients': typeof AdminClientsIndexRoute
+  '/admin/couriers': typeof AdminCouriersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -346,7 +353,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/services': typeof ServicesRoute
   '/admin/clients': typeof AdminClientsRouteWithChildren
-  '/admin/couriers': typeof AdminCouriersRoute
+  '/admin/couriers': typeof AdminCouriersRouteWithChildren
   '/admin/crm': typeof AdminCrmRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/pricing': typeof AdminPricingRoute
@@ -373,6 +380,7 @@ export interface FileRoutesById {
   '/products/': typeof ProductsIndexRoute
   '/admin/clients/$clientId': typeof AdminClientsClientIdRoute
   '/admin/clients/': typeof AdminClientsIndexRoute
+  '/admin/couriers/': typeof AdminCouriersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -417,6 +425,7 @@ export interface FileRouteTypes {
     | '/products/'
     | '/admin/clients/$clientId'
     | '/admin/clients/'
+    | '/admin/couriers/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -428,7 +437,6 @@ export interface FileRouteTypes {
     | '/quote'
     | '/register'
     | '/services'
-    | '/admin/couriers'
     | '/admin/crm'
     | '/admin/orders'
     | '/admin/pricing'
@@ -455,6 +463,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/admin/clients/$clientId'
     | '/admin/clients'
+    | '/admin/couriers'
   id:
     | '__root__'
     | '/'
@@ -497,6 +506,7 @@ export interface FileRouteTypes {
     | '/products/'
     | '/admin/clients/$clientId'
     | '/admin/clients/'
+    | '/admin/couriers/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -798,6 +808,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminClientsClientIdRouteImport
       parentRoute: typeof AdminClientsRoute
     }
+    '/admin/couriers/': {
+      id: '/admin/couriers/'
+      path: '/'
+      fullPath: '/admin/couriers/'
+      preLoaderRoute: typeof AdminCouriersIndexRouteImport
+      parentRoute: typeof AdminCouriersRoute
+    }
   }
 }
 
@@ -815,9 +832,21 @@ const AdminClientsRouteWithChildren = AdminClientsRoute._addFileChildren(
   AdminClientsRouteChildren,
 )
 
+interface AdminCouriersRouteChildren {
+  AdminCouriersIndexRoute: typeof AdminCouriersIndexRoute
+}
+
+const AdminCouriersRouteChildren: AdminCouriersRouteChildren = {
+  AdminCouriersIndexRoute: AdminCouriersIndexRoute,
+}
+
+const AdminCouriersRouteWithChildren = AdminCouriersRoute._addFileChildren(
+  AdminCouriersRouteChildren,
+)
+
 interface AdminRouteChildren {
   AdminClientsRoute: typeof AdminClientsRouteWithChildren
-  AdminCouriersRoute: typeof AdminCouriersRoute
+  AdminCouriersRoute: typeof AdminCouriersRouteWithChildren
   AdminCrmRoute: typeof AdminCrmRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminPricingRoute: typeof AdminPricingRoute
@@ -834,7 +863,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminClientsRoute: AdminClientsRouteWithChildren,
-  AdminCouriersRoute: AdminCouriersRoute,
+  AdminCouriersRoute: AdminCouriersRouteWithChildren,
   AdminCrmRoute: AdminCrmRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminPricingRoute: AdminPricingRoute,
