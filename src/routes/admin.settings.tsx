@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { siteConfig } from "@/lib/catalog";
 import { Badge, PageTitle, Panel } from "@/features/admin/shared";
 import { Field as FormField, Grid, Select, Toggle } from "@/features/admin/form";
+import { LocationMapPicker } from "@/features/admin/location-map-picker";
 
 export const Route = createFileRoute("/admin/settings")({ component: Settings });
 
@@ -18,6 +19,9 @@ const templates = [
 
 function Settings() {
   const [testTo, setTestTo] = useState("");
+  const [mapLat, setMapLat] = useState("");
+  const [mapLng, setMapLng] = useState("");
+  const setCoords = (la: string, ln: string) => { setMapLat(la); setMapLng(ln); };
   const test = () => (testTo ? toast.success(`تم إرسال رسالة تجريبية إلى ${testTo} (تجريبي)`) : toast.error("أدخل بريداً لإرسال الرسالة التجريبية"));
   const save = (e: FormEvent) => { e.preventDefault(); toast.success("تم حفظ الإعدادات (تجريبي)"); };
   return (
@@ -29,6 +33,14 @@ function Settings() {
             <Field label="رقم الجوال" defaultValue={siteConfig.phone} placeholder="لم يُضف بعد" />
             <Field label="البريد الإلكتروني" defaultValue={siteConfig.email} placeholder="لم يُضف بعد" />
             <Field label="الموقع" defaultValue={siteConfig.location} />
+            <div className="md:col-span-2">
+              <span className="mb-2 block text-sm font-bold text-forest">تحديد الموقع على الخريطة</span>
+              <LocationMapPicker lat={mapLat} lng={mapLng} onChange={setCoords} />
+              <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                <Field label="خط العرض (Latitude)" dir="ltr" value={mapLat} onChange={(e) => setMapLat(e.target.value)} placeholder="24.7136" />
+                <Field label="خط الطول (Longitude)" dir="ltr" value={mapLng} onChange={(e) => setMapLng(e.target.value)} placeholder="46.6753" />
+              </div>
+            </div>
           </div>
         </Panel>
         <Panel title="الطلب والتوصيل">
