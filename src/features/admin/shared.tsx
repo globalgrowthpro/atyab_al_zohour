@@ -69,9 +69,9 @@ export function StatCard({ icon: Icon, label, value, hint }: { icon: LucideIcon;
   );
 }
 
-export function Panel({ title, action, children }: { title?: string; action?: ReactNode; children: ReactNode }) {
+export function Panel({ title, action, className, children }: { title?: string; action?: ReactNode; className?: string; children: ReactNode }) {
   return (
-    <div className="min-w-0 rounded-2xl border bg-admin-panel shadow-soft">
+    <div className={`min-w-0 rounded-2xl border bg-admin-panel shadow-soft ${className ?? ""}`}>
       {title && (
         <div className="flex items-center justify-between border-b bg-admin-head px-5 py-4">
           <h3 className="text-base">{title}</h3>
