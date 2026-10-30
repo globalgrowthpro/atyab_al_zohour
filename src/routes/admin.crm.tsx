@@ -3,6 +3,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, CalendarClock, CheckCircle2, Handshake, KanbanSquare, List, Mail, MapPin, Phone, Target, TrendingUp, UserPlus, Users, X } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useChartTheme } from "@/features/admin/theme";
+
 import { sar, type Tone } from "@/features/admin/data";
 import { Badge, DataTable, KpiCard, PageTitle, Panel, Toolbar, ExportButton, SelectFilter, uniq } from "@/features/admin/shared";
 
@@ -46,15 +48,17 @@ const trend = [
   { m: "مايو", v: 38000 }, { m: "يونيو", v: 42000 }, { m: "يوليو", v: 51000 },
   { m: "أغسطس", v: 47000 }, { m: "سبتمبر", v: 63000 }, { m: "أكتوبر", v: 74700 },
 ];
-const pieColors: string[] = ["var(--color-primary)", "var(--color-rose)", "var(--color-gold)", "var(--color-forest)", "var(--color-muted-foreground)"];
 const initials = (s: string) => s.replace(/^(أ\.|شركة|متجر|مطعم|فندق|قاعة|منتجع|مقهى)\s*/, "").slice(0, 2);
+
 
 function Avatar({ name }: { name: string }) {
   return <span className="grid size-9 shrink-0 place-items-center rounded-full bg-blush text-xs font-extrabold text-rose">{initials(name)}</span>;
 }
 
 function Crm() {
+  const chart = useChartTheme();
   const [deals, setDeals] = useState(initialDeals);
+
   const [q, setQ] = useState("");
   const [stageF, setStageF] = useState("all");
   const [ownerF, setOwnerF] = useState("all");
@@ -101,12 +105,13 @@ function Crm() {
           <div className="h-56 p-4" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trend}>
-                <defs><linearGradient id="crmG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.35} /><stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} /></linearGradient></defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="m" tick={{ fontSize: 10 }} reversed />
-                <YAxis tick={{ fontSize: 10 }} orientation="right" width={44} />
-                <Tooltip formatter={(v) => sar(Number(v))} />
-                <Area type="monotone" dataKey="v" stroke="var(--color-primary)" strokeWidth={2.5} fill="url(#crmG)" />
+                <defs><linearGradient id="crmG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={chart.line} stopOpacity={0.35} /><stop offset="100%" stopColor={chart.line} stopOpacity={0} /></linearGradient></defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
+                <XAxis dataKey="m" tick={{ fontSize: 10, fill: chart.tick }} reversed />
+                <YAxis tick={{ fontSize: 10, fill: chart.tick }} orientation="right" width={44} />
+                <Tooltip formatter={(v) => sar(Number(v))} contentStyle={chart.tooltip} />
+                <Area type="monotone" dataKey="v" stroke={chart.line} strokeWidth={2.5} fill="url(#crmG)" />
+
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -127,13 +132,14 @@ function Crm() {
           <div className="flex items-center gap-4 p-5">
             <div className="size-36 shrink-0" dir="ltr">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart><Pie data={sources} dataKey="value" innerRadius={42} outerRadius={64} paddingAngle={3}>{sources.map((s, i) => <Cell key={s.name} fill={pieColors[i % pieColors.length] ?? ""} />)}</Pie><Tooltip /></PieChart>
+                <PieChart><Pie data={sources} dataKey="value" innerRadius={42} outerRadius={64} paddingAngle={3}>{sources.map((s, i) => <Cell key={s.name} fill={chart.pieColors[i % chart.pieColors.length] ?? ""} />)}</Pie><Tooltip contentStyle={chart.tooltip} /></PieChart>
               </ResponsiveContainer>
             </div>
             <ul className="flex-1 space-y-2 text-sm">
               {sources.map((s, i) => (
-                <li key={s.name} className="flex items-center gap-2"><span className="size-2.5 rounded-full" style={{ background: pieColors[i % pieColors.length] ?? "" }} /><span className="flex-1">{s.name}</span><span className="font-bold text-forest">{s.value}</span></li>
+                <li key={s.name} className="flex items-center gap-2"><span className="size-2.5 rounded-full" style={{ background: chart.pieColors[i % chart.pieColors.length] ?? "" }} /><span className="flex-1">{s.name}</span><span className="font-bold text-forest">{s.value}</span></li>
               ))}
+
             </ul>
           </div>
         </Panel>
