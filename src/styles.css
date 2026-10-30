@@ -92,8 +92,8 @@
 /* Dark appearance for the management panels (admin, courier, client). */
 .admin-dark {
   color-scheme: dark;
-  --cream: oklch(0.205 0.02 165);              /* deep green-charcoal canvas */
-  --surface: oklch(0.25 0.022 165);            /* raised surfaces */
+  --cream: oklch(0.18 0.005 250);              /* neutral dark canvas */
+  --surface: oklch(0.22 0.005 250);            /* raised surfaces */
   --background: var(--cream);
   --foreground: oklch(0.94 0.012 110);
   --card: oklch(0.27 0.022 165);
@@ -122,13 +122,10 @@
   --ring: var(--primary);
   --shadow-soft: 0 10px 30px -12px oklch(0 0 0 / 0.5);
   --shadow-lift: 0 24px 50px -20px oklch(0 0 0 / 0.6);
-  --admin-canvas-image:
-    radial-gradient(46rem 24rem at 100% -6rem, color-mix(in oklab, var(--rose) 16%, transparent), transparent 68%),
-    radial-gradient(40rem 22rem at -8rem 105%, color-mix(in oklab, var(--sage) 20%, transparent), transparent 66%),
-    linear-gradient(165deg, oklch(0.24 0.03 165), var(--cream) 62%);
-  --admin-side-image: linear-gradient(180deg, oklch(0.27 0.024 165), oklch(0.235 0.02 165));
-  --admin-panel-image: linear-gradient(180deg, oklch(0.27 0.022 165), oklch(0.25 0.02 165));
-  --admin-head-image: linear-gradient(90deg, color-mix(in oklab, var(--primary) 14%, transparent), transparent 60%);
+  --admin-canvas-image: none;
+  --admin-side-image: none;
+  --admin-panel-image: none;
+  --admin-head-image: none;
 }
 
 

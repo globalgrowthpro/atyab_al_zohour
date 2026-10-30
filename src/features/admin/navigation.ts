@@ -1,7 +1,8 @@
-import { BarChart3, Handshake, Lock, SearchCheck, ClipboardList, FileText, Headset, LayoutDashboard, Package, Settings, Tags, Truck, Users } from "lucide-react";
+import { BarChart3, Handshake, Lock, SearchCheck, ClipboardList, FileText, Headset, LayoutDashboard, MessageSquare, Package, Settings, Tags, Truck, Users } from "lucide-react";
 
 export const adminNavigation = [
   ["/admin", "نظرة عامة", LayoutDashboard],
+  ["/admin/whatsapp", "واتساب للأعمال", MessageSquare],
   ["/admin/orders", "الطلبات", ClipboardList],
   ["/admin/quotes", "عروض الأسعار", FileText],
   ["/admin/products", "المنتجات والمخزون", Package],

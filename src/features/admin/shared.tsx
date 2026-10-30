@@ -153,24 +153,44 @@ export function FilterChips<T extends string>({ value, onChange, options }: { va
 }
 
 export type KpiColor = "forest" | "rose" | "gold" | "sage";
-const kpiColor: Record<KpiColor, { icon: string; bar: string }> = {
-  forest: { icon: "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground", bar: "bg-primary" },
-  rose: { icon: "bg-blush text-rose group-hover:bg-rose group-hover:text-primary-foreground", bar: "bg-rose" },
-  gold: { icon: "bg-gold/15 text-gold group-hover:bg-gold group-hover:text-forest", bar: "bg-gold" },
-  sage: { icon: "bg-sage/15 text-sage group-hover:bg-sage group-hover:text-primary-foreground", bar: "bg-sage" },
+const kpiColor: Record<KpiColor, { icon: string; bar: string; cardBg: string; border: string }> = {
+  forest: {
+    icon: "bg-emerald-100 text-emerald-800 group-hover:bg-primary group-hover:text-primary-foreground",
+    bar: "bg-primary",
+    cardBg: "bg-gradient-to-b from-emerald-50/90 via-emerald-50/40 to-background",
+    border: "border-emerald-200/80",
+  },
+  rose: {
+    icon: "bg-blush text-rose group-hover:bg-rose group-hover:text-primary-foreground",
+    bar: "bg-rose",
+    cardBg: "bg-gradient-to-b from-rose-50/90 via-rose-50/40 to-background",
+    border: "border-rose-200/80",
+  },
+  gold: {
+    icon: "bg-gold/20 text-gold group-hover:bg-gold group-hover:text-forest",
+    bar: "bg-gold",
+    cardBg: "bg-gradient-to-b from-amber-50/90 via-amber-50/40 to-background",
+    border: "border-amber-200/80",
+  },
+  sage: {
+    icon: "bg-sage/20 text-sage group-hover:bg-sage group-hover:text-primary-foreground",
+    bar: "bg-sage",
+    cardBg: "bg-gradient-to-b from-teal-50/90 via-teal-50/40 to-background",
+    border: "border-teal-200/80",
+  },
 };
 
 // KPI card with icon, trend chip and optional hint — the main dashboard metric.
 export function KpiCard({ icon: Icon, label, value, trend, trendUp, hint, color = "forest" }: { icon: LucideIcon; label: string; value: string; trend?: string; trendUp?: boolean; hint?: string; color?: KpiColor }) {
   const c = kpiColor[color];
   return (
-    <div className="group relative overflow-hidden rounded-2xl border bg-admin-panel p-5 shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift">
-      <span className={`absolute inset-x-0 top-0 h-1 ${c.bar}`} />
+    <div className={`group relative overflow-hidden rounded-2xl border ${c.border} ${c.cardBg} p-5 shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift`}>
+      <span className={`absolute inset-x-0 top-0 h-1.5 ${c.bar}`} />
       <div className="flex items-center justify-between">
         <span className={`grid size-11 place-items-center rounded-xl transition ${c.icon}`}><Icon className="size-5" /></span>
         {trend && (
           <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${trendUp ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"}`}>
-            {trendUp ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />}{trend}
+            {trendUp ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />} {trend}
           </span>
         )}
       </div>

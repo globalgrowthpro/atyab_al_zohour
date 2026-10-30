@@ -35,6 +35,7 @@ import { Route as AdminSeoRouteImport } from './routes/admin.seo'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminSmtpRouteImport } from './routes/admin.smtp'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
+import { Route as AdminWhatsappRouteImport } from './routes/admin.whatsapp'
 import { Route as CourierIndexRouteImport } from './routes/courier.index'
 import { Route as CourierMapRouteImport } from './routes/courier.map'
 import { Route as CourierProfileRouteImport } from './routes/courier.profile'
@@ -182,6 +183,11 @@ const AdminSupportRoute = AdminSupportRouteImport.update({
   path: '/support',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminWhatsappRoute = AdminWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => AdminRoute,
+} as any)
 const CourierIndexRoute = CourierIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -289,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/smtp': typeof AdminSmtpRoute
   '/admin/support': typeof AdminSupportRoute
+  '/admin/whatsapp': typeof AdminWhatsappRoute
   '/courier/map': typeof CourierMapRoute
   '/courier/profile': typeof CourierProfileRoute
   '/courier/support': typeof CourierSupportRoute
@@ -328,6 +335,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/smtp': typeof AdminSmtpRoute
   '/admin/support': typeof AdminSupportRoute
+  '/admin/whatsapp': typeof AdminWhatsappRoute
   '/courier/map': typeof CourierMapRoute
   '/courier/profile': typeof CourierProfileRoute
   '/courier/support': typeof CourierSupportRoute
@@ -373,6 +381,7 @@ export interface FileRoutesById {
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/smtp': typeof AdminSmtpRoute
   '/admin/support': typeof AdminSupportRoute
+  '/admin/whatsapp': typeof AdminWhatsappRoute
   '/courier/map': typeof CourierMapRoute
   '/courier/profile': typeof CourierProfileRoute
   '/courier/support': typeof CourierSupportRoute
@@ -419,6 +428,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/smtp'
     | '/admin/support'
+    | '/admin/whatsapp'
     | '/courier/map'
     | '/courier/profile'
     | '/courier/support'
@@ -458,6 +468,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/smtp'
     | '/admin/support'
+    | '/admin/whatsapp'
     | '/courier/map'
     | '/courier/profile'
     | '/courier/support'
@@ -502,6 +513,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/smtp'
     | '/admin/support'
+    | '/admin/whatsapp'
     | '/courier/map'
     | '/courier/profile'
     | '/courier/support'
@@ -722,6 +734,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSupportRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/whatsapp': {
+      id: '/admin/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/admin/whatsapp'
+      preLoaderRoute: typeof AdminWhatsappRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/courier/': {
       id: '/courier/'
       path: '/'
@@ -879,6 +898,7 @@ interface AdminRouteChildren {
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminSmtpRoute: typeof AdminSmtpRoute
   AdminSupportRoute: typeof AdminSupportRoute
+  AdminWhatsappRoute: typeof AdminWhatsappRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -896,6 +916,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSettingsRoute: AdminSettingsRoute,
   AdminSmtpRoute: AdminSmtpRoute,
   AdminSupportRoute: AdminSupportRoute,
+  AdminWhatsappRoute: AdminWhatsappRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

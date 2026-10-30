@@ -14,6 +14,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { CartProvider } from "@/lib/cart";
 import { SiteHeader } from "@/components/site/SiteHeader";
+import { TierSelectorBar } from "@/components/site/TierSelectorBar";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { MobileBottomNav } from "@/components/site/MobileBottomNav";
 import { Toaster } from "@/components/ui/sonner";
@@ -169,7 +170,12 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
-        {!isPanel && <SiteHeader />}
+        {!isPanel && (
+          <>
+            <SiteHeader />
+            <TierSelectorBar />
+          </>
+        )}
         <main className="min-h-[60vh] pb-24 md:pb-0">
           <Outlet />
         </main>

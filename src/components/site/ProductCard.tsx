@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Heart, Minus, Plus, ShoppingCart, Check } from "lucide-react";
+import { Heart, Minus, Plus, ShoppingCart, Check, Snowflake, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { productImages, type Product } from "@/lib/catalog";
 import { useCart } from "@/lib/cart";
+import { useClientTier, calculateTierPrice, CLIENT_TIERS } from "@/features/b2b/tier-pricing";
+import { getProductInventorySummary } from "@/features/inventory/batches";
 import { ImageSlider } from "./ImageSlider";
 
 export function QtyStepper({
@@ -56,6 +58,11 @@ export function ProductCard({
   layout?: "grid" | "list";
 }) {
   const { add } = useCart();
+  const [tier] = useClientTier();
+  const tierPrice = calculateTierPrice(p.price, tier);
+  const tierConfig = CLIENT_TIERS[tier];
+  const inv = getProductInventorySummary(p.slug);
+
   const [qty, setQty] = useState(p.moq || 1);
   const [isLiked, setIsLiked] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
@@ -65,7 +72,7 @@ export function ProductCard({
     e.stopPropagation();
     add(p.slug, qty);
     setIsAdded(true);
-    toast.success(`تمت إضافة ${p.name} إلى السلة`);
+    toast.success(`تمت إضافة ${qty} ${p.unit} من ${p.name} إلى السلة`);
     setTimeout(() => setIsAdded(false), 1500);
   };
 
@@ -107,6 +114,12 @@ export function ProductCard({
               <p className="mt-1 text-xs text-muted-foreground">
                 المنشأ: {p.origin} {p.stem && p.stem !== "—" ? `| الطول: ${p.stem}` : ""}
               </p>
+              <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1 rounded bg-muted/60 px-1.5 py-0.5">
+                  <Snowflake className="size-3 text-primary" /> {inv.freshnessLabel}
+                </span>
+                <span>المخزون المتاح: <strong className="text-forest">{inv.available} {p.unit}</strong></span>
+              </div>
             </div>
             <button
               type="button"
@@ -123,9 +136,22 @@ export function ProductCard({
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-3">
-            <div className="flex items-baseline gap-1">
-              <span className="text-lg font-black text-rose">{p.price} ر.س</span>
-              <span className="text-xs text-muted-foreground">/ {p.priceUnit}</span>
+            <div className="flex flex-col">
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-black text-rose">{tierPrice} ر.س</span>
+                {tierPrice < p.price && (
+                  <del className="text-xs text-muted-foreground">{p.price} ر.س</del>
+                )}
+                <span className="text-xs text-muted-foreground">/ {p.priceUnit}</span>
+                {tierConfig.discountPercent > 0 && (
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                    خصم {tierConfig.discountPercent}%
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                الحد الأدنى للطلب: <strong>{p.moq} {p.unit}</strong>
+              </p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -133,7 +159,7 @@ export function ProductCard({
               <button
                 type="button"
                 onClick={handleAddToCart}
-                disabled={!p.available}
+                disabled={!p.available || inv.available < (p.moq || 1)}
                 className="btn btn-rose !h-9 !px-4 text-xs font-bold"
               >
                 {isAdded ? <Check className="size-4" /> : <ShoppingCart className="size-4" />}
@@ -146,7 +172,7 @@ export function ProductCard({
     );
   }
 
-  // Grid layout (exact match with mockup)
+  // Grid layout
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card p-2.5 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-rose/30 hover:shadow-soft">
       {/* Top Image Box */}
@@ -165,6 +191,13 @@ export function ProductCard({
             }`}
           >
             {p.badge}
+          </span>
+        )}
+
+        {/* Tier Discount Badge */}
+        {tierConfig.discountPercent > 0 && (
+          <span className="absolute bottom-2.5 end-2.5 rounded-md bg-forest/90 px-2 py-0.5 text-[10px] font-bold text-white shadow-xs backdrop-blur">
+            خصم {tierConfig.discountPercent}%
           </span>
         )}
 
@@ -192,13 +225,27 @@ export function ProductCard({
         </Link>
 
         <p className="mt-1 line-clamp-1 text-[11px] text-muted-foreground">
-          المنشأ: {p.origin} {p.stem && p.stem !== "—" ? `| الطول: ${p.stem}` : ""}
+          المنشأ: {p.origin} {p.stem && p.stem !== "—" ? `| ${p.stem}` : ""}
         </p>
 
         {/* Price Row */}
-        <div className="mt-2 flex items-baseline gap-1">
-          <span className="text-base font-black text-rose">{p.price} ر.س</span>
-          <span className="text-[11px] text-muted-foreground">/ {p.priceUnit}</span>
+        <div className="mt-2 flex items-baseline justify-between gap-1">
+          <div className="flex items-baseline gap-1">
+            <span className="text-base font-black text-rose">{tierPrice} ر.س</span>
+            {tierPrice < p.price && (
+              <del className="text-[11px] text-muted-foreground">{p.price}</del>
+            )}
+            <span className="text-[11px] text-muted-foreground">/ {p.priceUnit}</span>
+          </div>
+          <span className="text-[10px] rounded-md bg-primary/10 px-1.5 py-0.5 text-primary font-bold">
+            متاح {inv.available}
+          </span>
+        </div>
+
+        {/* MOQ & Freshness indicator */}
+        <div className="mt-1 flex items-center justify-between text-[10px] text-muted-foreground">
+          <span>الحد الأدنى: <strong className="text-foreground">{p.moq} {p.unit}</strong></span>
+          <span className="text-emerald-700 font-medium">متبقي {inv.daysRemaining} أيام</span>
         </div>
 
         {/* Action Row: Stepper + Circular Cart Button */}
@@ -209,7 +256,7 @@ export function ProductCard({
           <button
             type="button"
             onClick={handleAddToCart}
-            disabled={!p.available}
+            disabled={!p.available || inv.available < (p.moq || 1)}
             aria-label="أضف إلى السلة"
             title="أضف إلى السلة"
             className="size-9 shrink-0 aspect-square rounded-full bg-rose text-white grid place-items-center shadow-xs transition-all duration-200 hover:bg-rose/90 hover:scale-105 active:scale-90 disabled:opacity-40"
@@ -225,4 +272,3 @@ export function ProductCard({
     </article>
   );
 }
-

@@ -8,11 +8,11 @@ export type AdminTheme = "dark" | "light";
 const STORAGE_KEY = "atyab:admin-theme";
 const THEME_CLASS = "admin-dark";
 
-let current: AdminTheme = "dark";
+let current: AdminTheme = "light";
 if (typeof window !== "undefined") {
   try {
     const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (saved === "light" || saved === "dark") current = saved;
+    if (saved === "dark") { window.localStorage.removeItem(STORAGE_KEY); current = "light"; } else if (saved === "light") { current = "light"; }
   } catch {
     /* storage unavailable — keep the default */
   }
@@ -36,7 +36,7 @@ export function applyAdminThemeClass() {
 if (typeof document !== "undefined") applyAdminThemeClass();
 
 export function useAdminTheme() {
-  const theme = useSyncExternalStore(subscribe, () => current, () => "dark" as AdminTheme);
+  const theme = useSyncExternalStore(subscribe, () => current, () => "light" as AdminTheme);
   const setTheme = useCallback((next: AdminTheme) => {
     current = next;
     applyAdminThemeClass();
