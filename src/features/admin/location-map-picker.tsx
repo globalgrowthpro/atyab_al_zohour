@@ -80,17 +80,11 @@ export function LocationMapPicker({ lat, lng, onChange }: Props) {
     markerRef.current.getMap()?.panTo({ lat: la, lng: ln });
   }, [lat, lng]);
 
-  if (!browserKey) {
+  if (!browserKey || failed) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-border bg-secondary/40 p-4 text-center text-sm text-muted-foreground">
-        تظهر الخريطة بعد ربط خرائط Google بالمشروع.
-      </div>
-    );
-  }
-  if (failed) {
-    return (
-      <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-border bg-secondary/40 p-4 text-center text-sm text-muted-foreground">
-        تعذّر تحميل الخريطة. تحقق من اتصال الإنترنت أو صلاحيات مفتاح الخرائط.
+      <div className="flex h-64 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-forest/25 bg-card p-4 text-center text-sm text-muted-foreground">
+        <MapPin className="size-6 text-forest/40" />
+        {failed ? "تعذّر تحميل الخريطة. تحقق من اتصال الإنترنت أو صلاحيات مفتاح الخرائط." : "تظهر الخريطة التفاعلية هنا بعد ربط خرائط Google بالمشروع."}
       </div>
     );
   }
