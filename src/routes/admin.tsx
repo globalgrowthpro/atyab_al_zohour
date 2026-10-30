@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Home, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { adminNavigation as navigation } from "@/features/admin/navigation";
 import { AdminHeader } from "@/features/admin/header";
+import { useAdminThemeClass } from "@/features/admin/theme";
+
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -18,7 +20,9 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminLayout() {
+  useAdminThemeClass();
   const [collapsed, setCollapsed] = useState(false);
+
   return (
     <section className="w-full bg-admin-canvas px-4 py-5 md:px-6 lg:px-8">
       <AdminHeader />
