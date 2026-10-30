@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, ClipboardList, FileText, Package, TrendingUp, Truck, Users } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useChartTheme } from "@/features/admin/theme";
+
 import {
   adminActivity, adminClients, adminCouriers, adminOrders, adminQuotes, categoryShare, hourlyOrders,
   orderStatusLabel, orderStatusTone, sar, weeklySales, type AdminActivity,
@@ -10,9 +12,8 @@ import { products } from "@/lib/catalog";
 
 export const Route = createFileRoute("/admin/")({ component: Overview });
 
-const pieColors = ["#0B4D33", "#E7547A", "#D4AF37", "#4E8F6E", "#063321", "#B23A5E", "#8A7A3A"];
-
 const activityIcon: Record<AdminActivity["icon"], typeof ClipboardList> = {
+
   order: ClipboardList, client: Users, quote: FileText, courier: Truck, ticket: AlertTriangle,
 };
 
