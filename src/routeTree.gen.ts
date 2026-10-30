@@ -50,6 +50,7 @@ import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
 import { Route as AdminClientsIndexRouteImport } from './routes/admin.clients.index'
 import { Route as AdminClientsClientIdRouteImport } from './routes/admin.clients.$clientId'
 import { Route as AdminCouriersIndexRouteImport } from './routes/admin.couriers.index'
+import { Route as AdminCouriersCourierIdRouteImport } from './routes/admin.couriers.$courierId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -256,6 +257,11 @@ const AdminCouriersIndexRoute = AdminCouriersIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminCouriersRoute,
 } as any)
+const AdminCouriersCourierIdRoute = AdminCouriersCourierIdRouteImport.update({
+  id: '/$courierId',
+  path: '/$courierId',
+  getParentRoute: () => AdminCouriersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -297,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/': typeof DashboardIndexRoute
   '/products/': typeof ProductsIndexRoute
   '/admin/clients/$clientId': typeof AdminClientsClientIdRoute
+  '/admin/couriers/$courierId': typeof AdminCouriersCourierIdRoute
   '/admin/clients/': typeof AdminClientsIndexRoute
   '/admin/couriers/': typeof AdminCouriersIndexRoute
 }
@@ -335,6 +342,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardIndexRoute
   '/products': typeof ProductsIndexRoute
   '/admin/clients/$clientId': typeof AdminClientsClientIdRoute
+  '/admin/couriers/$courierId': typeof AdminCouriersCourierIdRoute
   '/admin/clients': typeof AdminClientsIndexRoute
   '/admin/couriers': typeof AdminCouriersIndexRoute
 }
@@ -379,6 +387,7 @@ export interface FileRoutesById {
   '/dashboard/': typeof DashboardIndexRoute
   '/products/': typeof ProductsIndexRoute
   '/admin/clients/$clientId': typeof AdminClientsClientIdRoute
+  '/admin/couriers/$courierId': typeof AdminCouriersCourierIdRoute
   '/admin/clients/': typeof AdminClientsIndexRoute
   '/admin/couriers/': typeof AdminCouriersIndexRoute
 }
@@ -424,6 +433,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/products/'
     | '/admin/clients/$clientId'
+    | '/admin/couriers/$courierId'
     | '/admin/clients/'
     | '/admin/couriers/'
   fileRoutesByTo: FileRoutesByTo
@@ -462,6 +472,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/products'
     | '/admin/clients/$clientId'
+    | '/admin/couriers/$courierId'
     | '/admin/clients'
     | '/admin/couriers'
   id:
@@ -505,6 +516,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/products/'
     | '/admin/clients/$clientId'
+    | '/admin/couriers/$courierId'
     | '/admin/clients/'
     | '/admin/couriers/'
   fileRoutesById: FileRoutesById
@@ -815,6 +827,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCouriersIndexRouteImport
       parentRoute: typeof AdminCouriersRoute
     }
+    '/admin/couriers/$courierId': {
+      id: '/admin/couriers/$courierId'
+      path: '/$courierId'
+      fullPath: '/admin/couriers/$courierId'
+      preLoaderRoute: typeof AdminCouriersCourierIdRouteImport
+      parentRoute: typeof AdminCouriersRoute
+    }
   }
 }
 
@@ -833,10 +852,12 @@ const AdminClientsRouteWithChildren = AdminClientsRoute._addFileChildren(
 )
 
 interface AdminCouriersRouteChildren {
+  AdminCouriersCourierIdRoute: typeof AdminCouriersCourierIdRoute
   AdminCouriersIndexRoute: typeof AdminCouriersIndexRoute
 }
 
 const AdminCouriersRouteChildren: AdminCouriersRouteChildren = {
+  AdminCouriersCourierIdRoute: AdminCouriersCourierIdRoute,
   AdminCouriersIndexRoute: AdminCouriersIndexRoute,
 }
 
