@@ -89,6 +89,49 @@
   --shadow-lift: 0 24px 50px -20px color-mix(in oklab, var(--forest) 30%, transparent);
 }
 
+/* Dark appearance for the management panels (admin, courier, client). */
+.admin-dark {
+  color-scheme: dark;
+  --cream: oklch(0.205 0.02 165);              /* deep green-charcoal canvas */
+  --surface: oklch(0.25 0.022 165);            /* raised surfaces */
+  --background: var(--cream);
+  --foreground: oklch(0.94 0.012 110);
+  --card: oklch(0.27 0.022 165);
+  --card-foreground: oklch(0.94 0.012 110);
+  --popover: oklch(0.26 0.022 165);
+  --popover-foreground: oklch(0.94 0.012 110);
+  --primary: oklch(0.8 0.13 160);              /* mint green */
+  --primary-foreground: oklch(0.2 0.03 165);
+  --forest: oklch(0.83 0.1 160);               /* light green for text/headings */
+  --forest-foreground: oklch(0.2 0.03 165);
+  --rose: oklch(0.7 0.17 5);
+  --rose-foreground: oklch(0.98 0 0);
+  --blush: oklch(0.32 0.05 5);
+  --gold: oklch(0.81 0.13 88);
+  --sage: oklch(0.7 0.09 160);
+  --secondary: var(--rose);
+  --secondary-foreground: oklch(0.98 0 0);
+  --muted: oklch(0.31 0.02 165);
+  --muted-foreground: oklch(0.74 0.02 140);
+  --accent: oklch(0.31 0.03 165);
+  --accent-foreground: oklch(0.93 0.02 110);
+  --destructive: oklch(0.66 0.2 25);
+  --destructive-foreground: oklch(0.15 0 0);
+  --border: oklch(0.36 0.02 165);
+  --input: oklch(0.36 0.02 165);
+  --ring: var(--primary);
+  --shadow-soft: 0 10px 30px -12px oklch(0 0 0 / 0.5);
+  --shadow-lift: 0 24px 50px -20px oklch(0 0 0 / 0.6);
+  --admin-canvas-image:
+    radial-gradient(46rem 24rem at 100% -6rem, color-mix(in oklab, var(--rose) 16%, transparent), transparent 68%),
+    radial-gradient(40rem 22rem at -8rem 105%, color-mix(in oklab, var(--sage) 20%, transparent), transparent 66%),
+    linear-gradient(165deg, oklch(0.24 0.03 165), var(--cream) 62%);
+  --admin-side-image: linear-gradient(180deg, oklch(0.27 0.024 165), oklch(0.235 0.02 165));
+  --admin-panel-image: linear-gradient(180deg, oklch(0.27 0.022 165), oklch(0.25 0.02 165));
+  --admin-head-image: linear-gradient(90deg, color-mix(in oklab, var(--primary) 14%, transparent), transparent 60%);
+}
+
+
 @layer base {
   * { border-color: var(--color-border); }
   html { scroll-behavior: smooth; }
@@ -210,20 +253,18 @@
 /* Admin panel: layered background surfaces so cards, tables and charts read clearly. */
 @utility bg-admin-canvas {
   background-color: var(--cream);
-  background-image:
-    radial-gradient(46rem 24rem at 100% -6rem, color-mix(in oklab, var(--blush) 60%, transparent), transparent 68%),
-    radial-gradient(40rem 22rem at -8rem 105%, color-mix(in oklab, var(--sage) 24%, transparent), transparent 66%),
-    linear-gradient(165deg, oklch(0.985 0.008 160), var(--cream) 55%);
+  background-image: var(--admin-canvas-image);
 }
 @utility bg-admin-side {
-  background-image: linear-gradient(180deg, var(--surface), oklch(0.985 0.006 160));
+  background-image: var(--admin-side-image);
 }
 @utility bg-admin-panel {
-  background-image: linear-gradient(180deg, var(--surface), oklch(0.994 0.004 90));
+  background-image: var(--admin-panel-image);
 }
 @utility bg-admin-head {
-  background-image: linear-gradient(90deg, color-mix(in oklab, var(--primary) 8%, var(--surface)), var(--surface));
+  background-image: var(--admin-head-image);
 }
+
 
 @utility no-scrollbar {
   -ms-overflow-style: none;
