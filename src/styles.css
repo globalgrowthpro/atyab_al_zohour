@@ -271,3 +271,29 @@
   }
 }
 
+
+
+/* Professional Print and PDF Styles */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+  header, nav, footer, .no-print, [role="navigation"], aside {
+    display: none !important;
+  }
+  #order-receipt-print-area {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm;
+  }
+}

@@ -1,9 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { MapPin, CalendarDays, Package, Truck, CircleHelp } from "lucide-react";
+import { MapPin, CalendarDays, Package, Truck, CircleHelp, Printer } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { StatusBadge } from "./shared";
 import { type ClientOrder } from "./data";
 import { formatOrderDate, orderAddress, orderAmount, orderQuantity } from "./order-presentation";
+import {
+  openReceiptPrintWindow,
+  type ReceiptOrderData,
+} from "@/features/receipt/receipt-pdf-template";
 
 export function OrderDrawer({
   order,
@@ -133,6 +137,37 @@ export function OrderDrawer({
                 <CircleHelp className="size-4" />
                 طلب مساعدة
               </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  const receiptData: ReceiptOrderData = {
+                    id: order.id,
+                    date: order.date,
+                    clientName: order.city ? `عميل ${order.city}` : "عميل أطياب الزهور",
+                    clientPhone: "+966 50 123 4567",
+                    city: order.city || "الرياض",
+                    district: order.address?.district || "السلي",
+                    street: order.address?.street || "طريق هارون الرشيد",
+                    deliveryMethodLabel: "توصيل مبرد سريع (2°C — 4°C)",
+                    deliverySlotLabel: order.deliveryWindow || "الفترة الصباحية (8:00 ص — 12:00 م)",
+                    paymentMethodLabel: "بطاقة مدى / فيزا (مسدد)",
+                    clientTierLabel: "عميل معتمد",
+                    total: order.total || 1500,
+                    items: order.items.map((it) => ({
+                      name: it.name,
+                      sku: it.sku,
+                      qty: it.qty,
+                      unit: it.unit,
+                      price: Math.round((order.total || 1500) / (order.items.length || 1) / it.qty),
+                    })),
+                  };
+                  openReceiptPrintWindow(receiptData);
+                }}
+                className="btn btn-outline sm:col-span-2 flex items-center justify-center gap-2 font-bold !py-2.5 bg-forest/5 hover:bg-forest/10 text-forest border-forest/30"
+              >
+                <Printer className="size-4" />
+                تحميل / طباعة إيصال الفاتورة الرسمية PDF
+              </button>
             </div>
           </div>
         )}

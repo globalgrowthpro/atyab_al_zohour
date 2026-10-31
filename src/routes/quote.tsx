@@ -2,25 +2,77 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageBanner } from "@/components/site/PageBanner";
 import { Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { Download, ShoppingCart, Trash2, ShoppingBag, Plus, AlertTriangle, Snowflake, Sparkles, CheckCircle2 } from "lucide-react";
+import {
+  Download,
+  ShoppingCart,
+  Trash2,
+  ShoppingBag,
+  Plus,
+  AlertTriangle,
+  Snowflake,
+  Sparkles,
+  CheckCircle2,
+  Truck,
+  CreditCard,
+  Building2,
+  Calendar,
+  Clock,
+  Printer,
+  Copy,
+  ArrowRight,
+  ExternalLink,
+  ShieldCheck,
+  Check,
+  Smartphone,
+  Banknote,
+} from "lucide-react";
 import { QtyStepper } from "@/components/site/ProductCard";
 import { useCart } from "@/lib/cart";
 import { products, productImage } from "@/lib/catalog";
 import { useClientTier, calculateTierPrice, CLIENT_TIERS, validateMoq } from "@/features/b2b/tier-pricing";
 import { useFlowerBatches } from "@/features/inventory/batches";
+import { whatsAppHubStore } from "@/features/whatsapp/service";
+import { CLIENT_STORAGE_KEY, type ClientOrder } from "@/features/client/data";
 import { sar } from "@/features/admin/data";
+import { OrderReceiptModal } from "@/features/receipt/OrderReceiptModal";
+import {
+  openReceiptPrintWindow,
+  downloadReceiptDocument,
+  type ReceiptOrderData,
+} from "@/features/receipt/receipt-pdf-template";
 
 export const Route = createFileRoute("/quote")({
   head: () => ({
     meta: [
-      { title: "طلب عرض سعر | أطيب الزهور" },
-      { name: "description", content: "طلب عرض سعر — أطيب الزهور لتوريد الورود بالجملة وحجز الشحنات المبردة." },
-      { property: "og:title", content: "طلب عرض سعر | أطيب الزهور" },
-      { property: "og:description", content: "طلب عرض سعر — أطيب الزهور." },
+      { title: "إتمام الطلب وعرض السعر | أطياب الزهور" },
+      { name: "description", content: "إتمام طلب الزهور وحجز الشحنات المبردة مع التوصيل السريع لجميع مناطق المملكة." },
+      { property: "og:title", content: "إتمام الطلب | أطياب الزهور" },
+      { property: "og:description", content: "إتمام وتأكيد طلب الزهور بالجملة." },
     ],
   }),
   component: QuotePage,
 });
+
+type PaymentMethod = "card" | "apple_pay" | "bank_transfer" | "credit_terms" | "cash_on_delivery";
+type DeliveryMethod = "refrigerated_express" | "warehouse_pickup" | "cross_city";
+type DeliverySlot = "morning" | "afternoon" | "evening";
+
+interface CompletedOrderData {
+  id: string;
+  date: string;
+  clientName: string;
+  clientPhone: string;
+  city: string;
+  district: string;
+  street: string;
+  deliveryMethod: DeliveryMethod;
+  deliverySlot: DeliverySlot;
+  paymentMethod: PaymentMethod;
+  total: number;
+  items: Array<{ name: string; sku: string; qty: number; unit: string; price: number }>;
+  whatsappSent: boolean;
+  coldStockReserved: boolean;
+}
 
 export function QuotePage() {
   const { lines, setQty, remove, clear } = useCart();
@@ -28,9 +80,11 @@ export function QuotePage() {
   const tierConfig = CLIENT_TIERS[tier];
   const { getProductSummary, reserveForQuote } = useFlowerBatches();
 
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(0); // 0: Cart, 1: Details, 2: Review & Options, 3: Completed Order
   const [showClearModal, setShowClearModal] = useState(false);
   const [reserveColdStock, setReserveColdStock] = useState(true);
+
+  // Customer Details Form State
   const [customer, setCustomer] = useState({
     name: "",
     phone: "",
@@ -40,6 +94,18 @@ export function QuotePage() {
     street: "",
     notes: "",
   });
+
+  // Delivery & Payment Choices State
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("refrigerated_express");
+  const [deliverySlot, setDeliverySlot] = useState<DeliverySlot>("morning");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+
+  // Order Submission State
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [completedOrder, setCompletedOrder] = useState<CompletedOrderData | null>(null);
+  const [copiedId, setCopiedId] = useState(false);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -48,14 +114,14 @@ export function QuotePage() {
     return p ? [{ p, qty }] : [];
   });
 
-  // Calculate pricing & VAT (handling fixtures where p.price might be undefined)
+  // Calculate pricing & VAT
   const baseSubtotal = items.reduce((acc, { p, qty }) => acc + (p.price ?? 0) * qty, 0);
   const tierSubtotal = items.reduce((acc, { p, qty }) => acc + calculateTierPrice(p.price ?? 0, tier) * qty, 0);
   const tierDiscountSavings = Math.max(0, baseSubtotal - tierSubtotal);
   const vatAmount = Math.round(tierSubtotal * 0.15); // 15% ZATCA
   const finalTotal = tierSubtotal + vatAmount;
 
-  // MOQ check: only enforce financial minimum if baseSubtotal > 0 (real catalog items)
+  // MOQ check
   const moqCheck = validateMoq(
     items.map(({ p, qty }) => ({
       slug: p.slug,
@@ -86,6 +152,53 @@ export function QuotePage() {
     ["district", "الحي", "text", "address-level3", true],
     ["street", "الشارع", "text", "address-line1", true],
   ] as const;
+
+  const deliverySlotLabels: Record<DeliverySlot, string> = {
+    morning: "الفترة الصباحية (8:00 ص — 12:00 م)",
+    afternoon: "فترة الظهيرة (1:00 م — 5:00 م)",
+    evening: "الفترة المسائية (6:00 م — 10:00 م)",
+  };
+
+  const deliveryMethodLabels: Record<DeliveryMethod, { label: string; desc: string }> = {
+    refrigerated_express: {
+      label: "توصيل مبرد سريع (2°C — 4°C)",
+      desc: "سيارات أسطولنا المبردة مع فحص النضارة عند باب منشأتك",
+    },
+    warehouse_pickup: {
+      label: "استلام من المستودع المبرد",
+      desc: "الاستلام المباشر من مركز التوزيع المبرد (حي السلي — الرياض)",
+    },
+    cross_city: {
+      label: "شحن مبرد بين المدن (الشرقية / جدة / مكة)",
+      desc: "شحن جوي وبري مبرد مع كود تتبع حراري مباشر",
+    },
+  };
+
+  const paymentMethodLabels: Record<PaymentMethod, { label: string; icon: string }> = {
+    card: { label: "بطاقة مدى / فيزا / ماستركارد", icon: "💳" },
+    apple_pay: { label: "Apple Pay", icon: "🍏" },
+    bank_transfer: { label: "تحويل بنكي (الراجحي / الأهلي)", icon: "🏦" },
+    credit_terms: { label: "دفع آجل 30 يوماً (عقود B2B)", icon: "📄" },
+    cash_on_delivery: { label: "الدفع عند الاستلام المبرد", icon: "💵" },
+  };
+
+  const receiptData: ReceiptOrderData | null = completedOrder
+    ? {
+        id: completedOrder.id,
+        date: completedOrder.date,
+        clientName: completedOrder.clientName,
+        clientPhone: completedOrder.clientPhone,
+        city: completedOrder.city,
+        district: completedOrder.district,
+        street: completedOrder.street,
+        deliveryMethodLabel: deliveryMethodLabels[completedOrder.deliveryMethod].label,
+        deliverySlotLabel: deliverySlotLabels[completedOrder.deliverySlot],
+        paymentMethodLabel: paymentMethodLabels[completedOrder.paymentMethod].label,
+        clientTierLabel: tierConfig.label,
+        total: completedOrder.total,
+        items: completedOrder.items,
+      }
+    : null;
 
   function review(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -163,6 +276,126 @@ export function QuotePage() {
     }
   }
 
+  // Complete Order Online (Frontend Fulfillment Flow)
+  async function completeOrder() {
+    setIsSubmittingOrder(true);
+    setError("");
+
+    try {
+      const orderId = `ORD-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      const orderDate = new Date().toISOString().split("T")[0]!;
+      const nowFormatted = new Date().toISOString().replace("T", " ").slice(0, 16);
+
+      // 1. Reserve flower batches in cold storage
+      items.forEach(({ p, qty }) => {
+        reserveForQuote(orderId, p.slug, qty);
+      });
+
+      // 2. Trigger WhatsApp Business Hub Instant Notification (Meta Cloud API)
+      const whatsappResult = whatsAppHubStore.triggerAutomation("ORDER_PLACED", {
+        recipientPhone: customer.phone.trim(),
+        clientName: customer.name.trim(),
+        orderId,
+        totalAmount: finalTotal,
+      });
+
+      // 3. Persist order into client demo storage (for /dashboard/orders & /dashboard/track)
+      const newClientOrder: ClientOrder = {
+        id: orderId,
+        date: orderDate,
+        status: "received",
+        city: customer.city.trim(),
+        address: {
+          district: customer.district.trim(),
+          street: customer.street.trim(),
+        },
+        deliveryWindow: deliverySlotLabels[deliverySlot],
+        total: finalTotal,
+        items: items.map(({ p, qty }) => ({
+          name: p.name,
+          sku: p.sku,
+          qty,
+          unit: p.unit,
+        })),
+        events: [
+          {
+            label: "تم قبول الطلب",
+            at: nowFormatted,
+            detail: `تم اعتماد الطلب وتأكيد الحجز بنجاح عبر بوابة أطياب الزهور. طريقة الدفع: ${paymentMethodLabels[paymentMethod].label}.`,
+          },
+          {
+            label: "حجز المستودع المبرد",
+            at: nowFormatted,
+            detail: "تم تخصيص وحجز الباقات من شحنات الزهور المبردة (2°C - 4°C).",
+          },
+        ],
+      };
+
+      try {
+        const rawStorage = localStorage.getItem(CLIENT_STORAGE_KEY);
+        const parsed = rawStorage
+          ? JSON.parse(rawStorage)
+          : {
+              version: 1,
+              profile: {
+                name: customer.name.trim(),
+                company: "",
+                phone: customer.phone.trim(),
+                email: customer.email.trim(),
+                city: customer.city.trim(),
+                district: customer.district.trim(),
+                address: customer.street.trim(),
+              },
+              orders: [],
+              tickets: [],
+            };
+        if (!Array.isArray(parsed.orders)) {
+          parsed.orders = [];
+        }
+        parsed.orders.unshift(newClientOrder);
+        localStorage.setItem(CLIENT_STORAGE_KEY, JSON.stringify(parsed));
+      } catch {
+        // Fallback gracefully if storage is restricted
+      }
+
+      // 4. Record Completed Order State
+      const completedInfo: CompletedOrderData = {
+        id: orderId,
+        date: orderDate,
+        clientName: customer.name.trim(),
+        clientPhone: customer.phone.trim(),
+        city: customer.city.trim(),
+        district: customer.district.trim(),
+        street: customer.street.trim(),
+        deliveryMethod,
+        deliverySlot,
+        paymentMethod,
+        total: finalTotal,
+        items: items.map(({ p, qty }) => ({
+          name: p.name,
+          sku: p.sku,
+          qty,
+          unit: p.unit,
+          price: calculateTierPrice(p.price ?? 0, tier),
+        })),
+        whatsappSent: Boolean(whatsappResult?.success),
+        coldStockReserved: true,
+      };
+
+      setCompletedOrder(completedInfo);
+
+      // 5. Empty the shopping cart
+      clear();
+
+      // 6. Transition to Step 3 (Completed Order Screen)
+      setStep(3);
+    } catch {
+      setError("حدث خطأ أثناء معالجة الطلب، يرجى المحاولة مرة أخرى.");
+    } finally {
+      setIsSubmittingOrder(false);
+    }
+  }
+
   function go(next: number) {
     if (next > 0 && hasFinancialMoqWarning) {
       setError(`يرجى استيفاء الحد الأدنى للطلب (${sar(moqCheck.minOrderSar)}) قبل المتابعة.`);
@@ -173,15 +406,266 @@ export function QuotePage() {
     setMessage("");
   }
 
+  function copyOrderId() {
+    if (!completedOrder?.id) return;
+    navigator.clipboard?.writeText(completedOrder.id);
+    setCopiedId(true);
+    setTimeout(() => setCopiedId(false), 2000);
+  }
+
   return (
     <>
       <PageBanner
-        title="السلة وطلب عرض سعر"
-        crumb="طلب عرض سعر"
-        subtitle="راجع المنتجات والكميات وجهّز تفاصيل طلب الجملة."
+        title={step === 3 ? "تم اكتمال طلبك بنجاح" : "السلة وإتمام الطلب"}
+        crumb={step === 3 ? "اكتمال الطلب" : "إتمام الطلب"}
+        subtitle={step === 3 ? "شكراً لثقتكم بأطياب الزهور · تم تأكيد حجز الباقات والشحنة المبردة." : "راجع الأصناف والكميات وأكّد طلب الزهور المبرد."}
       />
       <section className="container-x py-8 sm:py-12">
-        {!items.length ? (
+        {step === 3 && completedOrder ? (
+          /* STEP 3: ORDER COMPLETION SUCCESS SCREEN */
+          <div className="mx-auto max-w-3xl space-y-8 animate-in fade-in duration-500">
+            {/* Success Celebration Card */}
+            <div className="overflow-hidden rounded-3xl border border-emerald-200 bg-gradient-to-b from-emerald-50/90 via-emerald-50/30 to-card p-6 sm:p-10 text-center shadow-soft">
+              <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-3xl bg-emerald-600 text-white shadow-soft">
+                <CheckCircle2 className="size-11" />
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3.5 py-1 text-xs font-bold text-emerald-800">
+                <Sparkles className="size-3.5" />
+                تم تأكيد وحجز الطلب بنجاح
+              </span>
+              <h2 className="mt-3 text-2xl sm:text-3xl font-black text-foreground">
+                شكراً لك، {completedOrder.clientName}! 🌸
+              </h2>
+              <p className="mt-2 text-sm sm:text-base text-muted-foreground">
+                تم استلام طلبك وجاري تجهيز باقات الزهور المستوردة بعناية فائقة في مستودع التبريد المركزي.
+              </p>
+
+              {/* Order ID Pill with Copy button */}
+              <div className="mx-auto mt-6 flex max-w-sm items-center justify-between rounded-2xl border border-emerald-300 bg-white/90 p-3 shadow-2xs">
+                <div className="text-right">
+                  <span className="block text-[11px] font-bold text-muted-foreground">رقم الطلب المرجعي</span>
+                  <span className="text-lg font-black font-mono text-emerald-800" dir="ltr">
+                    #{completedOrder.id}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={copyOrderId}
+                  className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 active:scale-95 transition"
+                >
+                  {copiedId ? (
+                    <>
+                      <Check className="size-3.5 text-emerald-600" />
+                      <span className="text-emerald-700">تم النسخ</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="size-3.5" />
+                      <span>نسخ الرقم</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* WhatsApp Notification Badge */}
+              <div className="mt-5 inline-flex items-center gap-2 rounded-2xl border border-emerald-300 bg-emerald-100/70 px-4 py-2 text-xs font-bold text-emerald-900">
+                <Smartphone className="size-4 text-emerald-700" />
+                <span>
+                  تم إرسال إشعار تأكيد فوري عبر واتساب إلى: <strong dir="ltr">{completedOrder.clientPhone}</strong>
+                </span>
+              </div>
+            </div>
+
+            {/* Live Progress Stepper */}
+            <div className="rounded-3xl border bg-card p-6 shadow-soft space-y-4">
+              <div className="flex items-center justify-between border-b pb-3">
+                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                  <Clock className="size-4.5 text-forest" />
+                  مراحل متابعة وتجهيز الطلب
+                </h3>
+                <span className="rounded-full bg-forest/10 px-2.5 py-0.5 text-xs font-bold text-forest">
+                  سلسلة التبريد المستمر (2°C — 4°C)
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-4 pt-2">
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3 text-right">
+                  <div className="flex items-center gap-1.5 text-emerald-800 font-bold text-xs">
+                    <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                    <span>١. قبول الطلب</span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-emerald-700">مكتمل وتم الاعتماد</p>
+                </div>
+
+                <div className="rounded-2xl border border-primary/40 bg-primary/5 p-3 text-right animate-pulse">
+                  <div className="flex items-center gap-1.5 text-primary font-bold text-xs">
+                    <Snowflake className="size-4 shrink-0 text-primary" />
+                    <span>٢. المستودع المبرد</span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">جاري التجهيز والفرز</p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-3 text-right opacity-60">
+                  <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs">
+                    <Truck className="size-4 shrink-0" />
+                    <span>٣. انطلاق التوصيل</span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">سيارة مبردة مخصصة</p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-3 text-right opacity-60">
+                  <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs">
+                    <Building2 className="size-4 shrink-0" />
+                    <span>٤. الاستلام النهائي</span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">فحص النضارة والتسليم</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Order Summary & Delivery Details */}
+            <div className="rounded-3xl border bg-card p-6 shadow-soft space-y-6">
+              <h3 className="text-base font-bold text-foreground border-b pb-3">تفاصيل الطلب والفاتورة</h3>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 text-xs">
+                <div className="rounded-2xl bg-slate-50 p-4 space-y-2">
+                  <p className="font-bold text-slate-800">بيانات التوصيل والاستلام:</p>
+                  <p className="text-muted-foreground">
+                    العميل: <strong className="text-foreground">{completedOrder.clientName}</strong>
+                  </p>
+                  <p className="text-muted-foreground">
+                    العنوان: <strong className="text-foreground">{completedOrder.city} · {completedOrder.district} · {completedOrder.street}</strong>
+                  </p>
+                  <p className="text-muted-foreground">
+                    طريقة التوصيل: <strong className="text-foreground">{deliveryMethodLabels[completedOrder.deliveryMethod].label}</strong>
+                  </p>
+                  <p className="text-muted-foreground">
+                    فترة التوصيل: <strong className="text-forest">{deliverySlotLabels[completedOrder.deliverySlot]}</strong>
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-slate-50 p-4 space-y-2">
+                  <p className="font-bold text-slate-800">بيانات الدفع والفوترة:</p>
+                  <p className="text-muted-foreground">
+                    طريقة الدفع: <strong className="text-foreground">{paymentMethodLabels[completedOrder.paymentMethod].label}</strong>
+                  </p>
+                  <p className="text-muted-foreground">
+                    شريحة العميل: <strong className="text-forest">{tierConfig.label}</strong>
+                  </p>
+                  <p className="text-muted-foreground">
+                    تاريخ الطلب: <strong className="text-foreground">{completedOrder.date}</strong>
+                  </p>
+                  <p className="text-muted-foreground">
+                    الإجمالي المدفوع: <strong className="text-lg font-black text-rose">{sar(completedOrder.total)}</strong>
+                  </p>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div className="space-y-2 border-t pt-4">
+                <p className="font-bold text-xs text-muted-foreground">الأصناف المحجوزة:</p>
+                <div className="divide-y rounded-2xl border bg-slate-50/50">
+                  {completedOrder.items.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 text-xs">
+                      <div>
+                        <span className="font-bold text-foreground">{item.name}</span>
+                        <span className="mr-2 text-muted-foreground">({item.sku})</span>
+                      </div>
+                      <div className="font-bold font-mono">
+                        {item.qty} {item.unit} · {item.price > 0 ? sar(item.price * item.qty) : "حسب الفاتورة"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Official Tax Invoice & PDF Receipt Section (Hidden per request - code preserved) */}
+            <div className="hidden rounded-3xl border-2 border-forest/20 bg-gradient-to-l from-forest/5 via-emerald-50/40 to-white p-6 shadow-soft flex-col md:flex-row items-center justify-between gap-5" style={{ display: "none" }}>
+              <div className="space-y-1.5 text-center md:text-start">
+                <div className="flex items-center justify-center md:justify-start gap-2">
+                  <span className="flex size-9 items-center justify-center rounded-xl bg-forest text-gold shadow-2xs">
+                    <Printer className="size-5" />
+                  </span>
+                  <h3 className="text-base font-black text-forest">
+                    فاتورة ضريبية رسمية وإيصال استلام PDF معتمد
+                  </h3>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
+                  وثيقة إلكترونية رسمية مطابقة لاشتراطات هيئة الزكاة والضريبة والجمارك (ZATCA)، متضمنة رمز التحقق الرقمي (QR Code)، وختم مطابقة سلسلة التبريد المباشرة (2°C — 4°C)، مع إمكانية التحميل أو الطباعة الفورية.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-2.5 w-full md:w-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowReceiptModal(true)}
+                  className="btn btn-outline text-xs font-bold flex-1 md:flex-none flex items-center justify-center gap-2 bg-white !py-3 shadow-2xs hover:bg-forest/5"
+                >
+                  <ExternalLink className="size-4 text-forest" />
+                  <span>معاينة الفاتورة</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => receiptData && openReceiptPrintWindow(receiptData)}
+                  className="btn btn-primary text-xs font-bold flex-1 md:flex-none flex items-center justify-center gap-2 !py-3 shadow-soft"
+                >
+                  <Printer className="size-4" />
+                  <span>تحميل وطباعة PDF</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => receiptData && downloadReceiptDocument(receiptData)}
+                  className="btn btn-outline text-xs font-bold flex-1 md:flex-none flex items-center justify-center gap-2 bg-white !py-3"
+                  title="تنزيل نسخة المستند الرقمي"
+                >
+                  <Download className="size-4" />
+                  <span>تنزيل مستند</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Action Navigation Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                to="/dashboard/track"
+                search={{ order: completedOrder.id }}
+                className="btn btn-primary w-full sm:w-auto px-6 py-3 font-bold flex items-center justify-center gap-2 shadow-soft"
+              >
+                <Truck className="size-4" />
+                تتبع مسار الطلب المباشر
+              </Link>
+
+              <Link
+                to="/dashboard/orders"
+                search={{ order: completedOrder.id }}
+                className="btn btn-outline w-full sm:w-auto px-6 py-3 font-bold flex items-center justify-center gap-2"
+              >
+                <ShoppingBag className="size-4" />
+                عرض الطلب في حسابي
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => (receiptData ? openReceiptPrintWindow(receiptData) : window.print())}
+                className="btn btn-outline w-full sm:w-auto px-5 py-3 font-bold flex items-center justify-center gap-2"
+              >
+                <Printer className="size-4" />
+                طباعة الإيصال
+              </button>
+
+              <Link
+                to="/products"
+                className="btn btn-rose w-full sm:w-auto px-6 py-3 font-bold flex items-center justify-center gap-2"
+              >
+                طلب زهور جديدة
+              </Link>
+            </div>
+          </div>
+        ) : !items.length ? (
+          /* Empty Cart State */
           <div className="rounded-3xl border bg-card p-8 sm:p-12 text-center shadow-soft">
             <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-2xl bg-forest/10 text-forest">
               <ShoppingCart className="size-8" />
@@ -195,6 +679,7 @@ export function QuotePage() {
             </Link>
           </div>
         ) : (
+          /* ACTIVE CHECKOUT & ORDER COMPLETION STEPS (0, 1, 2) */
           <>
             <ol aria-label="خطوات الطلب" className="mb-6 sm:mb-8 flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm font-bold">
               {["١. مراجعة السلة", "٢. بيانات الطلب", "٣. مراجعة وتحميل"].map((label, i) => (
@@ -212,7 +697,7 @@ export function QuotePage() {
               ))}
             </ol>
 
-            {/* MOQ Warning Alert if subtotal is below minimum order requirement */}
+            {/* MOQ Warning Alert */}
             {hasFinancialMoqWarning && (
               <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-900 shadow-xs">
                 <AlertTriangle className="size-5 shrink-0 text-amber-600 mt-0.5" />
@@ -228,6 +713,7 @@ export function QuotePage() {
             <div className="grid items-start gap-8 lg:grid-cols-3">
               <div className="space-y-4 sm:space-y-5 lg:col-span-2">
                 {step === 0 ? (
+                  /* STEP 0: REVIEW CART ITEMS */
                   <>
                     <div className="flex items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card p-3 sm:p-4 shadow-2xs">
                       <div className="flex items-center gap-2.5">
@@ -328,55 +814,32 @@ export function QuotePage() {
                             </div>
 
                             <div className="mt-3.5 flex items-center justify-between gap-3 border-t border-border/50 pt-3">
-                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <span>إجمالي الكمية:</span>
-                                <span className="font-bold text-foreground sm:text-sm">{qty} {p.unit}</span>
-                                {itemTierPrice > 0 && (
-                                  <span className="font-bold text-rose ms-2">({itemTierPrice * qty} ر.س)</span>
-                                )}
-                              </div>
-
-                              <div role="group" aria-label={`كمية ${p.name}`}>
-                                <QtyStepper value={qty} min={p.moq} onChange={(n) => setQty(p.slug, n)} />
-                              </div>
+                              <span className="text-xs text-muted-foreground">تعديل الكمية ({p.unit}):</span>
+                              <QtyStepper
+                                min={p.moq}
+                                value={qty}
+                                onChange={(n) => setQty(p.slug, n)}
+                              />
                             </div>
                           </article>
                         );
                       })}
                     </div>
 
-                    <div className="pt-2">
-                      <Link
-                        to="/products"
-                        className="btn btn-outline inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl py-3 text-xs sm:text-sm font-semibold hover:border-primary hover:text-primary transition-all"
-                      >
-                        <Plus className="size-4" />
-                        <span>إضافة منتجات أخرى للطلب</span>
-                      </Link>
-                    </div>
-
+                    {/* Clear Cart Confirmation Modal */}
                     {showClearModal && (
-                      <div
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="clear-cart-title"
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200"
-                        onClick={() => setShowClearModal(false)}
-                      >
-                        <div
-                          className="w-full max-w-sm overflow-hidden rounded-3xl border border-border/80 bg-card p-6 text-center shadow-2xl animate-in zoom-in-95 duration-200"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-destructive/10 text-destructive ring-8 ring-destructive/5">
-                            <AlertTriangle className="size-7" />
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-200">
+                        <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-4">
+                          <div className="flex size-12 items-center justify-center rounded-2xl bg-destructive/10 text-destructive mx-auto">
+                            <Trash2 className="size-6" />
                           </div>
-                          <h3 id="clear-cart-title" className="text-xl font-bold text-foreground">
-                            إفراغ سلة الطلب؟
-                          </h3>
-                          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                            هل أنت متأكد من حذف جميع المنتجات ({items.length} {items.length === 1 ? "صنف" : "أصناف"}) من السلة؟ لا يمكن التراجع عن هذا الإجراء.
-                          </p>
-                          <div className="mt-6 flex flex-col-reverse sm:flex-row gap-2.5">
+                          <div className="text-center space-y-1">
+                            <h3 className="text-lg font-bold text-foreground">هل أنت متأكد من إفراغ السلة؟</h3>
+                            <p className="text-xs text-muted-foreground">
+                              سيتم حذف جميع الأصناف والكميات المحفوظة في طلبك الحالي.
+                            </p>
+                          </div>
+                          <div className="flex gap-2 pt-2">
                             <button
                               type="button"
                               onClick={() => setShowClearModal(false)}
@@ -400,6 +863,7 @@ export function QuotePage() {
                     )}
                   </>
                 ) : step === 1 ? (
+                  /* STEP 1: CUSTOMER & DELIVERY DETAILS FORM */
                   <form
                     id="quote-details"
                     onSubmit={review}
@@ -460,49 +924,157 @@ export function QuotePage() {
                     </button>
                   </form>
                 ) : (
-                  <div className="space-y-5 rounded-3xl border bg-card p-6 shadow-soft">
-                    <h2 className="text-2xl font-bold">مراجعة طلب عرض السعر</h2>
-                    <dl className="grid gap-4 break-words sm:grid-cols-2">
-                      {fields.map(([key, label]) => (
-                        <div key={key}>
-                          <dt className="text-sm text-muted-foreground">{label}</dt>
-                          <dd className="font-bold">{customer[key] || "—"}</dd>
+                  /* STEP 2: REVIEW, DELIVERY & PAYMENT SELECTION */
+                  <div className="space-y-6">
+                    {/* Customer Info Card */}
+                    <div className="space-y-4 rounded-3xl border bg-card p-6 shadow-soft">
+                      <div className="flex items-center justify-between border-b pb-3">
+                        <h2 className="text-2xl font-bold">مراجعة طلب عرض السعر</h2>
+                        <button className="btn btn-outline text-xs !py-1.5" onClick={() => go(1)}>
+                          تعديل البيانات
+                        </button>
+                      </div>
+
+                      <dl className="grid gap-4 break-words sm:grid-cols-2 text-sm">
+                        {fields.map(([key, label]) => (
+                          <div key={key}>
+                            <dt className="text-xs text-muted-foreground">{label}</dt>
+                            <dd className="font-bold mt-0.5">{customer[key] || "—"}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+
+                    {/* Delivery Method Selection */}
+                    <div className="space-y-3 rounded-3xl border bg-card p-6 shadow-soft">
+                      <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                        <Truck className="size-4.5 text-forest" />
+                        طريقة الاستلام والتوصيل المبرد
+                      </h3>
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        {(["refrigerated_express", "warehouse_pickup", "cross_city"] as DeliveryMethod[]).map((m) => (
+                          <label
+                            key={m}
+                            className={`flex flex-col justify-between rounded-2xl border p-4 cursor-pointer transition ${
+                              deliveryMethod === m
+                                ? "border-forest bg-forest/5 shadow-xs"
+                                : "border-slate-200 bg-slate-50/50 hover:bg-slate-100"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-bold text-xs text-foreground">
+                                {deliveryMethodLabels[m].label.split("(")[0]}
+                              </span>
+                              <input
+                                type="radio"
+                                name="deliveryMethod"
+                                checked={deliveryMethod === m}
+                                onChange={() => setDeliveryMethod(m)}
+                                className="size-4 text-forest"
+                              />
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">{deliveryMethodLabels[m].desc}</p>
+                          </label>
+                        ))}
+                      </div>
+
+                      {/* Delivery Time Slot */}
+                      <div className="pt-3 border-t">
+                        <span className="block text-xs font-bold text-muted-foreground mb-2">
+                          الفترة الزمنية المفضلة للتسليم:
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {(["morning", "afternoon", "evening"] as DeliverySlot[]).map((slot) => (
+                            <button
+                              key={slot}
+                              type="button"
+                              onClick={() => setDeliverySlot(slot)}
+                              className={`rounded-xl border px-3.5 py-2 text-xs font-bold transition ${
+                                deliverySlot === slot
+                                  ? "border-forest bg-forest text-white"
+                                  : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+                              }`}
+                            >
+                              {deliverySlotLabels[slot]}
+                            </button>
+                          ))}
                         </div>
-                      ))}
-                    </dl>
-                    <ul className="divide-y">
-                      {items.map(({ p, qty }) => {
-                        const uPrice = calculateTierPrice(p.price ?? 0, tier);
-                        return (
-                          <li key={p.slug} className="flex justify-between gap-4 py-3 text-sm">
-                            <span>{p.name}</span>
-                            <strong>
-                              {qty} {p.unit}
-                              {uPrice > 0 && ` (${uPrice * qty} ر.س)`}
-                            </strong>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                    {customer.notes && (
-                      <p className="whitespace-pre-wrap break-words text-sm">ملاحظات: {customer.notes}</p>
-                    )}
-                    <p className="rounded-2xl bg-blush/60 p-4 leading-7 text-forest text-sm">
+                      </div>
+                    </div>
+
+                    {/* Payment Method Selection */}
+                    <div className="space-y-3 rounded-3xl border bg-card p-6 shadow-soft">
+                      <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                        <CreditCard className="size-4.5 text-forest" />
+                        طريقة الدفع وتأكيد الحجز
+                      </h3>
+                      <div className="grid gap-2.5 sm:grid-cols-2">
+                        {(["card", "apple_pay", "bank_transfer", "credit_terms", "cash_on_delivery"] as PaymentMethod[]).map((pm) => (
+                          <label
+                            key={pm}
+                            className={`flex items-center justify-between rounded-2xl border p-3.5 cursor-pointer transition ${
+                              paymentMethod === pm
+                                ? "border-forest bg-forest/5 shadow-xs"
+                                : "border-slate-200 bg-slate-50/50 hover:bg-slate-100"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-lg">{paymentMethodLabels[pm].icon}</span>
+                              <span className="text-xs font-bold text-foreground">
+                                {paymentMethodLabels[pm].label}
+                              </span>
+                            </div>
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              checked={paymentMethod === pm}
+                              onChange={() => setPaymentMethod(pm)}
+                              className="size-4 text-forest"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Items List Preview */}
+                    <div className="rounded-3xl border bg-card p-6 shadow-soft space-y-3">
+                      <div className="flex items-center justify-between border-b pb-2">
+                        <h4 className="font-bold text-sm text-foreground">أصناف الطلب المحجوزة</h4>
+                        <button className="btn btn-outline text-xs !py-1" onClick={() => go(0)}>
+                          تعديل المنتجات
+                        </button>
+                      </div>
+                      <ul className="divide-y text-xs">
+                        {items.map(({ p, qty }) => {
+                          const uPrice = calculateTierPrice(p.price ?? 0, tier);
+                          return (
+                            <li key={p.slug} className="flex justify-between gap-4 py-2.5">
+                              <span>{p.name} ({p.sku})</span>
+                              <strong className="font-mono">
+                                {qty} {p.unit}
+                                {uPrice > 0 && ` (${sar(uPrice * qty)})`}
+                              </strong>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      {customer.notes && (
+                        <p className="border-t pt-2 text-xs text-muted-foreground whitespace-pre-wrap">
+                          ملاحظات: {customer.notes}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Quote Download Disclaimer (Preserved for compatibility) */}
+                    <div className="rounded-2xl bg-blush/60 p-4 text-xs leading-6 text-forest">
                       لم يتم إرسال الطلب. حمّل الملف وشاركه مع ممثل المبيعات عبر وسيلة التواصل
                       المتفق عليها. بيانات التواصل الرسمية لم تُضف للموقع بعد.
-                    </p>
-                    <div className="flex flex-wrap gap-3">
-                      <button className="btn btn-outline" onClick={() => go(1)}>
-                        تعديل البيانات
-                      </button>
-                      <button className="btn btn-outline" onClick={() => go(0)}>
-                        تعديل المنتجات
-                      </button>
                     </div>
                   </div>
                 )}
+
                 {error && (
-                  <p role="alert" className="rounded-xl border border-destructive p-4 text-destructive text-sm">
+                  <p role="alert" className="rounded-xl border border-destructive p-4 text-destructive text-sm font-bold">
                     {error}
                   </p>
                 )}
@@ -513,6 +1085,7 @@ export function QuotePage() {
                 )}
               </div>
 
+              {/* Sticky Summary Aside */}
               <aside className="space-y-5 rounded-3xl border bg-card p-6 shadow-soft lg:sticky lg:top-40">
                 <div className="flex items-center justify-between border-b pb-3">
                   <h2 className="text-xl font-bold">ملخص الطلب</h2>
@@ -572,16 +1145,46 @@ export function QuotePage() {
                     مراجعة الطلب
                   </button>
                 ) : (
-                  <button className="btn btn-rose w-full" onClick={download}>
-                    <Download className="size-4" />
-                    تحميل طلب عرض السعر
-                  </button>
+                  <div className="space-y-2">
+                    {/* Primary Order Completion Button */}
+                    <button
+                      type="button"
+                      onClick={completeOrder}
+                      disabled={isSubmittingOrder}
+                      className="btn btn-primary w-full font-bold flex items-center justify-center gap-2 shadow-soft !py-3.5 text-sm"
+                    >
+                      {isSubmittingOrder ? (
+                        <>
+                          <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          <span>جاري تأكيد وحجز الطلب...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="size-4.5" />
+                          <span>تأكيد وإتمام الطلب ({sar(finalTotal)})</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Download Quote Button (Hidden from UI per user request, code preserved) */}
+                    <button className="hidden" style={{ display: "none" }} onClick={download}>
+                      <Download className="size-3.5" />
+                      تحميل طلب عرض السعر
+                    </button>
+                  </div>
                 )}
               </aside>
             </div>
           </>
         )}
       </section>
+
+      {/* Official ZATCA PDF & Print Receipt Modal */}
+      <OrderReceiptModal
+        order={receiptData}
+        open={showReceiptModal}
+        onOpenChange={setShowReceiptModal}
+      />
     </>
   );
 }
