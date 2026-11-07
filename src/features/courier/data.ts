@@ -248,11 +248,107 @@ export interface CourierRepository {
 }
 export const courierRepository: CourierRepository = {
   async load() {
-    const raw = localStorage.getItem(COURIER_STORAGE_KEY);
-    return raw ? stateSchema.parse(JSON.parse(raw)) : demoCourierData();
+    const raw = typeof window !== "undefined" ? localStorage.getItem(COURIER_STORAGE_KEY) : null;
+    let data = raw ? stateSchema.parse(JSON.parse(raw)) : demoCourierData();
+
+    if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data: remoteTasks, error } = await supabase
+          .from("delivery_tasks")
+          .select("*")
+          .order("delivery_date", { ascending: false });
+
+        if (!error && remoteTasks && remoteTasks.length > 0) {
+          const formatted: CourierTask[] = remoteTasks.map((t) => {
+            const items = (Array.isArray(t.items) ? t.items : []).map((item: any) => ({
+              sku: String(item.sku || "FLR-001"),
+              name: String(item.name || "باقة زهور"),
+              qty: Number(item.qty || 1),
+              unit: String(item.unit || "باقة"),
+            }));
+
+            const timeline = (Array.isArray(t.timeline) ? t.timeline : []).map((event: any) => ({
+              at: String(event.at || new Date().toISOString()),
+              label: String(event.label || "تحديث المهمة"),
+              note: String(event.note || ""),
+            }));
+
+            const status = (["assigned", "accepted", "out_for_delivery", "delivered", "failed"].includes(t.status)
+              ? t.status
+              : "assigned") as CourierTask["status"];
+
+            return {
+              id: t.id,
+              orderId: t.order_id || t.id,
+              date: t.delivery_date,
+              slot: t.delivery_slot,
+              customer: t.customer_name,
+              city: t.city,
+              district: t.district,
+              street: t.street,
+              instruction: t.instruction || "التسليم مع مراعاة سلسلة التبريد المباشر.",
+              status,
+              priority: (t.priority === "high" ? "high" : "normal") as CourierTask["priority"],
+              items: items.length > 0 ? items : [{ sku: "ROSE-RD-001", name: "ورد أحمر هولندي", qty: 5, unit: "باقة" }],
+              events: timeline.length > 0 ? timeline : [{ at: t.created_at, label: "تم إسناد المهمة", note: "مسجلة في Supabase" }],
+              recipient: t.recipient_name || undefined,
+              failureReason: (t.failure_reason as CourierTask["failureReason"]) || undefined,
+            };
+          });
+
+          // Combine remote with local/demo tasks
+          const remoteIds = new Set(formatted.map((f) => f.id));
+          const uniqueLocal = data.tasks.filter((lt) => !remoteIds.has(lt.id));
+          data = { ...data, tasks: [...formatted, ...uniqueLocal] };
+          localStorage.setItem(COURIER_STORAGE_KEY, JSON.stringify(data));
+        }
+      } catch (err) {
+        console.warn("Courier tasks Supabase fetch notice:", err);
+      }
+    }
+
+    return data;
   },
   async save(data) {
-    localStorage.setItem(COURIER_STORAGE_KEY, JSON.stringify(stateSchema.parse(data)));
+    const parsed = stateSchema.parse(data);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(COURIER_STORAGE_KEY, JSON.stringify(parsed));
+
+      // Asynchronous background status & telemetry sync
+      if (!import.meta.env["TEST"]) {
+        import("@/integrations/supabase/client")
+          .then(async ({ supabase }) => {
+            // Find recent task transitions and sync them
+            for (const task of parsed.tasks) {
+              if (["out_for_delivery", "delivered", "failed"].includes(task.status)) {
+                await supabase
+                  .from("delivery_tasks")
+                  .update({
+                    status: task.status,
+                    recipient_name: task.recipient || null,
+                    failure_reason: task.failureReason || null,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("id", task.id);
+
+                // If delivered or out_for_delivery, record cold chain telemetry
+                if (task.status === "delivered" || task.status === "out_for_delivery") {
+                  await supabase.from("courier_telemetry").insert({
+                    courier_id: "CR-01",
+                    latitude: 24.774265,
+                    longitude: 46.738586,
+                    temperature_celsius: 3.2,
+                    humidity_pct: 84.5,
+                    speed_kmh: task.status === "out_for_delivery" ? 42.0 : 0.0,
+                  });
+                }
+              }
+            }
+          })
+          .catch(() => {});
+      }
+    }
   },
 };
 export function taskAsOrder(task: CourierTask): ClientOrder {

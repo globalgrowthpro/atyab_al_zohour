@@ -87,18 +87,99 @@ export const emptyClientData = (): ClientData => ({
 });
 export const CLIENT_STORAGE_KEY = "atyab-client-demo-v1";
 
-// Replace this adapter with authenticated API calls when the customer service is connected.
+// Supabase-connected Client Repository with offline fallback
 export interface ClientRepository {
   load(): Promise<ClientData>;
   save(data: ClientData): Promise<void>;
+  syncWithSupabase?(phone?: string): Promise<ClientOrder[]>;
 }
 export const clientRepository: ClientRepository = {
   async load() {
-    const raw = localStorage.getItem(CLIENT_STORAGE_KEY);
-    return raw ? stateSchema.parse(JSON.parse(raw)) : withDemonstrationData(emptyClientData());
+    const raw = typeof window !== "undefined" ? localStorage.getItem(CLIENT_STORAGE_KEY) : null;
+    let data = raw ? stateSchema.parse(JSON.parse(raw)) : withDemonstrationData(emptyClientData());
+
+    // Live Supabase Sync (Non-blocking for instant responsiveness)
+    if (typeof window !== "undefined" && !import.meta.env["TEST"] && data.profile.phone) {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data: dbOrders, error } = await supabase
+          .from("orders")
+          .select("*")
+          .eq("client_phone", data.profile.phone)
+          .order("created_at", { ascending: false });
+
+        if (!error && dbOrders && dbOrders.length > 0) {
+          const remoteOrders: ClientOrder[] = dbOrders.map((o) => {
+            const rawItems = Array.isArray(o.items) ? o.items : [];
+            const parsedItems = rawItems.map((item: any) => ({
+              name: String(item.name || "صنف زهور"),
+              sku: String(item.sku || "FLR-001"),
+              qty: Number(item.qty || 1),
+              unit: String(item.unit || "باقة"),
+            }));
+
+            const status = (["received", "preparing", "ready", "shipping", "delivered", "cancelled"].includes(o.status)
+              ? o.status
+              : "received") as ClientOrder["status"];
+
+            return {
+              id: o.id,
+              date: (o.created_at ? o.created_at.split("T")[0] : new Date().toISOString().split("T")[0]) || "2026-11-08",
+              status,
+              city: o.city,
+              address: { district: o.district, street: o.street },
+              deliveryWindow: o.delivery_slot,
+              total: Number(o.total || 0),
+              items: parsedItems.length > 0 ? parsedItems : [{ name: "باقة ورد مبردة", sku: "FLR-001", qty: 1, unit: "باقة" }],
+              events: [
+                { label: "استلام الطلب", at: o.created_at || new Date().toISOString(), detail: "تم تأكيد الطلب وحجز المخزون في Supabase." },
+              ],
+            };
+          });
+
+          // Merge: remote orders take precedence, keep demo/local if distinct
+          const existingIds = new Set(remoteOrders.map((ro) => ro.id));
+          const uniqueLocal = data.orders.filter((lo) => !existingIds.has(lo.id));
+          data = { ...data, orders: [...remoteOrders, ...uniqueLocal] };
+          localStorage.setItem(CLIENT_STORAGE_KEY, JSON.stringify(data));
+        }
+      } catch (err) {
+        console.warn("Client data Supabase sync notice:", err);
+      }
+    }
+
+    return data;
   },
   async save(data) {
-    localStorage.setItem(CLIENT_STORAGE_KEY, JSON.stringify(stateSchema.parse(data)));
+    const parsed = stateSchema.parse(data);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(CLIENT_STORAGE_KEY, JSON.stringify(parsed));
+
+      // Asynchronous background profile sync with Supabase
+      if (!import.meta.env["TEST"] && parsed.profile.phone) {
+        import("@/integrations/supabase/client")
+          .then(({ supabase }) => {
+            supabase
+              .from("clients")
+              .upsert(
+                {
+                  phone: parsed.profile.phone,
+                  name: parsed.profile.name || "عميل أطياب الزهور",
+                  company: parsed.profile.company || null,
+                  email: parsed.profile.email || null,
+                  city: parsed.profile.city || "الرياض",
+                  district: parsed.profile.district || "الملقا",
+                  address: parsed.profile.address || null,
+                },
+                { onConflict: "phone" },
+              )
+              .then(({ error }) => {
+                if (error) console.warn("Supabase clients upsert notice:", error);
+              });
+          })
+          .catch(() => {});
+      }
+    }
   },
 };
 

@@ -1,28 +1,100 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { adminCouriers, adminOrders, orderStatusLabel, orderStatusTone, sar, type OrderStatus } from "@/features/admin/data";
+import { adminCouriers, adminOrders, orderStatusLabel, orderStatusTone, sar, type AdminOrder, type OrderStatus } from "@/features/admin/data";
 import { Badge, DataTable, FilterChips, PageTitle, Panel, Toolbar, ExportButton, SelectFilter, uniq } from "@/features/admin/shared";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin/orders")({ component: Orders });
 
 const flow: OrderStatus[] = ["new", "preparing", "ready", "shipping", "delivered"];
 
 function Orders() {
-  const [orders, setOrders] = useState(adminOrders);
+  const [orders, setOrders] = useState<AdminOrder[]>(adminOrders);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<OrderStatus | "all">("all");
   const [city, setCity] = useState("all");
   const [courier, setCourier] = useState("all");
+
+  // Fetch real-time orders from Supabase on mount
+  useEffect(() => {
+    let isMounted = true;
+    async function loadSupabaseOrders() {
+      try {
+        const { data, error } = await supabase
+          .from("orders")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (!error && data && data.length > 0 && isMounted) {
+          const statusMap: Record<string, OrderStatus> = {
+            received: "new",
+            preparing: "preparing",
+            ready: "ready",
+            shipping: "shipping",
+            delivered: "delivered",
+            cancelled: "cancelled",
+          };
+
+          const remoteList: AdminOrder[] = data.map((o) => ({
+            id: o.id,
+            client: o.client_name,
+            city: o.city,
+            date: o.created_at ? o.created_at.split("T")[0]! : "2026-11-08",
+            items: Array.isArray(o.items) ? o.items.length : 1,
+            total: Number(o.total || 0),
+            status: statusMap[o.status] || "new",
+          }));
+
+          const remoteIds = new Set(remoteList.map((r) => r.id));
+          const demoUnique = adminOrders.filter((d) => !remoteIds.has(d.id));
+          setOrders([...remoteList, ...demoUnique]);
+        }
+      } catch (err) {
+        console.warn("Admin orders Supabase load:", err);
+      }
+    }
+
+    void loadSupabaseOrders();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const list = useMemo(
     () => orders.filter((o) => (status === "all" || o.status === status) && (city === "all" || o.city === city) && (courier === "all" || (courier === "none" ? !o.courier : o.courier === courier)) && (o.id + o.client + o.city).includes(q.trim())),
     [orders, q, status, city, courier],
   );
   const update = (id: string, patch: Partial<(typeof orders)[number]>) =>
     setOrders((all) => all.map((o) => (o.id === id ? { ...o, ...patch } : o)));
-  const advance = (id: string, s: OrderStatus) => {
+
+  const advance = async (id: string, s: OrderStatus) => {
     const next = flow[flow.indexOf(s) + 1];
-    if (next) { update(id, { status: next }); toast.success(`تم تحديث ${id} إلى: ${orderStatusLabel[next]}`); }
+    if (next) {
+      update(id, { status: next });
+      toast.success(`تم تحديث ${id} إلى: ${orderStatusLabel[next]}`);
+
+      // Sync status to Supabase
+      try {
+        const dbStatusMap: Record<OrderStatus, string> = {
+          new: "received",
+          preparing: "preparing",
+          ready: "ready",
+          shipping: "shipping",
+          delivered: "delivered",
+          cancelled: "cancelled",
+        };
+        await supabase
+          .from("orders")
+          .update({
+            status: dbStatusMap[next] as any,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", id);
+      } catch {
+        // Safe fallback
+      }
+    }
   };
 
   const counts = flow.map((s) => ({ s, n: orders.filter((o) => o.status === s).length }));

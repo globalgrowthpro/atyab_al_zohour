@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useId } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ShieldCheck,
   Store,
@@ -239,6 +240,21 @@ function LoginPage() {
             isDemo: Boolean(matched),
           })
         );
+
+        // Record security audit log in Supabase
+        if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
+          supabase
+            .from("security_logs")
+            .insert({
+              actor_name: roleTitle,
+              event_type: "login_success",
+              description: `تسجيل دخول ناجح بصلاحية ${roleTitle} (${cleanEmail})`,
+              severity: "info",
+              tone: "sage",
+              user_agent: navigator.userAgent,
+            })
+            .then(() => {});
+        }
       } catch {
         // Safe fallback
       }

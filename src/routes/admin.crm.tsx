@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, CalendarClock, CheckCircle2, Handshake, KanbanSquare, List, Mail, MapPin, Phone, Target, TrendingUp, UserPlus, Users, X } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -7,6 +7,7 @@ import { useChartTheme } from "@/features/admin/theme";
 
 import { sar, type Tone } from "@/features/admin/data";
 import { Badge, DataTable, KpiCard, PageTitle, Panel, Toolbar, ExportButton, SelectFilter, uniq } from "@/features/admin/shared";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin/crm")({
   head: () => ({ meta: [{ title: "إدارة علاقات العملاء | لوحة الإدارة" }, { name: "description", content: "مسار المبيعات والعملاء المحتملين ومهام المتابعة." }] }),
@@ -57,7 +58,46 @@ function Avatar({ name }: { name: string }) {
 
 function Crm() {
   const chart = useChartTheme();
-  const [deals, setDeals] = useState(initialDeals);
+  const [deals, setDeals] = useState<Deal[]>(initialDeals);
+
+  // Sync B2B pipeline deals with Supabase
+  useEffect(() => {
+    let isMounted = true;
+    async function loadDeals() {
+      try {
+        const { data, error } = await supabase
+          .from("crm_deals")
+          .select("*")
+          .order("id", { ascending: true });
+
+        if (!error && data && data.length > 0 && isMounted) {
+          const remoteDeals: Deal[] = data.map((d) => ({
+            id: d.id,
+            company: d.company,
+            contact: d.contact_person,
+            type: d.business_type,
+            city: d.city,
+            value: Number(d.deal_value || 0),
+            stage: d.stage as Stage,
+            owner: d.owner,
+            next: d.next_follow_up || "—",
+            source: d.source,
+          }));
+
+          const remoteIds = new Set(remoteDeals.map((r) => r.id));
+          const demoUnique = initialDeals.filter((id) => !remoteIds.has(id.id));
+          setDeals([...remoteDeals, ...demoUnique]);
+        }
+      } catch (err) {
+        console.warn("CRM deals Supabase fetch notice:", err);
+      }
+    }
+
+    void loadDeals();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const [q, setQ] = useState("");
   const [stageF, setStageF] = useState("all");
@@ -67,16 +107,42 @@ function Crm() {
   const [sel, setSel] = useState<Deal | null>(null);
   const [done, setDone] = useState<string[]>([]);
 
-  const setStage = (d: Deal, stage: Stage) => {
+  const setStage = async (d: Deal, stage: Stage) => {
     setDeals((all) => all.map((x) => (x.id === d.id ? { ...x, stage } : x)));
     setSel((s) => (s && s.id === d.id ? { ...s, stage } : s));
     toast.success(`${d.company}: ${stageLabel[stage]}`);
+
+    try {
+      await supabase
+        .from("crm_deals")
+        .update({ stage, updated_at: new Date().toISOString() })
+        .eq("id", d.id);
+    } catch {
+      // Safe fallback
+    }
   };
-  const move = (d: Deal, dir: 1 | -1) => { const n = flow[flow.indexOf(d.stage) + dir]; if (n) setStage(d, n); };
-  const addLead = () => {
+  const move = (d: Deal, dir: 1 | -1) => { const n = flow[flow.indexOf(d.stage) + dir]; if (n) void setStage(d, n); };
+  const addLead = async () => {
     const id = `DL-${String(deals.length + 1).padStart(2, "0")}`;
-    setDeals((all) => [{ id, company: "عميل محتمل جديد", contact: "—", type: "—", city: "—", value: 0, stage: "lead", owner: "نورة", next: "—", source: "يدوي" }, ...all]);
+    const newLead: Deal = { id, company: "عميل محتمل جديد", contact: "—", type: "محل ورد", city: "الرياض", value: 5000, stage: "lead", owner: "نورة", next: "—", source: "يدوي" };
+    setDeals((all) => [newLead, ...all]);
     toast.success("تمت إضافة عميل محتمل");
+
+    try {
+      await supabase.from("crm_deals").insert({
+        id: newLead.id,
+        company: newLead.company,
+        contact_person: newLead.contact,
+        business_type: newLead.type,
+        city: newLead.city,
+        deal_value: newLead.value,
+        stage: newLead.stage,
+        owner: newLead.owner,
+        source: newLead.source,
+      });
+    } catch {
+      // Safe fallback
+    }
   };
 
   const list = deals.filter((d) => (stageF === "all" || d.stage === stageF) && (ownerF === "all" || d.owner === ownerF) && (sourceF === "all" || d.source === sourceF) && (d.company + d.contact + d.type + d.city).includes(q.trim()));

@@ -1,24 +1,72 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { adminQuotes, quoteStatusLabel, quoteStatusTone, type QuoteStatus } from "@/features/admin/data";
+import { adminQuotes, quoteStatusLabel, quoteStatusTone, type AdminQuote, type QuoteStatus } from "@/features/admin/data";
 import { Badge, ExportButton, FilterChips, PageTitle, Toolbar } from "@/features/admin/shared";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin/quotes")({ component: Quotes });
 
 function Quotes() {
-  const [quotes, setQuotes] = useState(adminQuotes);
+  const [quotes, setQuotes] = useState<AdminQuote[]>(adminQuotes);
   const [status, setStatus] = useState<QuoteStatus | "all">("all");
   const [q, setQ] = useState("");
-  const set = (id: string, s: QuoteStatus) => {
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadQuotes() {
+      try {
+        const { data, error } = await supabase
+          .from("quotations")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (!error && data && data.length > 0 && isMounted) {
+          const remoteQuotes: AdminQuote[] = data.map((d) => ({
+            id: d.id,
+            date: d.created_at ? d.created_at.split("T")[0]! : "2026-11-08",
+            client: d.company_name || d.client_name,
+            contact: d.client_name,
+            items: Array.isArray(d.items) ? d.items.length : 1,
+            note: d.notes || `عرض سعر لـ ${d.city}`,
+            status: d.status as QuoteStatus,
+          }));
+
+          const remoteIds = new Set(remoteQuotes.map((r) => r.id));
+          const demoUnique = adminQuotes.filter((dq) => !remoteIds.has(dq.id));
+          setQuotes([...remoteQuotes, ...demoUnique]);
+        }
+      } catch (err) {
+        console.warn("Quotes Supabase load notice:", err);
+      }
+    }
+
+    void loadQuotes();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const set = async (id: string, s: QuoteStatus) => {
     setQuotes((all) => all.map((q) => (q.id === id ? { ...q, status: s } : q)));
     toast.success(`${id}: ${quoteStatusLabel[s]}`);
+
+    try {
+      await supabase
+        .from("quotations")
+        .update({ status: s, updated_at: new Date().toISOString() })
+        .eq("id", id);
+    } catch {
+      // Safe fallback
+    }
   };
+
   const list = quotes.filter((x) => (status === "all" || x.status === status) && (x.id + x.client + x.contact + x.note).includes(q.trim()));
   const sent = quotes.filter((q) => q.status === "sent").length;
   const accepted = quotes.filter((q) => q.status === "accepted").length;
   const decided = quotes.filter((q) => q.status === "accepted" || q.status === "rejected").length;
   const rate = decided ? Math.round((accepted / decided) * 100) : 0;
+
   return (
     <>
       <PageTitle title="طلبات عروض الأسعار" desc="راجع الطلبات وأرسل العروض للعملاء." />
