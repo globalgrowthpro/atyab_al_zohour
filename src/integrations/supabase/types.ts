@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          image: string
+          item_count: number | null
+          name: string
+          name_en: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          image: string
+          item_count?: number | null
+          name: string
+          name_en: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          image?: string
+          item_count?: number | null
+          name?: string
+          name_en?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string | null
@@ -64,6 +91,207 @@ export type Database = {
           vat_number?: string | null
         }
         Relationships: []
+      }
+      contact_inquiries: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          message: string
+          name: string
+          phone: string
+          status: string
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message: string
+          name: string
+          phone: string
+          status?: string
+          subject: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string
+          name?: string
+          phone?: string
+          status?: string
+          subject?: string
+        }
+        Relationships: []
+      }
+      couriers: {
+        Row: {
+          active: boolean
+          city: string
+          created_at: string
+          id: string
+          name: string
+          phone: string
+          temperature_celsius: number | null
+          total_deliveries: number | null
+          vehicle: string
+        }
+        Insert: {
+          active?: boolean
+          city: string
+          created_at?: string
+          id: string
+          name: string
+          phone: string
+          temperature_celsius?: number | null
+          total_deliveries?: number | null
+          vehicle: string
+        }
+        Update: {
+          active?: boolean
+          city?: string
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string
+          temperature_celsius?: number | null
+          total_deliveries?: number | null
+          vehicle?: string
+        }
+        Relationships: []
+      }
+      crm_deals: {
+        Row: {
+          business_type: string
+          city: string
+          company: string
+          contact_person: string
+          created_at: string
+          deal_value: number
+          id: string
+          next_follow_up: string | null
+          notes: string | null
+          owner: string
+          source: string
+          stage: string
+          updated_at: string
+        }
+        Insert: {
+          business_type: string
+          city: string
+          company: string
+          contact_person: string
+          created_at?: string
+          deal_value?: number
+          id: string
+          next_follow_up?: string | null
+          notes?: string | null
+          owner: string
+          source: string
+          stage?: string
+          updated_at?: string
+        }
+        Update: {
+          business_type?: string
+          city?: string
+          company?: string
+          contact_person?: string
+          created_at?: string
+          deal_value?: number
+          id?: string
+          next_follow_up?: string | null
+          notes?: string | null
+          owner?: string
+          source?: string
+          stage?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      delivery_tasks: {
+        Row: {
+          city: string
+          courier_id: string | null
+          created_at: string
+          customer_name: string
+          customer_phone: string
+          delivery_date: string
+          delivery_slot: string
+          delivery_temp: number | null
+          district: string
+          failure_reason: string | null
+          id: string
+          instruction: string | null
+          items: Json
+          order_id: string | null
+          priority: string
+          recipient_name: string | null
+          status: string
+          street: string
+          timeline: Json
+          updated_at: string
+        }
+        Insert: {
+          city: string
+          courier_id?: string | null
+          created_at?: string
+          customer_name: string
+          customer_phone: string
+          delivery_date: string
+          delivery_slot: string
+          delivery_temp?: number | null
+          district: string
+          failure_reason?: string | null
+          id: string
+          instruction?: string | null
+          items?: Json
+          order_id?: string | null
+          priority?: string
+          recipient_name?: string | null
+          status?: string
+          street: string
+          timeline?: Json
+          updated_at?: string
+        }
+        Update: {
+          city?: string
+          courier_id?: string | null
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string
+          delivery_date?: string
+          delivery_slot?: string
+          delivery_temp?: number | null
+          district?: string
+          failure_reason?: string | null
+          id?: string
+          instruction?: string | null
+          items?: Json
+          order_id?: string | null
+          priority?: string
+          recipient_name?: string | null
+          status?: string
+          street?: string
+          timeline?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_tasks_courier_id_fkey"
+            columns: ["courier_id"]
+            isOneToOne: false
+            referencedRelation: "couriers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_tasks_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orders: {
         Row: {
@@ -206,6 +434,116 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_tiers: {
+        Row: {
+          benefits: Json | null
+          discount_pct: number
+          is_active: boolean
+          label_ar: string
+          label_en: string
+          min_spend: number
+          tier: string
+        }
+        Insert: {
+          benefits?: Json | null
+          discount_pct?: number
+          is_active?: boolean
+          label_ar: string
+          label_en: string
+          min_spend?: number
+          tier: string
+        }
+        Update: {
+          benefits?: Json | null
+          discount_pct?: number
+          is_active?: boolean
+          label_ar?: string
+          label_en?: string
+          min_spend?: number
+          tier?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          available: boolean
+          base_price: number
+          bunches_per_carton: number | null
+          category_slug: string
+          color: string
+          color_code: string | null
+          created_at: string
+          description: string | null
+          grade: string
+          id: string
+          image: string | null
+          moq: number
+          name: string
+          name_en: string
+          origin: string
+          sku: string
+          slug: string
+          stem_length: string | null
+          stems_per_bunch: number | null
+          storage_temp: string | null
+          unit: string
+        }
+        Insert: {
+          available?: boolean
+          base_price?: number
+          bunches_per_carton?: number | null
+          category_slug: string
+          color: string
+          color_code?: string | null
+          created_at?: string
+          description?: string | null
+          grade?: string
+          id?: string
+          image?: string | null
+          moq?: number
+          name: string
+          name_en: string
+          origin: string
+          sku: string
+          slug: string
+          stem_length?: string | null
+          stems_per_bunch?: number | null
+          storage_temp?: string | null
+          unit?: string
+        }
+        Update: {
+          available?: boolean
+          base_price?: number
+          bunches_per_carton?: number | null
+          category_slug?: string
+          color?: string
+          color_code?: string | null
+          created_at?: string
+          description?: string | null
+          grade?: string
+          id?: string
+          image?: string | null
+          moq?: number
+          name?: string
+          name_en?: string
+          origin?: string
+          sku?: string
+          slug?: string
+          stem_length?: string | null
+          stems_per_bunch?: number | null
+          storage_temp?: string | null
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_slug_fkey"
+            columns: ["category_slug"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       stock_reservations: {
         Row: {
           batch_id: string | null
@@ -246,6 +584,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      store_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
       }
       tickets: {
         Row: {
