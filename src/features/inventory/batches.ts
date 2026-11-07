@@ -337,6 +337,38 @@ export function useFlowerBatches() {
     reserveForQuote,
     releaseReservation,
     getProductSummary: getProductInventorySummary,
+    syncBatchesFromSupabase,
   };
+}
+
+export async function syncBatchesFromSupabase() {
+  if (typeof window === "undefined") return;
+  try {
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data, error } = await supabase.from("perishable_batches").select("*");
+    if (!error && Array.isArray(data) && data.length > 0) {
+      batchesState = data.map((row) => ({
+        id: row.id,
+        productSlug: row.product_slug,
+        productName: row.product_name,
+        sku: row.sku,
+        origin: row.origin as FlowerOrigin,
+        farm: row.farm,
+        airwayBill: row.airway_bill,
+        flightNumber: row.flight_number,
+        arrivalDate: row.arrival_date,
+        expiryDate: row.expiry_date,
+        vaseLifeDays: row.vase_life_days,
+        coldStorageTemp: row.cold_storage_temp,
+        unit: row.unit,
+        onHandQty: row.on_hand_qty,
+        reservedQty: row.reserved_qty,
+        status: row.status as FlowerBatch["status"],
+      }));
+      notify();
+    }
+  } catch (err) {
+    console.warn("Supabase batch sync notice:", err);
+  }
 }
 

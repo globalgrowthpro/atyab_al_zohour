@@ -282,7 +282,36 @@ export function QuotePage() {
     setError("");
 
     try {
-      const orderId = `ORD-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      // 0. Attempt Server-Side Order Checkout via Supabase Edge Function
+      let assignedOrderId = `ORD-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
+        try {
+          const { supabase } = await import("@/integrations/supabase/client");
+          const { data: edgeData, error: edgeErr } = await supabase.functions.invoke("checkout-order", {
+            body: {
+              customer,
+              items: items.map(({ p, qty }) => ({
+                name: p.name,
+                sku: p.sku,
+                qty,
+                unit: p.unit,
+                price: calculateTierPrice(p.price ?? 0, tier),
+              })),
+              deliveryMethod,
+              deliverySlot,
+              paymentMethod,
+              tier,
+            },
+          });
+          if (!edgeErr && edgeData?.orderId) {
+            assignedOrderId = edgeData.orderId;
+          }
+        } catch (err) {
+          console.warn("Supabase checkout function sync:", err);
+        }
+      }
+
+      const orderId = assignedOrderId;
       const orderDate = new Date().toISOString().split("T")[0]!;
       const nowFormatted = new Date().toISOString().replace("T", " ").slice(0, 16);
 

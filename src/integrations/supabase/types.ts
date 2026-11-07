@@ -14,13 +14,326 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          address: string | null
+          city: string | null
+          company: string | null
+          cr_number: string | null
+          created_at: string
+          credit_limit: number | null
+          district: string | null
+          email: string | null
+          id: string
+          name: string
+          phone: string
+          tier: string
+          updated_at: string
+          vat_number: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company?: string | null
+          cr_number?: string | null
+          created_at?: string
+          credit_limit?: number | null
+          district?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          phone: string
+          tier?: string
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company?: string | null
+          cr_number?: string | null
+          created_at?: string
+          credit_limit?: number | null
+          district?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string
+          tier?: string
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          city: string
+          client_email: string | null
+          client_name: string
+          client_phone: string
+          client_tier: string
+          cold_chain_status: string
+          created_at: string
+          delivery_method: string
+          delivery_slot: string
+          district: string
+          events: Json
+          id: string
+          items: Json
+          notes: string | null
+          payment_method: string
+          status: string
+          street: string
+          subtotal: number
+          tier_discount_savings: number
+          total: number
+          updated_at: string
+          vat_amount: number
+          whatsapp_notified: boolean
+        }
+        Insert: {
+          city: string
+          client_email?: string | null
+          client_name: string
+          client_phone: string
+          client_tier?: string
+          cold_chain_status?: string
+          created_at?: string
+          delivery_method: string
+          delivery_slot: string
+          district: string
+          events?: Json
+          id: string
+          items?: Json
+          notes?: string | null
+          payment_method: string
+          status?: string
+          street: string
+          subtotal?: number
+          tier_discount_savings?: number
+          total: number
+          updated_at?: string
+          vat_amount?: number
+          whatsapp_notified?: boolean
+        }
+        Update: {
+          city?: string
+          client_email?: string | null
+          client_name?: string
+          client_phone?: string
+          client_tier?: string
+          cold_chain_status?: string
+          created_at?: string
+          delivery_method?: string
+          delivery_slot?: string
+          district?: string
+          events?: Json
+          id?: string
+          items?: Json
+          notes?: string | null
+          payment_method?: string
+          status?: string
+          street?: string
+          subtotal?: number
+          tier_discount_savings?: number
+          total?: number
+          updated_at?: string
+          vat_amount?: number
+          whatsapp_notified?: boolean
+        }
+        Relationships: []
+      }
+      perishable_batches: {
+        Row: {
+          airway_bill: string
+          arrival_date: string
+          cold_storage_temp: string
+          created_at: string
+          expiry_date: string
+          farm: string
+          flight_number: string
+          id: string
+          on_hand_qty: number
+          origin: string
+          product_name: string
+          product_slug: string
+          reserved_qty: number
+          sku: string
+          status: string
+          unit: string
+          updated_at: string
+          vase_life_days: number
+        }
+        Insert: {
+          airway_bill: string
+          arrival_date: string
+          cold_storage_temp?: string
+          created_at?: string
+          expiry_date: string
+          farm: string
+          flight_number: string
+          id: string
+          on_hand_qty: number
+          origin: string
+          product_name: string
+          product_slug: string
+          reserved_qty?: number
+          sku: string
+          status?: string
+          unit?: string
+          updated_at?: string
+          vase_life_days?: number
+        }
+        Update: {
+          airway_bill?: string
+          arrival_date?: string
+          cold_storage_temp?: string
+          created_at?: string
+          expiry_date?: string
+          farm?: string
+          flight_number?: string
+          id?: string
+          on_hand_qty?: number
+          origin?: string
+          product_name?: string
+          product_slug?: string
+          reserved_qty?: number
+          sku?: string
+          status?: string
+          unit?: string
+          updated_at?: string
+          vase_life_days?: number
+        }
+        Relationships: []
+      }
+      stock_reservations: {
+        Row: {
+          batch_id: string | null
+          expires_at: string
+          id: string
+          order_id: string
+          product_slug: string
+          quantity: number
+          reserved_at: string
+          status: string
+        }
+        Insert: {
+          batch_id?: string | null
+          expires_at?: string
+          id?: string
+          order_id: string
+          product_slug: string
+          quantity: number
+          reserved_at?: string
+          status?: string
+        }
+        Update: {
+          batch_id?: string | null
+          expires_at?: string
+          id?: string
+          order_id?: string
+          product_slug?: string
+          quantity?: number
+          reserved_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_reservations_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "perishable_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets: {
+        Row: {
+          category: string
+          client_phone: string
+          created_at: string
+          id: string
+          order_id: string | null
+          replies: Json
+          status: string
+          subject: string
+        }
+        Insert: {
+          category: string
+          client_phone: string
+          created_at?: string
+          id: string
+          order_id?: string | null
+          replies?: Json
+          status?: string
+          subject: string
+        }
+        Update: {
+          category?: string
+          client_phone?: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          replies?: Json
+          status?: string
+          subject?: string
+        }
+        Relationships: []
+      }
+      whatsapp_logs: {
+        Row: {
+          cost_sar: number | null
+          created_at: string
+          event_type: string
+          id: string
+          message_body: string
+          meta_message_id: string | null
+          order_id: string | null
+          recipient_phone: string
+          status: string
+        }
+        Insert: {
+          cost_sar?: number | null
+          created_at?: string
+          event_type: string
+          id?: string
+          message_body: string
+          meta_message_id?: string | null
+          order_id?: string | null
+          recipient_phone: string
+          status?: string
+        }
+        Update: {
+          cost_sar?: number | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          message_body?: string
+          meta_message_id?: string | null
+          order_id?: string | null
+          recipient_phone?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      reserve_flower_stock: {
+        Args: { p_order_id: string; p_product_slug: string; p_quantity: number }
+        Returns: Json
+      }
+      update_vase_life_statuses: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
