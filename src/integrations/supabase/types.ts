@@ -17,27 +17,36 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
+          description: string | null
           image: string
+          is_active: boolean
           item_count: number | null
           name: string
           name_en: string
           slug: string
+          sort_order: number
         }
         Insert: {
           created_at?: string
+          description?: string | null
           image: string
+          is_active?: boolean
           item_count?: number | null
           name: string
           name_en: string
           slug: string
+          sort_order?: number
         }
         Update: {
           created_at?: string
+          description?: string | null
           image?: string
+          is_active?: boolean
           item_count?: number | null
           name?: string
           name_en?: string
           slug?: string
+          sort_order?: number
         }
         Relationships: []
       }
@@ -124,6 +133,47 @@ export type Database = {
           subject?: string
         }
         Relationships: []
+      }
+      courier_telemetry: {
+        Row: {
+          courier_id: string | null
+          humidity_pct: number | null
+          id: string
+          latitude: number
+          longitude: number
+          recorded_at: string
+          speed_kmh: number | null
+          temperature_celsius: number
+        }
+        Insert: {
+          courier_id?: string | null
+          humidity_pct?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          recorded_at?: string
+          speed_kmh?: number | null
+          temperature_celsius?: number
+        }
+        Update: {
+          courier_id?: string | null
+          humidity_pct?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          recorded_at?: string
+          speed_kmh?: number | null
+          temperature_celsius?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courier_telemetry_courier_id_fkey"
+            columns: ["courier_id"]
+            isOneToOne: false
+            referencedRelation: "couriers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       couriers: {
         Row: {
@@ -289,6 +339,223 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_adjustments: {
+        Row: {
+          adjusted_by: string
+          batch_id: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          product_slug: string
+          quantity_change: number
+          reason: string
+        }
+        Insert: {
+          adjusted_by?: string
+          batch_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_slug: string
+          quantity_change: number
+          reason: string
+        }
+        Update: {
+          adjusted_by?: string
+          batch_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_slug?: string
+          quantity_change?: number
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_adjustments_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "perishable_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          buyer_city: string
+          buyer_district: string | null
+          buyer_name: string
+          buyer_phone: string
+          buyer_vat_number: string | null
+          created_at: string
+          id: string
+          invoice_number: string
+          issue_date: string
+          order_id: string | null
+          pdf_url: string | null
+          seller_commercial_register: string
+          seller_name: string
+          seller_vat_number: string
+          subtotal_excluding_vat: number
+          total_with_vat: number
+          vat_amount: number
+          zatca_hash: string | null
+          zatca_invoice_uuid: string | null
+          zatca_qr: string | null
+          zatca_status: string
+        }
+        Insert: {
+          buyer_city: string
+          buyer_district?: string | null
+          buyer_name: string
+          buyer_phone: string
+          buyer_vat_number?: string | null
+          created_at?: string
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          order_id?: string | null
+          pdf_url?: string | null
+          seller_commercial_register?: string
+          seller_name?: string
+          seller_vat_number?: string
+          subtotal_excluding_vat: number
+          total_with_vat: number
+          vat_amount: number
+          zatca_hash?: string | null
+          zatca_invoice_uuid?: string | null
+          zatca_qr?: string | null
+          zatca_status?: string
+        }
+        Update: {
+          buyer_city?: string
+          buyer_district?: string | null
+          buyer_name?: string
+          buyer_phone?: string
+          buyer_vat_number?: string | null
+          created_at?: string
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          order_id?: string | null
+          pdf_url?: string | null
+          seller_commercial_register?: string
+          seller_name?: string
+          seller_vat_number?: string
+          subtotal_excluding_vat?: number
+          total_with_vat?: number
+          vat_amount?: number
+          zatca_hash?: string | null
+          zatca_invoice_uuid?: string | null
+          zatca_qr?: string | null
+          zatca_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_templates: {
+        Row: {
+          email_body: string | null
+          email_subject: string | null
+          key: string
+          sms_template: string | null
+          title_ar: string
+          updated_at: string
+          whatsapp_template: string
+        }
+        Insert: {
+          email_body?: string | null
+          email_subject?: string | null
+          key: string
+          sms_template?: string | null
+          title_ar: string
+          updated_at?: string
+          whatsapp_template: string
+        }
+        Update: {
+          email_body?: string | null
+          email_subject?: string | null
+          key?: string
+          sms_template?: string | null
+          title_ar?: string
+          updated_at?: string
+          whatsapp_template?: string
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          discount_amount: number
+          id: string
+          order_id: string
+          product_id: string | null
+          product_name: string
+          product_slug: string
+          quantity: number
+          sku: string
+          total_price: number
+          unit: string
+          unit_price: number
+          vat_amount: number
+          vat_rate: number
+        }
+        Insert: {
+          created_at?: string
+          discount_amount?: number
+          id?: string
+          order_id: string
+          product_id?: string | null
+          product_name: string
+          product_slug: string
+          quantity: number
+          sku: string
+          total_price?: number
+          unit?: string
+          unit_price?: number
+          vat_amount?: number
+          vat_rate?: number
+        }
+        Update: {
+          created_at?: string
+          discount_amount?: number
+          id?: string
+          order_id?: string
+          product_id?: string | null
+          product_name?: string
+          product_slug?: string
+          quantity?: number
+          sku?: string
+          total_price?: number
+          unit?: string
+          unit_price?: number
+          vat_amount?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -464,6 +731,39 @@ export type Database = {
         }
         Relationships: []
       }
+      product_reviews: {
+        Row: {
+          client_name: string
+          comment: string | null
+          created_at: string
+          id: string
+          is_verified_florist: boolean
+          product_slug: string
+          rating: number
+          vase_life_observed_days: number | null
+        }
+        Insert: {
+          client_name: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          is_verified_florist?: boolean
+          product_slug: string
+          rating: number
+          vase_life_observed_days?: number | null
+        }
+        Update: {
+          client_name?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          is_verified_florist?: boolean
+          product_slug?: string
+          rating?: number
+          vase_life_observed_days?: number | null
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           available: boolean
@@ -544,6 +844,165 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          address: string | null
+          avatar_url: string | null
+          city: string | null
+          commercial_register: string | null
+          company_name: string | null
+          created_at: string
+          district: string | null
+          email: string | null
+          full_name: string
+          id: string
+          is_verified: boolean
+          phone: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          tier: string
+          updated_at: string
+          vat_number: string | null
+        }
+        Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          commercial_register?: string | null
+          company_name?: string | null
+          created_at?: string
+          district?: string | null
+          email?: string | null
+          full_name?: string
+          id: string
+          is_verified?: boolean
+          phone?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          tier?: string
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Update: {
+          address?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          commercial_register?: string | null
+          company_name?: string | null
+          created_at?: string
+          district?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          is_verified?: boolean
+          phone?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          tier?: string
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Relationships: []
+      }
+      quotations: {
+        Row: {
+          city: string
+          client_email: string | null
+          client_name: string
+          client_phone: string
+          company_name: string | null
+          created_at: string
+          discount_amount: number
+          id: string
+          items: Json
+          notes: string | null
+          status: string
+          subtotal: number
+          tier: string
+          total: number
+          updated_at: string
+          valid_until: string | null
+          vat_amount: number
+        }
+        Insert: {
+          city: string
+          client_email?: string | null
+          client_name: string
+          client_phone: string
+          company_name?: string | null
+          created_at?: string
+          discount_amount?: number
+          id: string
+          items?: Json
+          notes?: string | null
+          status?: string
+          subtotal?: number
+          tier?: string
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+          vat_amount?: number
+        }
+        Update: {
+          city?: string
+          client_email?: string | null
+          client_name?: string
+          client_phone?: string
+          company_name?: string | null
+          created_at?: string
+          discount_amount?: number
+          id?: string
+          items?: Json
+          notes?: string | null
+          status?: string
+          subtotal?: number
+          tier?: string
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+          vat_amount?: number
+        }
+        Relationships: []
+      }
+      security_logs: {
+        Row: {
+          actor_name: string
+          created_at: string
+          description: string
+          details: Json | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          severity: string
+          tone: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          actor_name?: string
+          created_at?: string
+          description: string
+          details?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          severity?: string
+          tone?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          actor_name?: string
+          created_at?: string
+          description?: string
+          details?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          severity?: string
+          tone?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       stock_reservations: {
         Row: {
           batch_id: string | null
@@ -606,6 +1065,48 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_farms: {
+        Row: {
+          active: boolean
+          cold_chain_certified: boolean
+          contact_person: string | null
+          country: string
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          rating: number | null
+          region: string
+        }
+        Insert: {
+          active?: boolean
+          cold_chain_certified?: boolean
+          contact_person?: string | null
+          country: string
+          created_at?: string
+          email?: string | null
+          id: string
+          name: string
+          phone?: string | null
+          rating?: number | null
+          region: string
+        }
+        Update: {
+          active?: boolean
+          cold_chain_certified?: boolean
+          contact_person?: string | null
+          country?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          rating?: number | null
+          region?: string
+        }
+        Relationships: []
+      }
       tickets: {
         Row: {
           category: string
@@ -636,6 +1137,63 @@ export type Database = {
           replies?: Json
           status?: string
           subject?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          assigned_by: string | null
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          created_at: string
+          device: string
+          id: string
+          ip_address: string | null
+          is_current: boolean | null
+          last_active: string
+          location: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device: string
+          id?: string
+          ip_address?: string | null
+          is_current?: boolean | null
+          last_active?: string
+          location?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device?: string
+          id?: string
+          ip_address?: string | null
+          is_current?: boolean | null
+          last_active?: string
+          location?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -688,6 +1246,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_role: {
+        Args: {
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       reserve_flower_stock: {
         Args: { p_order_id: string; p_product_slug: string; p_quantity: number }
         Returns: Json
@@ -695,7 +1260,13 @@ export type Database = {
       update_vase_life_statuses: { Args: never; Returns: undefined }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "admin"
+        | "manager"
+        | "sales"
+        | "inventory"
+        | "courier"
+        | "client"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -822,6 +1393,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "manager", "sales", "inventory", "courier", "client"],
+    },
   },
 } as const
