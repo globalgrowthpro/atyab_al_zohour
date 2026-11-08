@@ -3,7 +3,6 @@ import { useState, useId, type FormEvent } from "react";
 import { useAuth } from "@/features/auth/context";
 import { toast } from "sonner";
 import {
-  ShieldCheck,
   Lock,
   Mail,
   Eye,
@@ -12,9 +11,6 @@ import {
   LogIn,
   HelpCircle,
   Shield,
-  Layers,
-  Snowflake,
-  FileCheck,
   ChevronLeft,
 } from "lucide-react";
 import loginBg from "@/assets/login-bg.jpg";
@@ -97,15 +93,15 @@ function LoginPage() {
         aria-hidden="true"
       />
 
-      {/* Subtle overlay to ensure optimal contrast */}
+      {/* Subtle overlay to soften edges and keep text crisp */}
       <div
-        className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-background/50 pointer-events-none"
+        className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/40 pointer-events-none"
         aria-hidden="true"
       />
 
       <section className="container-x relative z-10 max-w-6xl w-full">
         {/* Breadcrumb Navigation */}
-        <nav className="mb-6 flex items-center gap-1.5 text-xs font-medium text-forest/80 backdrop-blur-xs bg-white/40 w-fit px-3 py-1.5 rounded-full border border-white/60 shadow-xs">
+        <nav className="mb-6 flex items-center gap-1.5 text-xs font-medium text-forest/80 backdrop-blur-xs bg-white/50 w-fit px-3 py-1.5 rounded-full border border-white/70 shadow-xs">
           <Link to="/" className="hover:text-primary transition-colors">
             الرئيسية
           </Link>
@@ -113,10 +109,10 @@ function LoginPage() {
           <span className="font-bold text-forest">تسجيل الدخول</span>
         </nav>
 
-        <div className="grid gap-8 lg:grid-cols-12 items-center">
-          {/* Main Sign-In Card (6 cols in RTL: right side) */}
-          <div className="lg:col-span-6 w-full max-w-lg mx-auto lg:mx-0">
-            <div className="rounded-3xl border border-white/80 bg-white/95 dark:bg-card/95 p-6 sm:p-8 md:p-9 shadow-2xl backdrop-blur-xl transition-all">
+        {/* Positioned on the right side in RTL to keep the roses & brand logo unobstructed */}
+        <div className="flex flex-col items-start">
+          <div className="w-full max-w-md mx-auto lg:mx-0 lg:mr-8 xl:mr-12">
+            <div className="rounded-3xl border border-white/90 bg-white/95 dark:bg-card/95 p-6 sm:p-8 md:p-9 shadow-2xl backdrop-blur-xl transition-all">
               <div className="mb-6 flex items-center justify-between border-b pb-5">
                 <div>
                   <span className="eyebrow text-xs text-primary font-bold">بوابة الأعمال الموحدة</span>
@@ -227,7 +223,7 @@ function LoginPage() {
                 </button>
               </form>
 
-              {/* Security & Support Note */}
+              {/* Security & Register Note */}
               <div className="mt-6 border-t pt-5 space-y-3">
                 <div className="flex items-start gap-2.5 rounded-xl bg-forest/5 p-3 text-xs leading-5 text-forest/80 border border-forest/10">
                   <Shield className="size-4 shrink-0 text-emerald-600 mt-0.5" />
@@ -242,48 +238,6 @@ function LoginPage() {
                     إنشاء حساب تجاري جديد
                   </Link>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Side Brand & Platform Info (6 cols in RTL: left side) */}
-          <div className="lg:col-span-6 space-y-5">
-            <div className="rounded-3xl border border-white/30 bg-forest/85 backdrop-blur-xl p-7 text-forest-foreground shadow-2xl space-y-5">
-              <div className="flex items-center gap-3">
-                <div className="grid size-12 place-items-center rounded-2xl bg-gold/25 text-gold border border-gold/40">
-                  <ShieldCheck className="size-6" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-forest-foreground">بوابة توريد الزهور الموحدة</h2>
-                  <p className="text-xs text-forest-foreground/80">المملكة العربية السعودية</p>
-                </div>
-              </div>
-
-              <p className="text-sm leading-7 text-forest-foreground/90">
-                وصول مباشر وموثوق لشحنات الزهور الطبيعية الهولندية والإكوادورية والكينية الطازجة، مع تتبع دقيق لسلسلة التبريد والفواتير الضريبية لحظياً.
-              </p>
-
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center gap-3 rounded-2xl bg-white/10 backdrop-blur-xs p-3.5 text-xs border border-white/10">
-                  <Snowflake className="size-5 shrink-0 text-gold" />
-                  <span>سلسلة تبريد دقيقة (2°C - 4°C) من المزارع العالمية حتى مقر منشأتكم.</span>
-                </div>
-                <div className="flex items-center gap-3 rounded-2xl bg-white/10 backdrop-blur-xs p-3.5 text-xs border border-white/10">
-                  <FileCheck className="size-5 shrink-0 text-gold" />
-                  <span>فواتير إلكترونية معتمدة فورية مطابقة لمتطلبات هيئة الزكاة (ZATCA).</span>
-                </div>
-                <div className="flex items-center gap-3 rounded-2xl bg-white/10 backdrop-blur-xs p-3.5 text-xs border border-white/10">
-                  <Layers className="size-5 shrink-0 text-gold" />
-                  <span>أسعار جملة متدرجة حسب شرائح الشراء مع مرونة دفع للمتاجر المعتمدة.</span>
-                </div>
-              </div>
-
-              <div className="border-t border-forest-foreground/20 pt-4 flex items-center justify-between text-xs">
-                <span className="text-forest-foreground/80">هل ترغب بطلب تسعيرة سريعة دون تسجيل؟</span>
-                <Link to="/quote" className="font-bold text-gold hover:underline flex items-center gap-1">
-                  طلب عرض سعر
-                  <ArrowLeft className="size-3" />
-                </Link>
               </div>
             </div>
           </div>
