@@ -17,6 +17,7 @@ import {
   ArrowRight,
   CheckCircle2,
   Loader2,
+  ChevronDown,
 } from "lucide-react";
 import { PageBanner } from "@/components/site/PageBanner";
 import { useAuth } from "@/features/auth/context";
@@ -50,6 +51,7 @@ function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fullNameId = useId();
@@ -185,72 +187,71 @@ function RegisterPage() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-5 sm:grid-cols-2">
                   <div>
-                    <label htmlFor={fullNameId} className="block text-xs font-bold mb-1.5">
-                      اسم المسؤول الكامل *
+                    <label htmlFor={fullNameId} className="flex items-center gap-1.5 text-xs font-bold mb-1.5 text-forest">
+                      <User className="size-3.5 text-primary" />
+                      <span>اسم المسؤول الكامل</span>
+                      <span className="text-rose-500">*</span>
                     </label>
-                    <div className="relative">
-                      <input
-                        id={fullNameId}
-                        required
-                        type="text"
-                        className="field !pe-10"
-                        placeholder="سارة العتيبي"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                      />
-                      <User className="absolute end-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                    </div>
+                    <input
+                      id={fullNameId}
+                      required
+                      type="text"
+                      className="field font-medium text-sm transition-all focus:ring-2 focus:ring-primary/20 bg-background/80"
+                      placeholder="سارة العتيبي"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                    />
                   </div>
 
                   <div>
-                    <label htmlFor={companyId} className="block text-xs font-bold mb-1.5">
-                      اسم المتجر أو الشركة *
+                    <label htmlFor={companyId} className="flex items-center gap-1.5 text-xs font-bold mb-1.5 text-forest">
+                      <Building2 className="size-3.5 text-primary" />
+                      <span>اسم المتجر أو الشركة</span>
+                      <span className="text-rose-500">*</span>
                     </label>
-                    <div className="relative">
-                      <input
-                        id={companyId}
-                        required
-                        type="text"
-                        className="field !pe-10"
-                        placeholder="مؤسسة زهرة الربيع"
-                        value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
-                      />
-                      <Building2 className="absolute end-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                    </div>
+                    <input
+                      id={companyId}
+                      required
+                      type="text"
+                      className="field font-medium text-sm transition-all focus:ring-2 focus:ring-primary/20 bg-background/80"
+                      placeholder="مؤسسة زهرة الربيع"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                    />
                   </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-5 sm:grid-cols-2">
                   <div>
-                    <label htmlFor={phoneId} className="block text-xs font-bold mb-1.5">
-                      رقم الجوال التجاري *
+                    <label htmlFor={phoneId} className="flex items-center gap-1.5 text-xs font-bold mb-1.5 text-forest">
+                      <Phone className="size-3.5 text-primary" />
+                      <span>رقم الجوال التجاري</span>
+                      <span className="text-rose-500">*</span>
                     </label>
-                    <div className="relative">
-                      <input
-                        id={phoneId}
-                        required
-                        type="tel"
-                        dir="ltr"
-                        className="field !pe-10"
-                        placeholder="0501234567"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                      />
-                      <Phone className="absolute end-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                    </div>
+                    <input
+                      id={phoneId}
+                      required
+                      type="tel"
+                      dir="ltr"
+                      className="field font-mono text-sm text-start transition-all focus:ring-2 focus:ring-primary/20 bg-background/80"
+                      placeholder="0501234567"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                    />
                   </div>
 
                   <div>
-                    <label htmlFor={cityId} className="block text-xs font-bold mb-1.5">
-                      مدينة التوصيل *
+                    <label htmlFor={cityId} className="flex items-center gap-1.5 text-xs font-bold mb-1.5 text-forest">
+                      <MapPin className="size-3.5 text-primary" />
+                      <span>مدينة التوصيل</span>
+                      <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
                       <select
                         id={cityId}
-                        className="field"
+                        className="field appearance-none cursor-pointer font-medium text-sm transition-all focus:ring-2 focus:ring-primary/20 bg-background/80 !pe-10"
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
                       >
@@ -263,53 +264,54 @@ function RegisterPage() {
                         <option value="أبها">أبها</option>
                         <option value="الطائف">الطائف</option>
                       </select>
+                      <ChevronDown className="absolute end-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                     </div>
                   </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-5 sm:grid-cols-2">
                   <div>
-                    <label htmlFor={crId} className="block text-xs font-bold mb-1.5">
-                      رقم السجل التجاري (إن وجد)
+                    <label htmlFor={crId} className="flex items-center gap-1.5 text-xs font-bold mb-1.5 text-forest">
+                      <FileText className="size-3.5 text-primary" />
+                      <span>رقم السجل التجاري (إن وجد)</span>
                     </label>
-                    <div className="relative">
-                      <input
-                        id={crId}
-                        type="text"
-                        dir="ltr"
-                        className="field !pe-10"
-                        placeholder="1010XXXXXX"
-                        value={commercialRegister}
-                        onChange={(e) => setCommercialRegister(e.target.value)}
-                      />
-                      <FileText className="absolute end-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                    </div>
+                    <input
+                      id={crId}
+                      type="text"
+                      dir="ltr"
+                      className="field font-mono text-sm text-start transition-all focus:ring-2 focus:ring-primary/20 bg-background/80"
+                      placeholder="1010XXXXXX"
+                      value={commercialRegister}
+                      onChange={(e) => setCommercialRegister(e.target.value)}
+                    />
                   </div>
 
                   <div>
-                    <label htmlFor={emailId} className="block text-xs font-bold mb-1.5">
-                      البريد الإلكتروني للتوثيق *
+                    <label htmlFor={emailId} className="flex items-center gap-1.5 text-xs font-bold mb-1.5 text-forest">
+                      <Mail className="size-3.5 text-primary" />
+                      <span>البريد الإلكتروني للتوثيق</span>
+                      <span className="text-rose-500">*</span>
                     </label>
-                    <div className="relative">
-                      <input
-                        id={emailId}
-                        required
-                        type="email"
-                        dir="ltr"
-                        className="field !pe-10"
-                        placeholder="procurement@florist.sa"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                      />
-                      <Mail className="absolute end-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                    </div>
+                    <input
+                      id={emailId}
+                      required
+                      type="email"
+                      dir="ltr"
+                      className="field font-mono text-sm text-start transition-all focus:ring-2 focus:ring-primary/20 bg-background/80"
+                      placeholder="procurement@florist.sa"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      autoComplete="email"
+                    />
                   </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-5 sm:grid-cols-2">
                   <div>
-                    <label htmlFor={passwordId} className="block text-xs font-bold mb-1.5">
-                      كلمة المرور (8 خانات كحد أدنى) *
+                    <label htmlFor={passwordId} className="flex items-center gap-1.5 text-xs font-bold mb-1.5 text-forest">
+                      <Lock className="size-3.5 text-primary" />
+                      <span>كلمة المرور (8 خانات كحد أدنى)</span>
+                      <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
                       <input
@@ -317,15 +319,17 @@ function RegisterPage() {
                         required
                         type={showPassword ? "text" : "password"}
                         dir="ltr"
-                        className="field !pe-10"
+                        className="field !pr-10 text-start font-mono text-sm transition-all focus:ring-2 focus:ring-primary/20 bg-background/80"
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        autoComplete="new-password"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
                       >
                         {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </button>
@@ -333,21 +337,31 @@ function RegisterPage() {
                   </div>
 
                   <div>
-                    <label htmlFor={confirmPasswordId} className="block text-xs font-bold mb-1.5">
-                      تأكيد كلمة المرور *
+                    <label htmlFor={confirmPasswordId} className="flex items-center gap-1.5 text-xs font-bold mb-1.5 text-forest">
+                      <Lock className="size-3.5 text-primary" />
+                      <span>تأكيد كلمة المرور</span>
+                      <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
                       <input
                         id={confirmPasswordId}
                         required
-                        type={showPassword ? "text" : "password"}
+                        type={showConfirmPassword ? "text" : "password"}
                         dir="ltr"
-                        className="field !pe-10"
+                        className="field !pr-10 text-start font-mono text-sm transition-all focus:ring-2 focus:ring-primary/20 bg-background/80"
                         placeholder="••••••••"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
+                        autoComplete="new-password"
                       />
-                      <Lock className="absolute end-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label={showConfirmPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+                      >
+                        {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
                     </div>
                   </div>
                 </div>
