@@ -123,9 +123,63 @@ function ProductsPage() {
     ];
   }, []);
 
+  const [allProducts, setAllProducts] = useState<Product[]>(products);
+
+  // Live Supabase sync for products with images
+  useEffect(() => {
+    let isMounted = true;
+    async function loadDbProducts() {
+      if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
+        try {
+          const { supabase } = await import("@/integrations/supabase/client");
+          const { data, error } = await supabase
+            .from("products")
+            .select("*")
+            .order("created_at", { ascending: true });
+
+          if (!error && data && data.length > 0 && isMounted) {
+            const mapped: Product[] = data.map((p) => {
+              const item: Product = {
+                slug: p.slug,
+                sku: p.sku,
+                name: p.name,
+                en: p.name_en,
+                category: p.category_slug,
+                origin: p.origin,
+                grade: p.grade,
+                stem: p.stem_length || "60 سم",
+                color: p.color,
+                unit: p.unit,
+                moq: p.moq,
+                available: p.available,
+                description: p.description || "",
+                storage: p.storage_temp || "2°C - 4°C مبرد",
+                price: Number(p.base_price || 0),
+                priceUnit: ((p as Record<string, unknown>)["price_unit"] as string) || p.unit,
+                ...(p.color_code ? { colorCode: p.color_code } : {}),
+                ...(p.stems_per_bunch ? { stemsPerBunch: p.stems_per_bunch } : {}),
+                ...(p.bunches_per_carton ? { bunchesPerCarton: p.bunches_per_carton } : {}),
+                ...((p as Record<string, unknown>)["badge"] ? { badge: (p as Record<string, unknown>)["badge"] as string } : {}),
+                ...((p as Record<string, unknown>)["sales_count"] ? { salesCount: Number((p as Record<string, unknown>)["sales_count"]) } : {}),
+                ...(p.image ? { image: p.image } : {}),
+                ...(Array.isArray((p as Record<string, unknown>)["images"]) ? { images: (p as Record<string, unknown>)["images"] as string[] } : {}),
+              };
+              return item;
+            });
+            setAllProducts(mapped);
+          }
+        } catch (err) {
+          console.warn("Products live Supabase load notice:", err);
+        }
+      }
+    }
+    void loadDbProducts();
+    return () => { isMounted = false; };
+  }, []);
+
   // Filter products
   const filteredProducts = useMemo(() => {
-    return products.filter((p: Product) => {
+    return allProducts.filter((p: Product) => {
       // Search text match
       if (q.trim()) {
         const query = q.trim().toLowerCase();

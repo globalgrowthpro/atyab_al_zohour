@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Pencil, Plus, Power, Snowflake, Plane, Clock, ShieldCheck, AlertCircle, Box } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { categories, categoryOf, productImage, products, type Product } from "@/lib/catalog";
 import { sar } from "@/features/admin/data";
@@ -33,6 +33,60 @@ const emptyDraft = (): Draft => ({
 function Products() {
   const [activeTab, setActiveTab] = useState<"catalog" | "batches">("catalog");
   const [items, setItems] = useState<Item[]>(() => products.map((p) => ({ ...p, active: true })));
+
+  // Live Supabase sync for products
+  useEffect(() => {
+    let isMounted = true;
+    async function loadAdminProducts() {
+      if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
+        try {
+          const { supabase } = await import("@/integrations/supabase/client");
+          const { data, error } = await supabase
+            .from("products")
+            .select("*")
+            .order("created_at", { ascending: true });
+
+          if (!error && data && data.length > 0 && isMounted) {
+            const mapped: Item[] = data.map((p) => {
+              const item: Item = {
+                slug: p.slug,
+                sku: p.sku,
+                name: p.name,
+                en: p.name_en,
+                category: p.category_slug,
+                origin: p.origin,
+                grade: p.grade,
+                stem: p.stem_length || "60 سم",
+                color: p.color,
+                unit: p.unit,
+                moq: p.moq,
+                available: p.available,
+                active: true,
+                description: p.description || "",
+                storage: p.storage_temp || "2°C - 4°C مبرد",
+                price: Number(p.base_price || 0),
+                priceUnit: ((p as Record<string, unknown>)["price_unit"] as string) || p.unit,
+                ...(p.color_code ? { colorCode: p.color_code } : {}),
+                ...(p.stems_per_bunch ? { stemsPerBunch: p.stems_per_bunch } : {}),
+                ...(p.bunches_per_carton ? { bunchesPerCarton: p.bunches_per_carton } : {}),
+                ...((p as Record<string, unknown>)["badge"] ? { badge: (p as Record<string, unknown>)["badge"] as string } : {}),
+                ...((p as Record<string, unknown>)["sales_count"] ? { salesCount: Number((p as Record<string, unknown>)["sales_count"]) } : {}),
+                ...(p.image ? { image: p.image } : {}),
+                ...(Array.isArray((p as Record<string, unknown>)["images"]) ? { images: (p as Record<string, unknown>)["images"] as string[] } : {}),
+              };
+              return item;
+            });
+            setItems(mapped);
+          }
+        } catch (err) {
+          console.warn("Admin products Supabase load notice:", err);
+        }
+      }
+    }
+    void loadAdminProducts();
+    return () => { isMounted = false; };
+  }, []);
+
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
   const [avail, setAvail] = useState("all");
@@ -71,8 +125,26 @@ function Products() {
     [items, q, cat, avail, state]
   );
 
-  const patch = (slug: string, v: Partial<Item>) =>
+  const patch = (slug: string, v: Partial<Item>) => {
     setItems((all) => all.map((p) => (p.slug === slug ? { ...p, ...v } : p)));
+    if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
+      import("@/integrations/supabase/client")
+        .then(({ supabase }) => {
+          const updatePayload: { available?: boolean; base_price?: number; name?: string } = {};
+          if (v.available !== undefined) updatePayload["available"] = v.available;
+          if (v.price !== undefined) updatePayload["base_price"] = v.price;
+          if (v.name !== undefined) updatePayload["name"] = v.name;
+          if (Object.keys(updatePayload).length > 0) {
+            supabase
+              .from("products")
+              .update(updatePayload)
+              .eq("slug", slug)
+              .then(() => {});
+          }
+        })
+        .catch(() => {});
+    }
+  };
 
   const openNew = () => {
     setDraft(emptyDraft());
