@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   LogIn,
   HelpCircle,
-  Shield,
   ChevronLeft,
 } from "lucide-react";
 import loginBg from "@/assets/login-bg.jpg";
@@ -223,16 +222,9 @@ function LoginPage() {
                 </button>
               </form>
 
-              {/* Security & Register Note */}
-              <div className="mt-6 border-t pt-5 space-y-3">
-                <div className="flex items-start gap-2.5 rounded-xl bg-forest/5 p-3 text-xs leading-5 text-forest/80 border border-forest/10">
-                  <Shield className="size-4 shrink-0 text-emerald-600 mt-0.5" />
-                  <span>
-                    الاتصال مشفر ومحمي ببروتوكول SSL 256-bit وقاعدة بيانات Supabase الموثقة.
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs pt-1">
+              {/* Register Link */}
+              <div className="mt-6 border-t pt-5">
+                <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">ليس لديك حساب منشأة؟</span>
                   <Link to="/register" className="font-bold text-primary hover:underline">
                     إنشاء حساب تجاري جديد
