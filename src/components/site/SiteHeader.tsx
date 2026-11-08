@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { FileText, Mail, MapPin, Menu, Phone, Search, ShoppingCart, User, X } from "lucide-react";
+import { FileText, Mail, MapPin, Menu, Phone, Search, ShoppingCart, User, X, LogOut, ShieldCheck } from "lucide-react";
+import { useAuth, getRoleDestination } from "@/features/auth/context";
 import logo from "@/assets/logo.png";
 import { siteConfig } from "@/lib/catalog";
 import { useCart } from "@/lib/cart";
@@ -17,6 +18,7 @@ const nav = [
 
 export function SiteHeader() {
   const { count } = useCart();
+  const { isAuthenticated, profile, role, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const navigate = useNavigate();
@@ -57,16 +59,39 @@ export function SiteHeader() {
               </a>
             )}
           </div>
-          <div className="flex items-center gap-4">
-            <Link to="/login" className="hover:text-gold">
-              تسجيل الدخول
-            </Link>
-            <Link
-              to="/register"
-              className="rounded-full bg-rose px-3 py-1 font-bold text-rose-foreground"
-            >
-              إنشاء حساب
-            </Link>
+          <div className="flex items-center gap-3">
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to={getRoleDestination(role)}
+                  className="flex items-center gap-1.5 hover:text-gold font-bold"
+                >
+                  <ShieldCheck className="size-3.5 text-gold" />
+                  <span>{profile?.fullName || "حسابي"}</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => signOut()}
+                  className="flex items-center gap-1 rounded-full bg-forest-foreground/15 px-2.5 py-0.5 text-xs hover:bg-destructive/80 hover:text-white transition"
+                  title="تسجيل الخروج"
+                >
+                  <LogOut className="size-3" />
+                  <span>خروج</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="hover:text-gold">
+                  تسجيل الدخول
+                </Link>
+                <Link
+                  to="/register"
+                  className="rounded-full bg-rose px-3 py-1 font-bold text-rose-foreground hover:bg-rose/90 transition"
+                >
+                  إنشاء حساب
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

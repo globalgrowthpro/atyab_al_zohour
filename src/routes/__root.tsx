@@ -12,6 +12,7 @@ import {
 import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { AuthProvider } from "@/features/auth/context";
 import { CartProvider } from "@/lib/cart";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { TierSelectorBar } from "@/components/site/TierSelectorBar";
@@ -169,6 +170,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <AuthProvider>
       <CartProvider>
         {!isPanel && (
           <>
@@ -183,6 +185,7 @@ function RootComponent() {
         {!isPanel && <MobileBottomNav />}
         <Toaster position="top-center" richColors />
       </CartProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

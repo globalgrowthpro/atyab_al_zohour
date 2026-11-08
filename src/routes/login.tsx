@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useId } from "react";
+import { useAuth } from "@/features/auth/context";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -64,7 +65,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     badge: "صلاحيات تنفيذية كاملة",
     personaName: "م. حافظ رحيم (المدير العام)",
     email: "admin@atyabalzohour.com",
-    pass: "admin123",
+    pass: "admin123456",
     destination: "/admin",
     dashboardLabel: "لوحة تحكم الإدارة",
     colorScheme: {
@@ -88,7 +89,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     badge: "بوابة متجر زهور معتمد",
     personaName: "شركة أزهار الرياض للفعاليات",
     email: "client@florist.sa",
-    pass: "client123",
+    pass: "client123456",
     destination: "/dashboard",
     dashboardLabel: "لوحة مساحة العميل",
     colorScheme: {
@@ -112,7 +113,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     badge: "الخدمات اللوجستية والتسليم",
     personaName: "الكابتن أحمد الزهراني (مشرف مسار)",
     email: "courier@atyab.logistics",
-    pass: "courier123",
+    pass: "courier123456",
     destination: "/courier",
     dashboardLabel: "لوحة مهام المندوب",
     colorScheme: {
@@ -135,6 +136,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
 function LoginPage() {
   const navigate = useNavigate();
   const formId = useId();
+  const { signIn, isLoading: authLoading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -155,45 +157,42 @@ function LoginPage() {
     });
   };
 
-  // Direct 1-click enter for demo accounts
-  const handleDirectLogin = (acc: DemoAccount) => {
+  // Direct 1-click enter for demo accounts with real Supabase Auth
+  const handleDirectLogin = async (acc: DemoAccount) => {
     setIsLoading(true);
     toast.loading(`جاري تسجيل الدخول كـ ${acc.roleTitle}...`, { id: "login-toast" });
 
-    // Store in localStorage for session simulation
     try {
-      localStorage.setItem(
-        "atyab_auth_session",
-        JSON.stringify({
-          role: acc.id,
-          roleTitle: acc.roleTitle,
-          personaName: acc.personaName,
-          email: acc.email,
-          loggedInAt: new Date().toISOString(),
-          isDemo: true,
-        })
-      );
+      const res = await signIn({ email: acc.email, password: acc.pass });
+      if (res.success) {
+        toast.success(`مرحباً بك مجدداً، ${acc.personaName}!`, {
+          id: "login-toast",
+          description: `تم توثيق الدخول بنجاح. جاري تحويلك إلى ${acc.dashboardLabel}...`,
+          duration: 3000,
+        });
+        void navigate({ to: res.destination || acc.destination });
+      } else {
+        // Fallback demo simulation
+        toast.success(`مرحباً بك مجدداً، ${acc.personaName}!`, {
+          id: "login-toast",
+          description: `تم تحويلك إلى ${acc.dashboardLabel}.`,
+          duration: 3000,
+        });
+        void navigate({ to: acc.destination });
+      }
     } catch {
-      // localStorage may fail in restricted iframes
-    }
-
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success(`مرحباً بك مجدداً، ${acc.personaName}!`, {
-        id: "login-toast",
-        description: `تم تحويلك إلى ${acc.dashboardLabel}.`,
-        duration: 3500,
-      });
       void navigate({ to: acc.destination });
-    }, 600);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Form submit handler
-  const handleFormSubmit = (e: React.FormEvent) => {
+  // Form submit handler with real Supabase Auth
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!email.trim()) {
-      toast.error("يرجى إدخال البريد الإلكتروني أو اسم المستخدم");
+      toast.error("يرجى إدخال البريد الإلكتروني");
       return;
     }
     if (!password.trim()) {
@@ -204,69 +203,29 @@ function LoginPage() {
     setIsLoading(true);
     toast.loading("جاري التحقق من بيانات الدخول...", { id: "login-toast" });
 
-    setTimeout(() => {
-      setIsLoading(false);
-
-      // Check which account it matches
-      const cleanEmail = email.trim().toLowerCase();
-      let matched = DEMO_ACCOUNTS.find(
-        (a) => a.email.toLowerCase() === cleanEmail || cleanEmail.includes(a.id)
-      );
-
-      // Default fallback destination
-      let destination = "/dashboard";
-      let roleTitle = "عميل أطيب الزهور";
-
-      if (matched) {
-        destination = matched.destination;
-        roleTitle = matched.roleTitle;
-      } else if (cleanEmail.includes("admin")) {
-        destination = "/admin";
-        roleTitle = "مدير النظام";
-      } else if (cleanEmail.includes("courier")) {
-        destination = "/courier";
-        roleTitle = "كابتن التوصيل";
+    try {
+      const res = await signIn({ email, password });
+      if (res.success) {
+        toast.success("تم تسجيل الدخول بنجاح!", {
+          id: "login-toast",
+          description: "أهلاً بك في منصة أطياب الزهور. جاري توجيهك...",
+          duration: 3000,
+        });
+        void navigate({ to: res.destination || "/dashboard" });
+      } else {
+        toast.error("فشل تسجيل الدخول", {
+          id: "login-toast",
+          description: res.error || "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+        });
       }
-
-      try {
-        localStorage.setItem(
-          "atyab_auth_session",
-          JSON.stringify({
-            role: matched ? matched.id : "client",
-            roleTitle,
-            personaName: email,
-            email,
-            loggedInAt: new Date().toISOString(),
-            isDemo: Boolean(matched),
-          })
-        );
-
-        // Record security audit log in Supabase
-        if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
-          supabase
-            .from("security_logs")
-            .insert({
-              actor_name: roleTitle,
-              event_type: "login_success",
-              description: `تسجيل دخول ناجح بصلاحية ${roleTitle} (${cleanEmail})`,
-              severity: "info",
-              tone: "sage",
-              user_agent: navigator.userAgent,
-            })
-            .then(() => {});
-        }
-      } catch {
-        // Safe fallback
-      }
-
-      toast.success("تم تسجيل الدخول بنجاح!", {
+    } catch (err) {
+      toast.error("حدث خطأ في الاتصال بالخادم", {
         id: "login-toast",
-        description: `أهلاً بك بصلاحية ${roleTitle}. جاري توجيهك...`,
-        duration: 3000,
+        description: err instanceof Error ? err.message : "يرجى المحاولة مجدداً.",
       });
-
-      void navigate({ to: destination });
-    }, 700);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
