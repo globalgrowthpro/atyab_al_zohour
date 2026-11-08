@@ -13,12 +13,11 @@ import {
   HelpCircle,
   Shield,
   Layers,
-  CheckCircle2,
-  Phone,
   Snowflake,
   FileCheck,
+  ChevronLeft,
 } from "lucide-react";
-import { PageBanner } from "@/components/site/PageBanner";
+import loginBg from "@/assets/login-bg.jpg";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -90,31 +89,47 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-cream/40 pb-20">
-      <PageBanner
-        title="بوابة تسجيل الدخول"
-        crumb="تسجيل الدخول"
-        subtitle="سجّل الدخول إلى حسابك للوصول إلى لوحة التحكم ومتابعة الطلبات وخدمات التوريد المباشر."
+    <div className="relative min-h-[calc(100vh-140px)] flex items-center justify-center py-10 md:py-16 px-4 sm:px-6 lg:px-8 bg-cream/30 overflow-hidden">
+      {/* Background Graphic */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-700"
+        style={{ backgroundImage: `url(${loginBg})` }}
+        aria-hidden="true"
       />
 
-      <section className="container-x py-10 md:py-16 max-w-5xl">
+      {/* Subtle overlay to ensure optimal contrast */}
+      <div
+        className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-background/50 pointer-events-none"
+        aria-hidden="true"
+      />
+
+      <section className="container-x relative z-10 max-w-6xl w-full">
+        {/* Breadcrumb Navigation */}
+        <nav className="mb-6 flex items-center gap-1.5 text-xs font-medium text-forest/80 backdrop-blur-xs bg-white/40 w-fit px-3 py-1.5 rounded-full border border-white/60 shadow-xs">
+          <Link to="/" className="hover:text-primary transition-colors">
+            الرئيسية
+          </Link>
+          <ChevronLeft className="size-3 text-muted-foreground" />
+          <span className="font-bold text-forest">تسجيل الدخول</span>
+        </nav>
+
         <div className="grid gap-8 lg:grid-cols-12 items-center">
-          {/* Main Sign-In Form (6 cols) */}
-          <div className="lg:col-span-6">
-            <div className="rounded-3xl border border-border bg-card p-6 shadow-soft md:p-8">
+          {/* Main Sign-In Card (6 cols in RTL: right side) */}
+          <div className="lg:col-span-6 w-full max-w-lg mx-auto lg:mx-0">
+            <div className="rounded-3xl border border-white/80 bg-white/95 dark:bg-card/95 p-6 sm:p-8 md:p-9 shadow-2xl backdrop-blur-xl transition-all">
               <div className="mb-6 flex items-center justify-between border-b pb-5">
                 <div>
-                  <span className="eyebrow text-xs">أطياب الزهور</span>
-                  <h2 className="mt-1 text-2xl font-bold text-forest">تسجيل الدخول</h2>
+                  <span className="eyebrow text-xs text-primary font-bold">بوابة الأعمال الموحدة</span>
+                  <h1 className="mt-1 text-2xl font-bold text-forest">تسجيل الدخول</h1>
                 </div>
-                <div className="flex size-12 items-center justify-center rounded-2xl bg-forest/5 text-forest">
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-forest/5 text-forest border border-forest/10">
                   <LogIn className="size-6 text-primary" />
                 </div>
               </div>
 
               {/* Form */}
               <form onSubmit={handleFormSubmit} className="space-y-4">
-                {/* Email or Username */}
+                {/* Email */}
                 <div>
                   <label
                     htmlFor={`${formId}-email`}
@@ -131,7 +146,7 @@ function LoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="name@domain.com"
-                      className="field !pl-10 text-start font-mono text-sm"
+                      className="field !pl-10 text-start font-mono text-sm bg-background/80"
                       autoComplete="username"
                     />
                     <Mail className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -164,7 +179,7 @@ function LoginPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="field !pl-10 !pr-10 text-start font-mono text-sm"
+                      className="field !pl-10 !pr-10 text-start font-mono text-sm bg-background/80"
                       autoComplete="current-password"
                     />
                     <Lock className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -214,10 +229,10 @@ function LoginPage() {
 
               {/* Security & Support Note */}
               <div className="mt-6 border-t pt-5 space-y-3">
-                <div className="flex items-start gap-2.5 rounded-xl bg-muted/60 p-3 text-xs leading-5 text-muted-foreground">
+                <div className="flex items-start gap-2.5 rounded-xl bg-forest/5 p-3 text-xs leading-5 text-forest/80 border border-forest/10">
                   <Shield className="size-4 shrink-0 text-emerald-600 mt-0.5" />
                   <span>
-                    الاتصال مشفر وآمن عبر بروتوكول SSL 256-bit وقاعدة بيانات Supabase الموثقة.
+                    الاتصال مشفر ومحمي ببروتوكول SSL 256-bit وقاعدة بيانات Supabase الموثقة.
                   </span>
                 </div>
 
@@ -231,40 +246,40 @@ function LoginPage() {
             </div>
           </div>
 
-          {/* Side Brand & Platform Info (6 cols) */}
+          {/* Side Brand & Platform Info (6 cols in RTL: left side) */}
           <div className="lg:col-span-6 space-y-5">
-            <div className="rounded-3xl border border-forest/20 bg-forest p-7 text-forest-foreground shadow-soft space-y-5">
+            <div className="rounded-3xl border border-white/30 bg-forest/85 backdrop-blur-xl p-7 text-forest-foreground shadow-2xl space-y-5">
               <div className="flex items-center gap-3">
-                <div className="grid size-12 place-items-center rounded-2xl bg-gold/20 text-gold">
+                <div className="grid size-12 place-items-center rounded-2xl bg-gold/25 text-gold border border-gold/40">
                   <ShieldCheck className="size-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-forest-foreground">بوابة توريد الزهور الموحدة</h3>
-                  <p className="text-xs text-forest-foreground/75">المملكة العربية السعودية</p>
+                  <h2 className="text-xl font-bold text-forest-foreground">بوابة توريد الزهور الموحدة</h2>
+                  <p className="text-xs text-forest-foreground/80">المملكة العربية السعودية</p>
                 </div>
               </div>
 
-              <p className="text-sm leading-7 text-forest-foreground/85">
-                تمنحك المنصة وصولاً مباشراً إلى شحنات الورود الهولندية والإكوادورية والكينية الطازجة، مع متابعة سلسلة التبريد والفواتير الضريبية لحظياً.
+              <p className="text-sm leading-7 text-forest-foreground/90">
+                وصول مباشر وموثوق لشحنات الزهور الطبيعية الهولندية والإكوادورية والكينية الطازجة، مع تتبع دقيق لسلسلة التبريد والفواتير الضريبية لحظياً.
               </p>
 
               <div className="space-y-3 pt-2">
-                <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-3.5 text-xs">
+                <div className="flex items-center gap-3 rounded-2xl bg-white/10 backdrop-blur-xs p-3.5 text-xs border border-white/10">
                   <Snowflake className="size-5 shrink-0 text-gold" />
-                  <span>سلسلة تبريد دقيقة (2°C - 4°C) من مزارع الاستيراد حتى باب محلك.</span>
+                  <span>سلسلة تبريد دقيقة (2°C - 4°C) من المزارع العالمية حتى مقر منشأتكم.</span>
                 </div>
-                <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-3.5 text-xs">
+                <div className="flex items-center gap-3 rounded-2xl bg-white/10 backdrop-blur-xs p-3.5 text-xs border border-white/10">
                   <FileCheck className="size-5 shrink-0 text-gold" />
-                  <span>فواتير إلكترونية معتمدة فورية مطابقة لاشتراطات هيئة الزكاة (ZATCA).</span>
+                  <span>فواتير إلكترونية معتمدة فورية مطابقة لمتطلبات هيئة الزكاة (ZATCA).</span>
                 </div>
-                <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-3.5 text-xs">
+                <div className="flex items-center gap-3 rounded-2xl bg-white/10 backdrop-blur-xs p-3.5 text-xs border border-white/10">
                   <Layers className="size-5 shrink-0 text-gold" />
-                  <span>أسعار جملة متدرجة حسب شرائح الشراء مع تسهيلات دفع للمتاجر المعتمدة.</span>
+                  <span>أسعار جملة متدرجة حسب شرائح الشراء مع مرونة دفع للمتاجر المعتمدة.</span>
                 </div>
               </div>
 
-              <div className="border-t border-forest-foreground/15 pt-4 flex items-center justify-between text-xs">
-                <span className="text-forest-foreground/70">هل ترغب بطلب تسعيرة سريعة دون تسجيل؟</span>
+              <div className="border-t border-forest-foreground/20 pt-4 flex items-center justify-between text-xs">
+                <span className="text-forest-foreground/80">هل ترغب بطلب تسعيرة سريعة دون تسجيل؟</span>
                 <Link to="/quote" className="font-bold text-gold hover:underline flex items-center gap-1">
                   طلب عرض سعر
                   <ArrowLeft className="size-3" />
@@ -277,7 +292,7 @@ function LoginPage() {
 
       {/* Forgot Password Modal Dialog */}
       {showForgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div
             className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
             role="dialog"
