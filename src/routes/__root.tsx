@@ -18,6 +18,7 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { TierSelectorBar } from "@/components/site/TierSelectorBar";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { MobileBottomNav } from "@/components/site/MobileBottomNav";
+import { FloatingChat } from "@/components/site/FloatingChat";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -183,6 +184,7 @@ function RootComponent() {
         </main>
         {!isPanel && <SiteFooter />}
         {!isPanel && <MobileBottomNav />}
+        {!isPanel && <FloatingChat />}
         <Toaster position="top-center" richColors />
       </CartProvider>
       </AuthProvider>

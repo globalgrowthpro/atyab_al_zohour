@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { FileText, Mail, MapPin, Menu, Phone, Search, ShoppingCart, User, X, LogOut, ShieldCheck } from "lucide-react";
+import { FileText, Mail, MapPin, Menu, Phone, Search, ShoppingCart, User, X, LogOut, ShieldCheck, MessageCircle, MessageSquare } from "lucide-react";
+import { useStoreSettings, formatWhatsAppUrl, formatMessengerUrl } from "@/features/settings/store";
 import { useAuth, getRoleDestination } from "@/features/auth/context";
 import logo from "@/assets/logo.png";
 import { siteConfig } from "@/lib/catalog";
@@ -19,9 +20,16 @@ const nav = [
 export function SiteHeader() {
   const { count } = useCart();
   const { isAuthenticated, profile, role, signOut } = useAuth();
+  const { general, social } = useStoreSettings();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const navigate = useNavigate();
+
+  const phone = general.phone || siteConfig.phone;
+  const email = general.email || siteConfig.email;
+  const location = general.location || siteConfig.location;
+  const whatsappUrl = social.whatsapp_url || formatWhatsAppUrl(social.whatsapp, social.whatsapp_prefill);
+  const messengerUrl = formatMessengerUrl(social.facebook_messenger);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,25 +45,49 @@ export function SiteHeader() {
           <div className="flex items-center gap-5">
             <span className="flex items-center gap-1.5">
               <MapPin className="size-3.5 text-gold" />
-              {siteConfig.location}
+              {location}
             </span>
-            {siteConfig.phone && (
+            {phone && (
               <a
-                href={`tel:${siteConfig.phone}`}
+                href={`tel:${phone}`}
                 className="hidden sm:flex items-center gap-1.5"
                 dir="ltr"
               >
                 <Phone className="size-3.5 text-gold" />
-                {siteConfig.phone}
+                {phone}
               </a>
             )}
-            {siteConfig.email && (
+            {email && (
               <a
-                href={`mailto:${siteConfig.email}`}
+                href={`mailto:${email}`}
                 className="hidden md:flex items-center gap-1.5"
               >
                 <Mail className="size-3.5 text-gold" />
-                {siteConfig.email}
+                {email}
+              </a>
+            )}
+            {social.whatsapp && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="hidden lg:flex items-center gap-1.5 hover:text-emerald-300 transition font-medium"
+                title="واتساب المبيعات"
+              >
+                <MessageCircle className="size-3.5 text-emerald-400" />
+                <span>واتساب</span>
+              </a>
+            )}
+            {social.facebook_messenger && (
+              <a
+                href={messengerUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="hidden lg:flex items-center gap-1.5 hover:text-sky-300 transition font-medium"
+                title="ماسنجر فيسبوك"
+              >
+                <MessageSquare className="size-3.5 text-sky-400" />
+                <span>ماسنجر</span>
               </a>
             )}
           </div>

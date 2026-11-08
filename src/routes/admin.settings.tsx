@@ -4,13 +4,14 @@ import { toast } from "sonner";
 import { Badge, PageTitle, Panel } from "@/features/admin/shared";
 import { Field as FormField, Grid, Select, Toggle } from "@/features/admin/form";
 import { LocationMapPicker } from "@/features/admin/location-map-picker";
-import { Save, Send, Loader2 } from "lucide-react";
+import { Save, Send, Loader2, MessageCircle, MessageSquare } from "lucide-react";
+import { formatWhatsAppUrl } from "@/features/settings/store";
 
 export const Route = createFileRoute("/admin/settings")({
   head: () => ({
     meta: [
       { title: "إعدادات المنصة | لوحة الإدارة | أطيب الزهور" },
-      { name: "description", content: "إدارة بيانات المنصة وضوابط التوريد والتوصيل وخادم البريد SMTP وسلسلة التبريد." },
+      { name: "description", content: "إدارة بيانات المنصة وضوابط التوريد والتوصيل وقنوات التواصل الاجتماعي وخادم البريد SMTP وسلسلة التبريد." },
     ],
   }),
   component: Settings,
@@ -32,6 +33,17 @@ function Settings() {
   const [location, setLocation] = useState("الرياض، حي السلي، مخرج 16");
   const [mapLat, setMapLat] = useState("24.6877");
   const [mapLng, setMapLng] = useState("46.8229");
+
+  // Social Media & Instant Chat State
+  const [whatsapp, setWhatsapp] = useState("+201007419344");
+  const [whatsappPrefill, setWhatsappPrefill] = useState(
+    "مرحباً أطيب الزهور، أود الاستفسار عن توريد الزهور بالجملة"
+  );
+  const [facebookUrl, setFacebookUrl] = useState("https://facebook.com/atyabalzohour");
+  const [facebookMessenger, setFacebookMessenger] = useState("https://m.me/atyabalzohour");
+  const [instagramUrl, setInstagramUrl] = useState("https://instagram.com/atyabalzohour");
+  const [twitterUrl, setTwitterUrl] = useState("https://x.com/atyabalzohour");
+  const [enableFloatingChat, setEnableFloatingChat] = useState(true);
 
   // Delivery State
   const [sameDayCutoff, setSameDayCutoff] = useState("12:00");
@@ -100,6 +112,16 @@ function Settings() {
               if (val["location"]) setLocation(String(val["location"]));
               if (val["map_lat"]) setMapLat(String(val["map_lat"]));
               if (val["map_lng"]) setMapLng(String(val["map_lng"]));
+            } else if (row.key === "social_media") {
+              if (val["whatsapp"]) setWhatsapp(String(val["whatsapp"]));
+              if (val["whatsapp_prefill"]) setWhatsappPrefill(String(val["whatsapp_prefill"]));
+              if (val["facebook_url"]) setFacebookUrl(String(val["facebook_url"]));
+              if (val["facebook_messenger"]) setFacebookMessenger(String(val["facebook_messenger"]));
+              if (val["instagram_url"]) setInstagramUrl(String(val["instagram_url"]));
+              if (val["twitter_url"]) setTwitterUrl(String(val["twitter_url"]));
+              if (val["enable_floating_chat"] !== undefined) {
+                setEnableFloatingChat(Boolean(val["enable_floating_chat"]));
+              }
             } else if (row.key === "delivery") {
               if (val["same_day_cutoff"]) setSameDayCutoff(String(val["same_day_cutoff"]));
               if (Array.isArray(val["delivery_cities"])) {
@@ -169,6 +191,17 @@ function Settings() {
         developer: "Mr. Hafez Rahim (+201007419344)",
       };
 
+      const socialPayload = {
+        whatsapp,
+        whatsapp_url: formatWhatsAppUrl(whatsapp, whatsappPrefill),
+        whatsapp_prefill: whatsappPrefill,
+        facebook_url: facebookUrl,
+        facebook_messenger: facebookMessenger,
+        instagram_url: instagramUrl,
+        twitter_url: twitterUrl,
+        enable_floating_chat: enableFloatingChat,
+      };
+
       const parsedCities = deliveryCities
         .split(/[،,]/)
         .map((c) => c.trim())
@@ -211,6 +244,11 @@ function Settings() {
           p_description: "بيانات التواصل وهوية المنصة",
         }),
         supabase.rpc("save_store_setting" as any, {
+          p_key: "social_media",
+          p_value: socialPayload,
+          p_description: "قنوات التواصل الاجتماعي والمحادثة الفورية",
+        }),
+        supabase.rpc("save_store_setting" as any, {
           p_key: "delivery",
           p_value: deliveryPayload,
           p_description: "ضوابط الطلب ومواعيد التوصيل",
@@ -243,7 +281,7 @@ function Settings() {
       } else {
         toast.success("تم حفظ وتحديث كافة الإعدادات بنجاح في قاعدة البيانات!", {
           id: "save-settings",
-          description: "تم توثيق التعديل في سجل الأمان ومزامنة إعدادات المنصة.",
+          description: "تم توثيق التعديل في سجل الأمان وتحديث قنوات التواصل الاجتماعي على الموقع.",
         });
       }
     } catch (err) {
@@ -325,7 +363,7 @@ function Settings() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <PageTitle
           title="الإعدادات العامة والربط"
-          desc="إدارة بيانات التواصل وضوابط التوريد والتوصيل وخادم البريد SMTP وسلسلة التبريد."
+          desc="إدارة بيانات التواصل وضوابط التوريد وقنوات التواصل الاجتماعي (واتساب وفيسبوك) وخادم البريد وسلسلة التبريد."
         />
         {isLoading && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/60 px-3 py-1.5 rounded-xl w-fit">
@@ -385,7 +423,62 @@ function Settings() {
           </div>
         </Panel>
 
-        {/* Panel 2: Order & Delivery Controls */}
+        {/* Panel 2: Social Media & Instant Chat (User Requested) */}
+        <Panel title="قنوات التواصل الاجتماعي والمحادثة الفورية (Social Media & Chat)">
+          <div className="grid gap-4 p-5 md:grid-cols-2">
+            <Field
+              label="رقم واتساب للأعمال (WhatsApp Business Number)"
+              value={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.value)}
+              placeholder="+201007419344 أو +9665XXXXXXXX"
+              dir="ltr"
+            />
+            <Field
+              label="نص الرسالة المبدئية لواتساب (WhatsApp Welcome Message)"
+              value={whatsappPrefill}
+              onChange={(e) => setWhatsappPrefill(e.target.value)}
+              placeholder="مرحباً أطيب الزهور، أود الاستفسار عن توريد الزهور..."
+            />
+            <Field
+              label="رابط صفحة فيسبوك الرسمية (Facebook Page URL)"
+              value={facebookUrl}
+              onChange={(e) => setFacebookUrl(e.target.value)}
+              placeholder="https://facebook.com/atyabalzohour"
+              dir="ltr"
+            />
+            <Field
+              label="رابط فيسبوك ماسنجر للمحادثة المباشرة (Facebook Page Messenger)"
+              value={facebookMessenger}
+              onChange={(e) => setFacebookMessenger(e.target.value)}
+              placeholder="https://m.me/atyabalzohour أو اسم المعرف"
+              dir="ltr"
+            />
+            <Field
+              label="رابط حساب إنستغرام (Instagram URL)"
+              value={instagramUrl}
+              onChange={(e) => setInstagramUrl(e.target.value)}
+              placeholder="https://instagram.com/atyabalzohour"
+              dir="ltr"
+            />
+            <Field
+              label="رابط حساب منصة إكس / تويتر (X / Twitter URL)"
+              value={twitterUrl}
+              onChange={(e) => setTwitterUrl(e.target.value)}
+              placeholder="https://x.com/atyabalzohour"
+              dir="ltr"
+            />
+            <div className="md:col-span-2 pt-1">
+              <Toggle
+                label="تفعيل زر المحادثة الفورية العائم على الموقع (Floating WhatsApp & Messenger Widget)"
+                desc="إظهار أيقونة عائمة تمكّن عملاء وزوار الموقع من بدء محادثة فورية عبر واتساب أو فيسبوك ماسنجر مباشرة."
+                checked={enableFloatingChat}
+                onChange={(e) => setEnableFloatingChat(e.target.checked)}
+              />
+            </div>
+          </div>
+        </Panel>
+
+        {/* Panel 3: Order & Delivery Controls */}
         <Panel title="الطلب ومواعيد التوصيل">
           <div className="grid gap-4 p-5 md:grid-cols-2">
             <Field
@@ -421,7 +514,7 @@ function Settings() {
           </div>
         </Panel>
 
-        {/* Panel 3: Cold Chain Standards */}
+        {/* Panel 4: Cold Chain Standards */}
         <Panel title="معايير سلسلة التبريد المباشر (Cold Chain)">
           <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
             <Field
@@ -455,7 +548,7 @@ function Settings() {
           </div>
         </Panel>
 
-        {/* Panel 4: SMTP Server Configuration */}
+        {/* Panel 5: SMTP Server Configuration */}
         <div id="smtp" className="flex items-center gap-3 pt-2">
           <h2 className="text-lg font-extrabold text-forest">البريد الإلكتروني (SMTP)</h2>
           {smtpConnected ? (
@@ -543,7 +636,7 @@ function Settings() {
           </Grid>
         </Panel>
 
-        {/* Panel 5: Notification Templates */}
+        {/* Panel 6: Notification Templates */}
         <Panel title="قوالب وقنوات الإشعارات التلقائية">
           <div className="grid gap-3 p-5 md:grid-cols-2">
             <Toggle
@@ -585,7 +678,7 @@ function Settings() {
           </div>
         </Panel>
 
-        {/* Panel 6: Test Email */}
+        {/* Panel 7: Test Email */}
         <Panel title="اختبار الاتصال بالخادم">
           <div className="flex flex-wrap items-end gap-3 p-5">
             <div className="min-w-[260px] flex-1">

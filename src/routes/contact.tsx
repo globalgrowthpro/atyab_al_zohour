@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { Mail, MapPin, Phone, Send, Loader2 } from "lucide-react";
+import { Mail, MapPin, Phone, Send, Loader2, MessageCircle, MessageSquare, ExternalLink } from "lucide-react";
+import { useStoreSettings, formatWhatsAppUrl, formatMessengerUrl } from "@/features/settings/store";
 import { toast } from "sonner";
 import { PageBanner } from "@/components/site/PageBanner";
 import { siteConfig } from "@/lib/catalog";
@@ -22,6 +23,12 @@ export const Route = createFileRoute("/contact")({
 
 function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { general, social } = useStoreSettings();
+  const phone = general.phone || siteConfig.phone;
+  const email = general.email || siteConfig.email;
+  const location = general.location || siteConfig.location;
+  const whatsappUrl = social.whatsapp_url || formatWhatsAppUrl(social.whatsapp, social.whatsapp_prefill);
+  const messengerUrl = formatMessengerUrl(social.facebook_messenger);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -75,9 +82,49 @@ function ContactPage() {
       <PageBanner title="تواصل معنا" crumb="تواصل معنا" subtitle="يسعدنا الرد على استفساراتكم وطلبات الجملة." />
       <section className="container-x grid gap-10 py-16 lg:grid-cols-3">
         <aside className="space-y-4">
-          <Info icon={MapPin} label="الموقع" value={siteConfig.location} />
-          {siteConfig.phone && <Info icon={Phone} label="الهاتف" value={siteConfig.phone} ltr />}
-          {siteConfig.email && <Info icon={Mail} label="البريد الإلكتروني" value={siteConfig.email} ltr />}
+          <Info icon={MapPin} label="الموقع" value={location} />
+          {phone && <Info icon={Phone} label="الهاتف" value={phone} ltr />}
+          {email && <Info icon={Mail} label="البريد الإلكتروني" value={email} ltr />}
+
+          {social.whatsapp && (
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-between gap-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 p-5 shadow-soft transition group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="grid size-12 place-items-center rounded-xl bg-emerald-500 text-white shadow-sm">
+                  <MessageCircle className="size-6" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">محادثة واتساب فورية</p>
+                  <p className="text-xs text-muted-foreground">تواصل سريع مع مسؤولي المبيعات</p>
+                </div>
+              </div>
+              <ExternalLink className="size-4 text-emerald-600 transition group-hover:translate-x-[-2px]" />
+            </a>
+          )}
+
+          {social.facebook_messenger && (
+            <a
+              href={messengerUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-between gap-4 rounded-2xl border border-sky-500/20 bg-sky-500/5 hover:bg-sky-500/10 dark:bg-sky-950/20 dark:hover:bg-sky-950/30 p-5 shadow-soft transition group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="grid size-12 place-items-center rounded-xl bg-sky-500 text-white shadow-sm">
+                  <MessageSquare className="size-6" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-sky-800 dark:text-sky-300">ماسنجر فيسبوك</p>
+                  <p className="text-xs text-muted-foreground">خدمة عملاء الرد الآلي والاستفسارات</p>
+                </div>
+              </div>
+              <ExternalLink className="size-4 text-sky-600 transition group-hover:translate-x-[-2px]" />
+            </a>
+          )}
         </aside>
         <form
           className="space-y-4 rounded-3xl border bg-card p-7 shadow-soft lg:col-span-2"
