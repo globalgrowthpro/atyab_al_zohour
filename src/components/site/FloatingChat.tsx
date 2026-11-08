@@ -21,7 +21,7 @@ export function FloatingChat() {
   const messengerUrl = formatMessengerUrl(social.facebook_messenger);
 
   return (
-    <aside aria-label="قنوات المحادثة الفورية" className="fixed bottom-20 md:bottom-6 start-6 z-40">
+    <aside aria-label="قنوات المحادثة الفورية" className="fixed bottom-20 md:bottom-6 left-6 z-40">
       {/* Expanded Popup Menu */}
       {isOpen && (
         <div
