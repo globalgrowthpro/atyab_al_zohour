@@ -167,4 +167,70 @@ describe("Role-Based Access Control (RBAC) System", () => {
       expect(getRoleDestination(role)).toBe("/dashboard");
     });
   });
+
+  describe("Security Isolation & Anti-Tampering (الأمان ومنع التصعيد)", () => {
+    it("denies all permissions to unauthenticated or null roles", () => {
+      const allPermissions: Permission[] = [
+        "manage:all",
+        "manage:security",
+        "manage:roles",
+        "manage:settings",
+        "manage:pricing",
+        "manage:clients",
+        "manage:orders",
+        "manage:products",
+        "manage:couriers",
+        "manage:support",
+        "manage:seo",
+        "view:reports",
+        "portal:admin",
+        "portal:courier",
+        "portal:client",
+      ];
+
+      for (const p of allPermissions) {
+        expect(hasPermission(null, p)).toBe(false);
+        expect(hasPermission(undefined, p)).toBe(false);
+      }
+    });
+
+    it("restricts manage:roles strictly to superadmin", () => {
+      const otherRoles: AppRole[] = ["admin", "manager", "seo", "sales", "inventory", "courier", "client"];
+      for (const r of otherRoles) {
+        expect(hasPermission(r, "manage:roles")).toBe(false);
+        expect(hasPermission(r, "manage:security")).toBe(false);
+      }
+      expect(hasPermission("superadmin", "manage:roles")).toBe(true);
+      expect(hasPermission("superadmin", "manage:security")).toBe(true);
+    });
+
+    it("prevents clients and couriers from accessing any admin sub-route permissions", () => {
+      const restrictedForClientsAndCouriers: Permission[] = [
+        "portal:admin",
+        "manage:orders",
+        "manage:pricing",
+        "manage:settings",
+        "manage:security",
+        "manage:roles",
+        "manage:seo",
+        "manage:clients",
+        "manage:couriers",
+      ];
+
+      for (const p of restrictedForClientsAndCouriers) {
+        expect(hasPermission("client", p)).toBe(false);
+        expect(hasPermission("courier", p)).toBe(false);
+      }
+    });
+
+    it("prevents SEO role from viewing financial and order management", () => {
+      expect(hasPermission("seo", "manage:orders")).toBe(false);
+      expect(hasPermission("seo", "manage:pricing")).toBe(false);
+      expect(hasPermission("seo", "manage:clients")).toBe(false);
+      expect(hasPermission("seo", "manage:couriers")).toBe(false);
+      expect(hasPermission("seo", "manage:settings")).toBe(false);
+      expect(hasPermission("seo", "manage:security")).toBe(false);
+    });
+  });
 });
+

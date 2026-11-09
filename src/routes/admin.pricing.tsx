@@ -7,6 +7,7 @@ import { sar } from "@/features/admin/data";
 import { DataTable, ExportButton, PageTitle, Panel, SelectFilter, Toolbar } from "@/features/admin/shared";
 import { CLIENT_TIERS, type ClientTier } from "@/features/b2b/tier-pricing";
 import { supabase } from "@/integrations/supabase/client";
+import { RequirePermission } from "@/features/admin/guard";
 
 export const Route = createFileRoute("/admin/pricing")({ component: Pricing });
 
@@ -123,7 +124,7 @@ function Pricing() {
     Math.round(base * (1 - (tierSettings[t]?.discount ?? 0) / 100));
 
   return (
-    <>
+    <RequirePermission permission="manage:pricing" fallbackMessage="إدارة قوائم الأسعار وهوامش الفئات B2B مقتصرة على مدراء النظام.">
       <PageTitle
         title="قوائم أسعار الجملة والحد الأدنى للطلب (Tiered Pricing & MOQ)"
         desc="حدد نسبة الخصم والحد الأدنى للطلب المالي (ر.س) لكل شريحة عملاء B2B في السوق السعودي."
@@ -266,6 +267,6 @@ function Pricing() {
           ))}
         </DataTable>
       </Panel>
-    </>
+    </RequirePermission>
   );
 }

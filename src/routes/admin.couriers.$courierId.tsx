@@ -8,6 +8,7 @@ import {
 } from "@/features/admin/data";
 import { Badge, DataTable, KpiCard, Panel } from "@/features/admin/shared";
 import { supabase } from "@/integrations/supabase/client";
+import { RequirePermission } from "@/features/admin/guard";
 
 export const Route = createFileRoute("/admin/couriers/$courierId")({
   head: () => ({ meta: [{ title: "تفاصيل المندوب — لوحة الإدارة" }, { name: "robots", content: "noindex" }] }),
@@ -110,7 +111,7 @@ function CourierDetails() {
   };
 
   return (
-    <>
+    <RequirePermission permission="manage:couriers" fallbackMessage="إدارة وتفاصيل كباتن التوصيل مقتصرة على موظفي العمليات والإدارة.">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <Link to="/admin/couriers" className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline">
@@ -182,7 +183,7 @@ function CourierDetails() {
           ))}
         </DataTable>
       </Panel>
-    </>
+    </RequirePermission>
   );
 }
 

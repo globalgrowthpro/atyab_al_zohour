@@ -7,6 +7,7 @@ import { sar } from "@/features/admin/data";
 import { Badge, DataTable, PageTitle, Panel, Toolbar, ExportButton, SelectFilter } from "@/features/admin/shared";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useFlowerBatches, type FlowerBatch, type FlowerOrigin } from "@/features/inventory/batches";
+import { RequirePermission } from "@/features/admin/guard";
 
 export const Route = createFileRoute("/admin/products")({ component: Products });
 
@@ -217,7 +218,7 @@ function Products() {
   };
 
   return (
-    <>
+    <RequirePermission permission="manage:products" fallbackMessage="إدارة المنتجات وكتالوج المخزون المبرد مقتصرة على موظفي المستودع والعمليات والإدارة والتسويق.">
       <PageTitle
         title="المنتجات والمخزون المبرد (Products & Cold-Chain Inventory)"
         desc="إدارة كتالوج المنتجات، الحد الأدنى للطلب (MOQ)، ومتابعة الشحنات المستوردة وفترة نضارتها (Vase-Life)."
@@ -646,6 +647,6 @@ function Products() {
           </form>
         </DialogContent>
       </Dialog>
-    </>
+    </RequirePermission>
   );
 }

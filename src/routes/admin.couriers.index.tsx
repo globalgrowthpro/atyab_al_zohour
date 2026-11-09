@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { type AdminCourier, type CourierStatus, adminCouriers, courierStatusLabel, courierStatusTone } from "@/features/admin/data";
 import { Badge, ExportButton, FilterChips, PageTitle, Panel, SelectFilter, Toolbar, uniq } from "@/features/admin/shared";
 import { supabase } from "@/integrations/supabase/client";
+import { RequirePermission } from "@/features/admin/guard";
 
 export const Route = createFileRoute("/admin/couriers/")({ component: Couriers });
 
@@ -71,7 +72,7 @@ function Couriers() {
   const avgRating = (couriers.reduce((s, c) => s + c.rating, 0) / (couriers.length || 1)).toFixed(1);
 
   return (
-    <>
+    <RequirePermission permission="manage:couriers" fallbackMessage="إدارة وتتبع مناديب التوصيل والأسطول المبرد مقتصرة على مدراء العمليات والنظام.">
       <PageTitle title="المندوبون" desc="حالة فريق التوصيل وإنجاز مهام اليوم وسلسلة التبريد." />
       <div className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft">
@@ -156,6 +157,6 @@ function Couriers() {
           );
         })}
       </div>
-    </>
+    </RequirePermission>
   );
 }

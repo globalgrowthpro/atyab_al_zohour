@@ -5,6 +5,7 @@ import { useChartTheme } from "@/features/admin/theme";
 import { adminOrders, orderStatusLabel, orderStatusTone, sar, weeklySales, type OrderStatus } from "@/features/admin/data";
 import { useState } from "react";
 import { Badge, ExportButton, Meter, PageTitle, Panel, SelectFilter, uniq } from "@/features/admin/shared";
+import { RequirePermission } from "@/features/admin/guard";
 
 export const Route = createFileRoute("/admin/reports")({ component: Reports });
 
@@ -28,7 +29,7 @@ function Reports() {
   const cityData = byCity.map(([name, total]) => ({ name, total }));
 
   return (
-    <>
+    <RequirePermission permission="view:reports" fallbackMessage="الاطلاع على تقارير الأداء والمبيعات مقتصر على المصرح لهم.">
       <PageTitle title="التقارير" desc="ملخص أداء المبيعات (بيانات تجريبية)." action={<div className="flex flex-wrap gap-2">
         <SelectFilter label="المدينة" value={city} onChange={setCity} options={uniq(adminOrders.map((o) => o.city))} />
         <SelectFilter label="الحالة" value={status} onChange={setStatus} options={Object.entries(orderStatusLabel)} />
@@ -98,6 +99,6 @@ function Reports() {
           </ul>
         </Panel>
       </div>
-    </>
+    </RequirePermission>
   );
 }

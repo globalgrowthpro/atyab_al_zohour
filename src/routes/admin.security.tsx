@@ -7,6 +7,7 @@ import { Field, Grid, Select, Toggle } from "@/features/admin/form";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, hasPermission, getRoleLabel, type AppRole } from "@/features/auth/context";
 import { ShieldCheck, UserCheck, ShieldAlert } from "lucide-react";
+import { RequirePermission } from "@/features/admin/guard";
 
 export const Route = createFileRoute("/admin/security")({ component: Security });
 
@@ -192,7 +193,7 @@ function Security() {
   };
 
   return (
-    <>
+    <RequirePermission permission="manage:security" fallbackMessage="صفحة الأمان وإدارة صلاحيات المستخدمين مقتصرة فقط على المدير العام (Super Admin).">
       <PageTitle
         title="الأمان والصلاحيات (RBAC)"
         desc="إدارة صلاحيات المستخدمين (Super Admin · Admin · Manager · SEO · Courier · Client) وسجلات التدقيق الأمني."
@@ -338,6 +339,6 @@ function Security() {
           </DataTable>
         </Panel>
       </div>
-    </>
+    </RequirePermission>
   );
 }

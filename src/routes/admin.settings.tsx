@@ -6,6 +6,7 @@ import { Field as FormField, Grid, Select, Toggle } from "@/features/admin/form"
 import { LocationMapPicker } from "@/features/admin/location-map-picker";
 import { Save, Send, Loader2, MessageCircle, MessageSquare } from "lucide-react";
 import { formatWhatsAppUrl } from "@/features/settings/store";
+import { RequirePermission } from "@/features/admin/guard";
 
 export const Route = createFileRoute("/admin/settings")({
   head: () => ({
@@ -359,7 +360,7 @@ function Settings() {
   };
 
   return (
-    <>
+    <RequirePermission permission="manage:settings" fallbackMessage="إدارة إعدادات المنصة والهوية والتكامل مقتصرة على مدراء النظام.">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <PageTitle
           title="الإعدادات العامة والربط"
@@ -737,7 +738,7 @@ function Settings() {
           </span>
         </div>
       </form>
-    </>
+    </RequirePermission>
   );
 }
 

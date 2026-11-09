@@ -10,6 +10,7 @@ import {
 } from "@/features/admin/data";
 import { Badge, DataTable, KpiCard, Panel } from "@/features/admin/shared";
 import { supabase } from "@/integrations/supabase/client";
+import { RequirePermission } from "@/features/admin/guard";
 
 export const Route = createFileRoute("/admin/clients/$clientId")({
   component: ClientDetails,
@@ -158,7 +159,7 @@ function ClientDetails() {
   };
 
   return (
-    <>
+    <RequirePermission permission="manage:clients" fallbackMessage="إدارة وتفاصيل حسابات العملاء مقتصرة على موظفي الإدارة والعمليات.">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <Link to="/admin/clients" className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline">
@@ -302,7 +303,7 @@ function ClientDetails() {
           </DataTable>
         </Panel>
       </div>
-    </>
+    </RequirePermission>
   );
 }
 

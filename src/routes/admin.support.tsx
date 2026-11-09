@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { type TicketStatus, adminTickets, ticketStatusLabel, ticketStatusTone } from "@/features/admin/data";
 import { Badge, DataTable, ExportButton, FilterChips, PageTitle, Panel, Toolbar } from "@/features/admin/shared";
 import { supabase } from "@/integrations/supabase/client";
+import { RequirePermission } from "@/features/admin/guard";
 
 export const Route = createFileRoute("/admin/support")({ component: Support });
 
@@ -79,7 +80,7 @@ function Support() {
   const closed = tickets.filter((t) => t.status === "closed").length;
 
   return (
-    <>
+    <RequirePermission permission="manage:support" fallbackMessage="إدارة تذاكر الدعم وخدمة العملاء مقتصرة على موظفي الدعم والعمليات والإدارة.">
       <PageTitle title="تذاكر الدعم" desc="استفسارات وطلبات العملاء من البوابة الإلكترونية." />
       <div className="mb-4 grid grid-cols-3 gap-3">
         <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft">
@@ -140,6 +141,6 @@ function Support() {
           ))}
         </DataTable>
       </Panel>
-    </>
+    </RequirePermission>
   );
 }

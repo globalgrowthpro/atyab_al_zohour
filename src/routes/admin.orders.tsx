@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { adminCouriers, adminOrders, orderStatusLabel, orderStatusTone, sar, type AdminOrder, type OrderStatus } from "@/features/admin/data";
 import { Badge, DataTable, FilterChips, PageTitle, Panel, Toolbar, ExportButton, SelectFilter, uniq } from "@/features/admin/shared";
 import { supabase } from "@/integrations/supabase/client";
+import { RequirePermission } from "@/features/admin/guard";
 
 export const Route = createFileRoute("/admin/orders")({ component: Orders });
 
@@ -101,7 +102,7 @@ function Orders() {
   const totalValue = orders.filter((o) => o.status !== "cancelled").reduce((sum, o) => sum + o.total, 0);
 
   return (
-    <>
+    <RequirePermission permission="manage:orders" fallbackMessage="إدارة وتحديث الطلبات مقتصرة على موظفي العمليات والإدارة.">
       <PageTitle title="الطلبات" desc="تابع الطلبات وحدّث حالتها وعيّن المندوب." />
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft">
@@ -152,6 +153,6 @@ function Orders() {
           ))}
         </DataTable>
       </Panel>
-    </>
+    </RequirePermission>
   );
 }

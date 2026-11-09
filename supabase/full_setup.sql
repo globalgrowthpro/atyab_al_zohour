@@ -401,13 +401,19 @@ DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
         CREATE TYPE public.app_role AS ENUM (
+            'superadmin',
             'admin',
             'manager',
+            'seo',
             'sales',
             'inventory',
             'courier',
             'client'
         );
+    ELSE
+        -- Ensure superadmin and seo exist if the enum was created previously
+        ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'superadmin';
+        ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'seo';
     END IF;
 END$$;
 
@@ -484,12 +490,47 @@ CREATE TRIGGER on_auth_user_created
 CREATE OR REPLACE FUNCTION public.has_role(p_user_id UUID, p_role public.app_role)
 RETURNS BOOLEAN AS $$
 BEGIN
+    IF p_user_id IS NULL THEN
+        RETURN FALSE;
+    END IF;
+
+    -- Superadmin inherits all permissions implicitly
+    IF EXISTS (
+        SELECT 1 FROM public.profiles WHERE id = p_user_id AND role = 'superadmin'::public.app_role
+    ) OR EXISTS (
+        SELECT 1 FROM public.user_roles WHERE user_id = p_user_id AND role = 'superadmin'::public.app_role
+    ) THEN
+        RETURN TRUE;
+    END IF;
+
     RETURN EXISTS (
         SELECT 1 FROM public.user_roles
         WHERE user_id = p_user_id AND role = p_role
+    ) OR EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = p_user_id AND role = p_role
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+-- Trigger لحماية حقل الصلاحيات من التصعيد الذاتي (Anti-Privilege Escalation)
+CREATE OR REPLACE FUNCTION public.protect_role_escalation()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.role IS DISTINCT FROM OLD.role THEN
+        -- Only superadmin can change user roles
+        IF auth.uid() IS NOT NULL AND NOT public.has_role(auth.uid(), 'superadmin'::public.app_role) THEN
+            RAISE EXCEPTION 'لا تملك الصلاحية لتعديل أدوار المستخدمين (Super Admin required)';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_protect_role_escalation ON public.profiles;
+CREATE TRIGGER trg_protect_role_escalation
+    BEFORE UPDATE ON public.profiles
+    FOR EACH ROW EXECUTE FUNCTION public.protect_role_escalation();
 
 -- ------------------------------------------------------------------------------
 -- 2. جدول سجلات الأمان والتدقيق (Security & Audit Logs)
@@ -705,12 +746,24 @@ ALTER TABLE public.courier_telemetry ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.product_reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notification_templates ENABLE ROW LEVEL SECURITY;
 
--- قراءة الملفات الشخصية: المستخدم يقرأ ملفه فقط، أو الأدمن يقرأ الجميع
+-- قراءة الملفات الشخصية وتحديثها بصلاحيات محكمة
 DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
 CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
-CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (
+    auth.uid() = id OR public.has_role(auth.uid(), 'superadmin'::public.app_role)
+);
+
+-- إدارة أدوار المستخدمين مقتصرة حصرياً على المدير العام
+DROP POLICY IF EXISTS "Superadmin manages user roles" ON public.user_roles;
+CREATE POLICY "Superadmin manages user roles" ON public.user_roles
+    FOR ALL USING (public.has_role(auth.uid(), 'superadmin'::public.app_role))
+    WITH CHECK (public.has_role(auth.uid(), 'superadmin'::public.app_role));
+
+DROP POLICY IF EXISTS "Users can view own roles" ON public.user_roles;
+CREATE POLICY "Users can view own roles" ON public.user_roles
+    FOR SELECT USING (auth.uid() = user_id OR public.has_role(auth.uid(), 'superadmin'::public.app_role));
 
 -- قراءة بنود الطلبات والفواتير
 DROP POLICY IF EXISTS "Public can view order items" ON public.order_items;

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { adminQuotes, quoteStatusLabel, quoteStatusTone, type AdminQuote, type QuoteStatus } from "@/features/admin/data";
 import { Badge, ExportButton, FilterChips, PageTitle, Toolbar } from "@/features/admin/shared";
 import { supabase } from "@/integrations/supabase/client";
+import { RequirePermission } from "@/features/admin/guard";
 
 export const Route = createFileRoute("/admin/quotes")({ component: Quotes });
 
@@ -68,7 +69,7 @@ function Quotes() {
   const rate = decided ? Math.round((accepted / decided) * 100) : 0;
 
   return (
-    <>
+    <RequirePermission permission="manage:orders" fallbackMessage="إدارة عروض الأسعار والتسعير مقتصرة على موظفي المبيعات والعمليات والإدارة.">
       <PageTitle title="طلبات عروض الأسعار" desc="راجع الطلبات وأرسل العروض للعملاء." />
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft"><p className="text-xs text-muted-foreground">بانتظار التسعير</p><p className="mt-1 text-xl font-extrabold text-rose">{quotes.filter((q) => q.status === "pending").length}</p></div>
@@ -100,6 +101,6 @@ function Quotes() {
         ))}
         {list.length === 0 && <p className="text-sm text-muted-foreground">لا توجد طلبات.</p>}
       </div>
-    </>
+    </RequirePermission>
   );
 }

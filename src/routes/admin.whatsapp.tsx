@@ -35,6 +35,7 @@ import { PageTitle } from "@/features/admin/shared";
 import { whatsAppHubStore } from "@/features/whatsapp/service";
 import { isCustomerServiceWindowOpen } from "@/features/whatsapp/budget-engine";
 import type { WhatsAppConversation, WhatsAppTemplate } from "@/features/whatsapp/types";
+import { RequirePermission } from "@/features/admin/guard";
 
 export const Route = createFileRoute("/admin/whatsapp")({
   component: AdminWhatsAppHub,
@@ -245,7 +246,8 @@ function AdminWhatsAppHub() {
   };
 
   return (
-    <div className="space-y-6">
+    <RequirePermission permission="manage:orders" fallbackMessage="إدارة محادثات وحملات الواتساب للأعمال مقتصرة على موظفي العمليات والإدارة.">
+      <div className="space-y-6">
       {/* Master Warning Ribbon if WhatsApp is OFF */}
       {!apiForm.isEnabled && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 flex items-center justify-between">
@@ -1404,5 +1406,6 @@ function AdminWhatsAppHub() {
         </div>
       )}
     </div>
+    </RequirePermission>
   );
 }

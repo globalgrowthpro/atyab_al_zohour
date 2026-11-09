@@ -8,6 +8,7 @@ import { useChartTheme } from "@/features/admin/theme";
 import { sar, type Tone } from "@/features/admin/data";
 import { Badge, DataTable, KpiCard, PageTitle, Panel, Toolbar, ExportButton, SelectFilter, uniq } from "@/features/admin/shared";
 import { supabase } from "@/integrations/supabase/client";
+import { RequirePermission } from "@/features/admin/guard";
 
 export const Route = createFileRoute("/admin/crm")({
   head: () => ({ meta: [{ title: "إدارة علاقات العملاء | لوحة الإدارة" }, { name: "description", content: "مسار المبيعات والعملاء المحتملين ومهام المتابعة." }] }),
@@ -155,7 +156,7 @@ function Crm() {
   const maxFunnel = Math.max(1, funnel[0]?.n ?? 1);
 
   return (
-    <>
+    <RequirePermission permission="manage:clients" fallbackMessage="إدارة مسار المبيعات وعلاقات العملاء CRM مقتصرة على موظفي المبيعات والعمليات والإدارة.">
       <PageTitle title="إدارة علاقات العملاء" desc="تابع العملاء المحتملين ومراحل الصفقات والمهام من مكان واحد."
         action={<button onClick={addLead} className="btn btn-primary"><UserPlus className="size-4" />عميل محتمل</button>} />
 
@@ -338,6 +339,6 @@ function Crm() {
           </aside>
         </div>
       )}
-    </>
+    </RequirePermission>
   );
 }

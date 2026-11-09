@@ -5,6 +5,7 @@ import { Badge, PageTitle, Panel, StatCard } from "@/features/admin/shared";
 import { Area, Field, Grid, Toggle } from "@/features/admin/form";
 import { Bot, Globe, MessageCircleQuestion, Search, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { RequirePermission } from "@/features/admin/guard";
 
 export const Route = createFileRoute("/admin/seo")({ component: Seo });
 
@@ -106,7 +107,7 @@ function Seo() {
   };
 
   return (
-    <>
+    <RequirePermission permission="manage:seo" fallbackMessage="إدارة إعدادات محركات البحث وSEO/AEO مقتصرة على مسؤولي التسويق ومدراء النظام.">
       <PageTitle title="SEO و AEO و GEO" desc="ظهور الموقع في محركات البحث ومحركات الإجابة وأدوات الذكاء الاصطناعي." />
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={Search} label="صفحات مفهرسة" value="7 / 7" hint="فهرسة ديناميكية" />
@@ -255,6 +256,6 @@ function Seo() {
           </button>
         </div>
       </form>
-    </>
+    </RequirePermission>
   );
 }

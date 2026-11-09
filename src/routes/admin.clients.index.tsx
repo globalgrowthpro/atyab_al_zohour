@@ -23,6 +23,7 @@ import {
   uniq,
 } from "@/features/admin/shared";
 import { supabase } from "@/integrations/supabase/client";
+import { RequirePermission } from "@/features/admin/guard";
 
 export const Route = createFileRoute("/admin/clients/")({ component: Clients });
 
@@ -168,7 +169,7 @@ function Clients() {
   const maxTier = Math.max(1, ...tiers.map((x) => x.n));
 
   return (
-    <>
+    <RequirePermission permission="manage:clients" fallbackMessage="إدارة وتفعيل حسابات العملاء التجاريين مقتصرة على موظفي الإدارة والعمليات.">
       <PageTitle title="حسابات العملاء" desc="وافق على الحسابات الجديدة وحدد فئة السعر لكل عميل." />
       <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border bg-admin-panel p-4 shadow-soft">
@@ -302,6 +303,6 @@ function Clients() {
           ))}
         </DataTable>
       </Panel>
-    </>
+    </RequirePermission>
   );
 }
