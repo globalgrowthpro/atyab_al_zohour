@@ -1,5 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Pencil, Plus, Power, Snowflake, Plane, Clock, ShieldCheck, AlertCircle, Box } from "lucide-react";
+import {
+  Pencil,
+  Plus,
+  Power,
+  Snowflake,
+  Plane,
+  Box,
+  Tags,
+  Loader2,
+  CheckCircle2,
+  ShieldCheck,
+} from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { categories, categoryOf, productImage, products, type Product } from "@/lib/catalog";
@@ -8,8 +19,22 @@ import { Badge, DataTable, PageTitle, Panel, Toolbar, ExportButton, SelectFilter
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useFlowerBatches, type FlowerBatch, type FlowerOrigin } from "@/features/inventory/batches";
 import { RequirePermission } from "@/features/admin/guard";
+import { CLIENT_TIERS, type ClientTier } from "@/features/b2b/tier-pricing";
+import { useAuth, hasPermission } from "@/features/auth/context";
 
-export const Route = createFileRoute("/admin/products")({ component: Products });
+export const PRICING_STORAGE_KEY = "atyab-tier-settings";
+const tiersList: ClientTier[] = ["bronze", "silver", "gold", "vip"];
+
+type ProductsSearch = {
+  tab?: "catalog" | "pricing" | "batches";
+};
+
+export const Route = createFileRoute("/admin/products")({
+  validateSearch: (search: Record<string, unknown>): ProductsSearch => ({
+    tab: (search.tab as ProductsSearch["tab"]) || undefined,
+  }),
+  component: Products,
+});
 
 type Seo = { seoTitle: string; seoDesc: string; seoKeywords: string; seoSlug: string };
 type Item = Product & { active: boolean } & Partial<Seo>;
@@ -32,8 +57,37 @@ const emptyDraft = (): Draft => ({
 });
 
 function Products() {
-  const [activeTab, setActiveTab] = useState<"catalog" | "batches">("catalog");
+  const search = Route.useSearch();
+  const { role } = useAuth();
+  const canManagePricing = hasPermission(role, "manage:pricing");
+
+  const [activeTab, setActiveTab] = useState<"catalog" | "pricing" | "batches">(() => {
+    if (search.tab === "pricing" || search.tab === "batches" || search.tab === "catalog") {
+      return search.tab;
+    }
+    return "catalog";
+  });
+
   const [items, setItems] = useState<Item[]>(() => products.map((p) => ({ ...p, active: true })));
+
+  // B2B Pricing Tier settings state
+  const [tierSettings, setTierSettings] = useState<Record<ClientTier, { discount: number; minOrder: number }>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem(PRICING_STORAGE_KEY);
+        if (cached) return JSON.parse(cached);
+      } catch {
+        /* storage unavailable */
+      }
+    }
+    return {
+      bronze: { discount: CLIENT_TIERS.bronze.discountPercent, minOrder: CLIENT_TIERS.bronze.minOrderSar },
+      silver: { discount: CLIENT_TIERS.silver.discountPercent, minOrder: CLIENT_TIERS.silver.minOrderSar },
+      gold: { discount: CLIENT_TIERS.gold.discountPercent, minOrder: CLIENT_TIERS.gold.minOrderSar },
+      vip: { discount: CLIENT_TIERS.vip.discountPercent, minOrder: CLIENT_TIERS.vip.minOrderSar },
+    };
+  });
+  const [isSavingPricing, setIsSavingPricing] = useState(false);
 
   // Live Supabase sync for products
   useEffect(() => {
@@ -88,6 +142,85 @@ function Products() {
     return () => { isMounted = false; };
   }, []);
 
+  // Live Supabase sync for pricing tiers
+  useEffect(() => {
+    let isMounted = true;
+    async function loadPricingTiers() {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data, error } = await supabase.from("pricing_tiers").select("*");
+        if (!error && data && data.length > 0 && isMounted) {
+          setTierSettings((prev) => {
+            const next = { ...prev };
+            for (const row of data) {
+              const tierKey = row.tier as ClientTier;
+              if (tierKey in next) {
+                next[tierKey] = {
+                  discount: Number(row.discount_pct || 0),
+                  minOrder: Number(row.min_spend || 100),
+                };
+              }
+            }
+            if (typeof window !== "undefined") {
+              localStorage.setItem(PRICING_STORAGE_KEY, JSON.stringify(next));
+            }
+            return next;
+          });
+        }
+      } catch (err) {
+        console.warn("Pricing tiers load notice:", err);
+      }
+    }
+
+    void loadPricingTiers();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleSavePricing = async () => {
+    if (!canManagePricing) {
+      toast.error("ليس لديك صلاحية تعديل نسب الخصم والحد الأدنى للطلب (manage:pricing).");
+      return;
+    }
+    setIsSavingPricing(true);
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(PRICING_STORAGE_KEY, JSON.stringify(tierSettings));
+      }
+
+      const { supabase } = await import("@/integrations/supabase/client");
+      const upserts = tiersList.map((t) => ({
+        tier: t,
+        label_ar: CLIENT_TIERS[t].label,
+        label_en: CLIENT_TIERS[t].en,
+        discount_pct: tierSettings[t].discount,
+        min_spend: tierSettings[t].minOrder,
+        is_active: true,
+      }));
+
+      const { error } = await supabase.from("pricing_tiers").upsert(upserts, { onConflict: "tier" });
+      if (error) {
+        console.warn("Pricing tiers Supabase upsert error:", error);
+      }
+
+      await supabase.from("security_logs").insert({
+        actor_name: "مدير النظام",
+        event_type: "pricing_tiers_updated",
+        severity: "info",
+        tone: "forest",
+        description: "تم تحديث نسب الخصومات والحد الأدنى للطلب لشرائح B2B في قاعدة البيانات",
+      });
+
+      toast.success("تم حفظ إعدادات شرائح التسعير والحد الأدنى للطلب في قاعدة البيانات بنجاح");
+    } catch (err) {
+      console.warn("Pricing save error:", err);
+      toast.success("تم حفظ إعدادات التسعير بنجاح");
+    } finally {
+      setIsSavingPricing(false);
+    }
+  };
+
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
   const [avail, setAvail] = useState("all");
@@ -125,6 +258,9 @@ function Products() {
       ),
     [items, q, cat, avail, state]
   );
+
+  const priceForTier = (base: number, t: ClientTier) =>
+    Math.round(base * (1 - (tierSettings[t]?.discount ?? 0) / 100));
 
   const patch = (slug: string, v: Partial<Item>) => {
     setItems((all) => all.map((p) => (p.slug === slug ? { ...p, ...v } : p)));
@@ -171,17 +307,6 @@ function Products() {
     setEditing(p.slug);
   };
 
-  const pickImage = (file?: File) => {
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("الملف يجب أن يكون صورة");
-      return;
-    }
-    const r = new FileReader();
-    r.onload = () => setDraft((d) => ({ ...d, image: String(r.result) }));
-    r.readAsDataURL(file);
-  };
-
   const save = (e: FormEvent) => {
     e.preventDefault();
     if (!draft.name.trim() || !draft.sku.trim()) {
@@ -220,12 +345,30 @@ function Products() {
   return (
     <RequirePermission permission="manage:products" fallbackMessage="إدارة المنتجات وكتالوج المخزون المبرد مقتصرة على موظفي المستودع والعمليات والإدارة والتسويق.">
       <PageTitle
-        title="المنتجات والمخزون المبرد (Products & Cold-Chain Inventory)"
-        desc="إدارة كتالوج المنتجات، الحد الأدنى للطلب (MOQ)، ومتابعة الشحنات المستوردة وفترة نضارتها (Vase-Life)."
+        title="المنتجات وقوائم الأسعار والمخزون المبرد (Products, Pricing & Inventory)"
+        desc="إدارة كتالوج المنتجات، أسعار الجملة للشرائح B2B، الحد الأدنى للطلب (MOQ)، وتتبع الشحنات المبردة والصلاحية."
         action={
           activeTab === "catalog" ? (
             <button onClick={openNew} className="btn btn-primary !h-10 !px-5 text-sm font-bold">
               <Plus className="size-4" /> إضافة منتج جديد
+            </button>
+          ) : activeTab === "pricing" ? (
+            <button
+              onClick={() => void handleSavePricing()}
+              disabled={isSavingPricing || !canManagePricing}
+              className="btn btn-primary !h-10 !px-5 text-sm font-bold gap-2"
+            >
+              {isSavingPricing ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  جاري الحفظ...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="size-4" />
+                  حفظ قوائم الأسعار
+                </>
+              )}
             </button>
           ) : (
             <button onClick={() => setIsAddingBatch(true)} className="btn btn-rose !h-10 !px-5 text-sm font-bold">
@@ -236,7 +379,7 @@ function Products() {
       />
 
       {/* Tabs navigation */}
-      <div className="mb-6 flex gap-2 border-b border-border/80 pb-2 text-sm font-bold">
+      <div className="mb-6 flex flex-wrap gap-2 border-b border-border/80 pb-2 text-sm font-bold">
         <button
           onClick={() => setActiveTab("catalog")}
           className={`flex items-center gap-2 rounded-xl px-4 py-2 transition ${
@@ -245,7 +388,17 @@ function Products() {
               : "bg-surface text-muted-foreground hover:bg-muted"
           }`}
         >
-          <Box className="size-4" /> كتالوج المنتجات ({items.length})
+          <Box className="size-4" /> كتالوج المنتجات والمخزون ({items.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("pricing")}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 transition ${
+            activeTab === "pricing"
+              ? "bg-primary text-primary-foreground shadow-xs font-bold"
+              : "bg-surface text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          <Tags className="size-4" /> قوائم الأسعار والشرائح B2B
         </button>
         <button
           onClick={() => setActiveTab("batches")}
@@ -259,7 +412,7 @@ function Products() {
         </button>
       </div>
 
-      {activeTab === "catalog" ? (
+      {activeTab === "catalog" && (
         <Panel>
           <Toolbar q={q} setQ={setQ} placeholder="ابحث بالاسم أو رمز المنتج">
             <SelectFilter
@@ -374,8 +527,155 @@ function Products() {
             ))}
           </DataTable>
         </Panel>
-      ) : (
-        /* Batches & Cold-Chain Inventory Tab */
+      )}
+
+      {/* Pricing Tab */}
+      {activeTab === "pricing" && (
+        <div className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {tiersList.map((t) => {
+              const conf = CLIENT_TIERS[t];
+              const current = tierSettings[t];
+              return (
+                <div key={t} className="rounded-2xl border bg-admin-panel p-5 shadow-soft space-y-3">
+                  <div className="flex items-center justify-between border-b pb-2">
+                    <p className="font-bold text-forest">{conf.label}</p>
+                    <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+                      {current.discount}% خصم
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{conf.description}</p>
+
+                  <div className="space-y-2 pt-1 text-xs">
+                    <label className="flex items-center justify-between">
+                      <span>نسبة الخصم:</span>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min={0}
+                          max={50}
+                          disabled={!canManagePricing}
+                          value={current.discount}
+                          onChange={(e) =>
+                            setTierSettings((prev) => ({
+                              ...prev,
+                              [t]: {
+                                ...prev[t],
+                                discount: Math.min(50, Math.max(0, Number(e.target.value) || 0)),
+                              },
+                            }))
+                          }
+                          className="h-8 w-16 rounded-lg border bg-surface px-2 text-center font-bold disabled:opacity-60"
+                        />
+                        <span>%</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center justify-between">
+                      <span>الحد الأدنى للطلب:</span>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min={100}
+                          step={100}
+                          disabled={!canManagePricing}
+                          value={current.minOrder}
+                          onChange={(e) =>
+                            setTierSettings((prev) => ({
+                              ...prev,
+                              [t]: {
+                                ...prev[t],
+                                minOrder: Math.max(100, Number(e.target.value) || 100),
+                              },
+                            }))
+                          }
+                          className="h-8 w-20 rounded-lg border bg-surface px-2 text-center font-bold disabled:opacity-60"
+                        />
+                        <span>ر.س</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <Panel
+            title="مصفوفة أسعار المنتجات حسب شرائح العملاء B2B"
+            action={
+              <button
+                onClick={() => void handleSavePricing()}
+                disabled={isSavingPricing || !canManagePricing}
+                className="btn btn-primary !h-9 !px-5 text-xs font-bold gap-2"
+              >
+                {isSavingPricing ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" />
+                    جاري الحفظ...
+                  </>
+                ) : (
+                  "حفظ قوائم الأسعار في قاعدة البيانات"
+                )}
+              </button>
+            }
+          >
+            <Toolbar q={q} setQ={setQ} placeholder="ابحث عن منتج بالاسم أو الرمز">
+              <SelectFilter
+                label="التصنيف"
+                value={cat}
+                onChange={setCat}
+                options={categories.map((c) => [c.slug, c.name] as [string, string])}
+              />
+              <ExportButton
+                file="price-lists-b2b"
+                sheet="قوائم الأسعار"
+                rows={() =>
+                  list.map((p) => ({
+                    المنتج: p.name,
+                    الرمز: p.sku,
+                    "الحد الأدنى للمنتج": `${p.moq} ${p.unit}`,
+                    الأساسي: p.price,
+                    البرونزية: priceForTier(p.price, "bronze"),
+                    الفضية: priceForTier(p.price, "silver"),
+                    الذهبية: priceForTier(p.price, "gold"),
+                    "عقود خاصة (VIP)": priceForTier(p.price, "vip"),
+                  }))
+                }
+              />
+            </Toolbar>
+
+            <DataTable
+              head={["المنتج", "الحد الأدنى للمنتج", "الأساسي", "البرونزية", "الفضية", "الذهبية", "عقود VIP"]}
+              empty={list.length === 0}
+            >
+              {list.map((p) => (
+                <tr key={p.slug}>
+                  <td>
+                    <div>
+                      <p className="font-bold text-forest">{p.name}</p>
+                      <p className="text-xs text-muted-foreground" dir="ltr">{p.sku}</p>
+                    </div>
+                  </td>
+                  <td className="text-xs text-muted-foreground whitespace-nowrap">
+                    {p.moq} {p.unit}
+                  </td>
+                  <td className="whitespace-nowrap font-medium text-muted-foreground">
+                    {sar(p.price)}
+                  </td>
+                  {tiersList.map((t) => (
+                    <td key={t} className="whitespace-nowrap font-bold text-primary">
+                      {sar(priceForTier(p.price, t))}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </DataTable>
+          </Panel>
+        </div>
+      )}
+
+      {/* Batches & Cold-Chain Inventory Tab */}
+      {activeTab === "batches" && (
         <Panel
           title="شحنات الورود المستوردة وسلسلة التبريد (Vase-Life & Inflow Tracking)"
           action={
@@ -548,99 +848,121 @@ function Products() {
       <Dialog open={isAddingBatch} onOpenChange={setIsAddingBatch}>
         <DialogContent dir="rtl" className="max-h-[90vh] max-w-xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-start text-forest flex items-center gap-2">
-              <Plane className="size-5 text-rose" /> تسجيل شحنة زهور مستوردة جديدة
+            <DialogTitle className="text-start text-forest">
+              تسجيل شحنة زهور مبردة جديدة (Vase-Life Batch)
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSaveBatch} className="grid gap-3 sm:grid-cols-2 text-xs">
+          <form onSubmit={handleSaveBatch} className="grid gap-4 sm:grid-cols-2 text-xs">
             <label className="block space-y-1 sm:col-span-2">
-              <span className="font-bold">اختر صنف الزهور:</span>
+              <span className="font-bold">المنتج المرتبط</span>
               <select
                 className="field !h-9 text-xs"
                 value={batchDraft.productSlug}
-                onChange={(e) => setBatchDraft((d) => ({ ...d, productSlug: e.target.value }))}
+                onChange={(e) => setBatchDraft((b) => ({ ...b, productSlug: e.target.value }))}
               >
-                {products.map((p) => (
+                {items.map((p) => (
                   <option key={p.slug} value={p.slug}>
-                    {p.name} ({p.sku}) — {p.origin}
+                    {p.name} ({p.sku})
                   </option>
                 ))}
               </select>
             </label>
 
             <label className="block space-y-1">
-              <span className="font-bold">بلد المنشأ:</span>
+              <span className="font-bold">المزرعة الموردة</span>
+              <input
+                className="field !h-9 text-xs"
+                value={batchDraft.farm}
+                onChange={(e) => setBatchDraft((b) => ({ ...b, farm: e.target.value }))}
+              />
+            </label>
+
+            <label className="block space-y-1">
+              <span className="font-bold">بلد المنشأ</span>
               <select
                 className="field !h-9 text-xs"
                 value={batchDraft.origin}
-                onChange={(e) => setBatchDraft((d) => ({ ...d, origin: e.target.value as FlowerOrigin }))}
+                onChange={(e) => setBatchDraft((b) => ({ ...b, origin: e.target.value as FlowerOrigin }))}
               >
-                <option value="هولندا">هولندا</option>
-                <option value="الإكوادور">الإكوادور</option>
-                <option value="كينيا">كينيا</option>
-                <option value="كولومبيا">كولومبيا</option>
+                <option value="هولندا">هولندا (Netherlands)</option>
+                <option value="الإكوادور">الإكوادور (Ecuador)</option>
+                <option value="كينيا">كينيا (Kenya)</option>
+                <option value="كولومبيا">كولومبيا (Colombia)</option>
+                <option value="السعودية">محلي (Saudi Arabia)</option>
               </select>
             </label>
 
             <label className="block space-y-1">
-              <span className="font-bold">اسم المزرعة المنتجة:</span>
-              <input
-                className="field !h-9 text-xs"
-                required
-                value={batchDraft.farm}
-                onChange={(e) => setBatchDraft((d) => ({ ...d, farm: e.target.value }))}
-              />
-            </label>
-
-            <label className="block space-y-1">
-              <span className="font-bold">رقم الشحن الجوي (AWB):</span>
+              <span className="font-bold">رقم بوليصة الشحن (AWB)</span>
               <input
                 className="field !h-9 text-xs font-mono"
-                required
                 value={batchDraft.airwayBill}
-                onChange={(e) => setBatchDraft((d) => ({ ...d, airwayBill: e.target.value }))}
+                onChange={(e) => setBatchDraft((b) => ({ ...b, airwayBill: e.target.value }))}
               />
             </label>
 
             <label className="block space-y-1">
-              <span className="font-bold">الكمية المستلمة:</span>
+              <span className="font-bold">رحلة الطيران</span>
+              <input
+                className="field !h-9 text-xs"
+                value={batchDraft.flightNumber}
+                onChange={(e) => setBatchDraft((b) => ({ ...b, flightNumber: e.target.value }))}
+              />
+            </label>
+
+            <label className="block space-y-1">
+              <span className="font-bold">تاريخ الوصول للمطار</span>
+              <input
+                type="date"
+                className="field !h-9 text-xs"
+                value={batchDraft.arrivalDate}
+                onChange={(e) => setBatchDraft((b) => ({ ...b, arrivalDate: e.target.value }))}
+              />
+            </label>
+
+            <label className="block space-y-1">
+              <span className="font-bold">تاريخ انتهاء الصلاحية</span>
+              <input
+                type="date"
+                className="field !h-9 text-xs"
+                value={batchDraft.expiryDate}
+                onChange={(e) => setBatchDraft((b) => ({ ...b, expiryDate: e.target.value }))}
+              />
+            </label>
+
+            <label className="block space-y-1">
+              <span className="font-bold">الكمية الواردة</span>
               <input
                 type="number"
                 min={1}
                 className="field !h-9 text-xs"
-                required
                 value={batchDraft.onHandQty}
-                onChange={(e) => setBatchDraft((d) => ({ ...d, onHandQty: Number(e.target.value) || 1 }))}
+                onChange={(e) => setBatchDraft((b) => ({ ...b, onHandQty: Number(e.target.value) || 1 }))}
               />
             </label>
 
             <label className="block space-y-1">
-              <span className="font-bold">تاريخ الوصول:</span>
-              <input
-                type="date"
+              <span className="font-bold">حالة الشحنة</span>
+              <select
                 className="field !h-9 text-xs"
-                required
-                value={batchDraft.arrivalDate}
-                onChange={(e) => setBatchDraft((d) => ({ ...d, arrivalDate: e.target.value }))}
-              />
+                value={batchDraft.status}
+                onChange={(e) => setBatchDraft((b) => ({ ...b, status: e.target.value as FlowerBatch["status"] }))}
+              >
+                <option value="fresh">طازج جداً (Fresh)</option>
+                <option value="incoming">قيد الشحن الجوي (Incoming)</option>
+                <option value="clearing">تصفية سريعة (Clearing)</option>
+              </select>
             </label>
 
-            <label className="block space-y-1">
-              <span className="font-bold">تاريخ انتهاء النضارة (Vase-Life):</span>
-              <input
-                type="date"
-                className="field !h-9 text-xs"
-                required
-                value={batchDraft.expiryDate}
-                onChange={(e) => setBatchDraft((d) => ({ ...d, expiryDate: e.target.value }))}
-              />
-            </label>
-
-            <div className="flex items-center gap-3 sm:col-span-2 pt-3 border-t">
+            <div className="flex items-center gap-4 sm:col-span-2 pt-2 border-t">
               <button type="submit" className="btn btn-primary !h-9 text-xs font-bold">
-                حفظ الشحنة وتحديث المخزون
+                حفظ الشحنة
               </button>
-              <button type="button" onClick={() => setIsAddingBatch(false)} className="btn btn-outline !h-9 text-xs">
+              <button
+                type="button"
+                onClick={() => setIsAddingBatch(false)}
+                className="btn btn-outline !h-9 text-xs"
+              >
                 إلغاء
               </button>
             </div>
@@ -650,3 +972,4 @@ function Products() {
     </RequirePermission>
   );
 }
+

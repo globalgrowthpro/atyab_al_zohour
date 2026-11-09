@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ChevronDown, Search, X, LogOut, Settings, UserRound, ArrowUpLeft, Clock3, Shield } from "lucide-react";
+import { ChevronDown, Search, X, LogOut, Settings, UserRound, ArrowUpLeft, Clock3, Shield, Tags } from "lucide-react";
 import logo from "@/assets/nav-logo.png";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -76,6 +76,7 @@ export function AdminHeader() {
 
   const searchEntries = [
     ...accessibleNav.map((i) => ({ id: i.to, to: i.to, label: i.label, detail: "أقسام الإدارة", Icon: i.icon })),
+    ...(hasPermission(role, "manage:products") ? [{ id: "pricing-tier-tab", to: "/admin/products" as const, label: "قوائم الأسعار والشرائح B2B", detail: "المنتجات والأسعار · خصومات وهوامش الشرائح", Icon: Tags }] : []),
     ...(hasPermission(role, "manage:orders") ? liveOrders.map((o) => ({ id: o.id, to: "/admin/orders" as const, label: o.id, detail: `الطلبات · ${o.client}`, Icon: accessibleNav[0]?.icon || Search })) : []),
     ...(hasPermission(role, "manage:clients") ? liveClients.map((c) => ({ id: c.id, to: "/admin/clients" as const, label: c.name, detail: `العملاء · ${c.name}`, Icon: UserRound })) : []),
     ...(hasPermission(role, "manage:products") ? products.map((p) => ({ id: p.slug, to: "/admin/products" as const, label: p.name, detail: "المنتجات والمخزون", Icon: accessibleNav[0]?.icon || Search })) : []),

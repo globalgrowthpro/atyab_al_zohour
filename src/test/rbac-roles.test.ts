@@ -40,7 +40,7 @@ describe("Role-Based Access Control (RBAC) System", () => {
       expect(getRoleDestination(role)).toBe("/admin");
     });
 
-    it("sees all 14 admin navigation items including security", () => {
+    it("sees all 13 admin navigation items including security", () => {
       const nav = getAdminNavigationForRole(role);
       expect(nav.length).toBe(adminNavigationItems.length);
       expect(nav.some((n) => n.to === "/admin/security")).toBe(true);
