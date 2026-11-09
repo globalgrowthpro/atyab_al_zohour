@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { adminQuotes, quoteStatusLabel, quoteStatusTone, type AdminQuote, type QuoteStatus } from "@/features/admin/data";
+import { quoteStatusLabel, quoteStatusTone, type AdminQuote, type QuoteStatus } from "@/features/admin/data";
 import { Badge, ExportButton, FilterChips, PageTitle, Toolbar } from "@/features/admin/shared";
 import { supabase } from "@/integrations/supabase/client";
 import { RequirePermission } from "@/features/admin/guard";
@@ -9,7 +9,7 @@ import { RequirePermission } from "@/features/admin/guard";
 export const Route = createFileRoute("/admin/quotes")({ component: Quotes });
 
 function Quotes() {
-  const [quotes, setQuotes] = useState<AdminQuote[]>(adminQuotes);
+  const [quotes, setQuotes] = useState<AdminQuote[]>([]);
   const [status, setStatus] = useState<QuoteStatus | "all">("all");
   const [q, setQ] = useState("");
 
@@ -22,7 +22,7 @@ function Quotes() {
           .select("*")
           .order("created_at", { ascending: false });
 
-        if (!error && data && data.length > 0 && isMounted) {
+        if (!error && data && isMounted) {
           const remoteQuotes: AdminQuote[] = data.map((d) => ({
             id: d.id,
             date: d.created_at ? d.created_at.split("T")[0]! : "2026-11-08",
@@ -33,9 +33,7 @@ function Quotes() {
             status: d.status as QuoteStatus,
           }));
 
-          const remoteIds = new Set(remoteQuotes.map((r) => r.id));
-          const demoUnique = adminQuotes.filter((dq) => !remoteIds.has(dq.id));
-          setQuotes([...remoteQuotes, ...demoUnique]);
+          setQuotes(remoteQuotes);
         }
       } catch (err) {
         console.warn("Quotes Supabase load notice:", err);

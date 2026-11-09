@@ -28,29 +28,6 @@ interface SystemUser {
   created_at: string;
 }
 
-const defaultUsers: SystemUser[] = [
-  { id: "usr-superadmin", email: "superadmin@atyabalzohour.com", fullName: "المهندس حافظ رحيم", phone: "+201007419344", role: "superadmin", tier: "platinum", created_at: "2026-10-01" },
-  { id: "usr-admin", email: "admin@atyabalzohour.com", fullName: "عبدالله الشمري", phone: "+966501234567", role: "admin", tier: "gold", created_at: "2026-10-05" },
-  { id: "usr-manager", email: "manager@atyabalzohour.com", fullName: "فيصل العتيبي", phone: "+966507654321", role: "manager", tier: "gold", created_at: "2026-10-10" },
-  { id: "usr-seo", email: "seo@atyabalzohour.com", fullName: "خالد المنصور", phone: "+966509876543", role: "seo", tier: "silver", created_at: "2026-10-15" },
-  { id: "usr-courier", email: "courier@atyabalzohour.com", fullName: "أحمد السريع", phone: "+966505551234", role: "courier", tier: "bronze", created_at: "2026-10-18" },
-  { id: "usr-client", email: "client@flowerboutique.sa", fullName: "سارة العتيبي (مؤسسة زهرة الربيع)", phone: "+966501112233", role: "client", tier: "gold", created_at: "2026-10-20" },
-];
-
-const initialSessions: SessionItem[] = [
-  { device: "Chrome · Windows", place: "الرياض", time: "الآن", current: true },
-  { device: "Safari · iPhone", place: "جدة", time: "منذ ساعتين", current: false },
-  { device: "Edge · Windows", place: "الدمام", time: "أمس", current: false },
-];
-
-const initialLog: Array<[string, string, string, Tone]> = [
-  ["2026-10-21 10:12", "المهندس حافظ رحيم", "تسجيل دخول بصلاحية المدير العام", "sage"],
-  ["2026-10-21 09:40", "—", "محاولة دخول فاشلة (3 مرات)", "danger"],
-  ["2026-10-20 18:05", "عبدالله الشمري", "تعديل قائمة أسعار فئة أ", "gold"],
-  ["2026-10-20 14:22", "فيصل العتيبي", "تغيير حالة طلب ORD-1046 إلى قيد التوصيل", "muted"],
-  ["2026-10-20 11:15", "خالد المنصور", "تحديث الكلمات المفتاحية لموسم الأعراس", "sage"],
-];
-
 const AVAILABLE_ROLES: Array<{ value: AppRole; label: string; tone: Tone }> = [
   { value: "superadmin", label: "👑 المدير العام (Super Admin)", tone: "gold" },
   { value: "admin", label: "🛡️ مدير النظام (Admin)", tone: "sage" },
@@ -62,9 +39,9 @@ const AVAILABLE_ROLES: Array<{ value: AppRole; label: string; tone: Tone }> = [
 
 function Security() {
   const { user: currentUser, profile: currentProfile, role: currentRole } = useAuth();
-  const [sessions, setSessions] = useState<SessionItem[]>(initialSessions);
-  const [logs, setLogs] = useState<Array<[string, string, string, Tone]>>(initialLog);
-  const [systemUsers, setSystemUsers] = useState<SystemUser[]>(defaultUsers);
+  const [sessions, setSessions] = useState<SessionItem[]>([]);
+  const [logs, setLogs] = useState<Array<[string, string, string, Tone]>>([]);
+  const [systemUsers, setSystemUsers] = useState<SystemUser[]>([]);
   const [selectedUserFilter, setSelectedUserFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
 
@@ -81,7 +58,7 @@ function Security() {
         ]);
 
         if (isMounted) {
-          if (!logsRes.error && logsRes.data && logsRes.data.length > 0) {
+          if (!logsRes.error && logsRes.data) {
             const formattedLogs: Array<[string, string, string, Tone]> = logsRes.data.map((l) => [
               l.created_at ? l.created_at.replace("T", " ").slice(0, 16) : "الآن",
               l.actor_name,
@@ -91,7 +68,7 @@ function Security() {
             setLogs(formattedLogs);
           }
 
-          if (!sessionsRes.error && sessionsRes.data && sessionsRes.data.length > 0) {
+          if (!sessionsRes.error && sessionsRes.data) {
             const formattedSessions: SessionItem[] = sessionsRes.data.map((s) => ({
               device: s.device,
               place: s.location || "الرياض",
@@ -101,7 +78,7 @@ function Security() {
             setSessions(formattedSessions);
           }
 
-          if (!profilesRes.error && profilesRes.data && profilesRes.data.length > 0) {
+          if (!profilesRes.error && profilesRes.data) {
             const loadedUsers: SystemUser[] = profilesRes.data.map((p) => ({
               id: p.id,
               email: p.email || "—",

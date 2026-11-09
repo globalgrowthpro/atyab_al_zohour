@@ -137,10 +137,8 @@ export const clientRepository: ClientRepository = {
             };
           });
 
-          // Merge: remote orders take precedence, keep demo/local if distinct
-          const existingIds = new Set(remoteOrders.map((ro) => ro.id));
-          const uniqueLocal = data.orders.filter((lo) => !existingIds.has(lo.id));
-          data = { ...data, orders: [...remoteOrders, ...uniqueLocal] };
+          // Remote orders take precedence: replace any demo orders with live data
+          data = { ...data, orders: remoteOrders };
           localStorage.setItem(CLIENT_STORAGE_KEY, JSON.stringify(data));
         }
       } catch (err) {

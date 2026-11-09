@@ -5,11 +5,9 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, Res
 import { useChartTheme } from "@/features/admin/theme";
 
 import {
-  adminActivity, adminClients, adminCouriers, adminOrders, adminQuotes, categoryShare, hourlyOrders,
-  orderStatusLabel, orderStatusTone, sar, weeklySales, type AdminActivity, type AdminOrder, type OrderStatus,
+  orderStatusLabel, orderStatusTone, sar, type AdminActivity, type AdminOrder, type OrderStatus,
 } from "@/features/admin/data";
 import { Badge, DataTable, ExportButton, KpiCard, Panel, Radial } from "@/features/admin/shared";
-import { products, categories } from "@/lib/catalog";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin/")({ component: Overview });
@@ -23,22 +21,44 @@ const activityIcon: Record<string, typeof ClipboardList> = {
   security: Shield,
 };
 
+const initialWeeklyDays = [
+  { day: "السبت", total: 0 },
+  { day: "الأحد", total: 0 },
+  { day: "الاثنين", total: 0 },
+  { day: "الثلاثاء", total: 0 },
+  { day: "الأربعاء", total: 0 },
+  { day: "الخميس", total: 0 },
+  { day: "الجمعة", total: 0 },
+];
+
+const initialHourlySlots = [
+  { h: "09:00", orders: 0 },
+  { h: "11:00", orders: 0 },
+  { h: "13:00", orders: 0 },
+  { h: "15:00", orders: 0 },
+  { h: "17:00", orders: 0 },
+  { h: "19:00", orders: 0 },
+];
+
 function Overview() {
   const chart = useChartTheme();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [orders, setOrders] = useState<AdminOrder[]>(adminOrders);
-  const [clientsCount, setClientsCount] = useState(adminClients.length);
-  const [pendingClientsCount, setPendingClientsCount] = useState(adminClients.filter((c) => c.status === "pending").length);
-  const [activeClientsCount, setActiveClientsCount] = useState(adminClients.filter((c) => c.status === "active").length);
-  const [pendingQuotesCount, setPendingQuotesCount] = useState(adminQuotes.filter((q) => q.status === "pending").length);
-  const [couriersCount, setCouriersCount] = useState(adminCouriers.length);
-  const [couriersOnRoute, setCouriersOnRoute] = useState(adminCouriers.filter((c) => c.status === "on-route").length);
-  const [outOfStockCount, setOutOfStockCount] = useState(products.filter((p) => !p.available).length);
-  const [totalProductsCount, setTotalProductsCount] = useState(products.length);
-  const [activities, setActivities] = useState<AdminActivity[]>(adminActivity);
-  const [dynamicWeeklySales, setDynamicWeeklySales] = useState(weeklySales);
-  const [dynamicCategoryShare, setDynamicCategoryShare] = useState(categoryShare);
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [clientsCount, setClientsCount] = useState(0);
+  const [pendingClientsCount, setPendingClientsCount] = useState(0);
+  const [activeClientsCount, setActiveClientsCount] = useState(0);
+  const [pendingQuotesCount, setPendingQuotesCount] = useState(0);
+  const [couriersCount, setCouriersCount] = useState(0);
+  const [couriersOnRoute, setCouriersOnRoute] = useState(0);
+  const [outOfStockCount, setOutOfStockCount] = useState(0);
+  const [totalProductsCount, setTotalProductsCount] = useState(0);
+  const [activities, setActivities] = useState<AdminActivity[]>([]);
+  const [dynamicWeeklySales, setDynamicWeeklySales] = useState(initialWeeklyDays);
+  const [hourlyDistribution, setHourlyDistribution] = useState(initialHourlySlots);
+  const [dynamicCategoryShare, setDynamicCategoryShare] = useState<Array<{ name: string; value: number }>>([
+    { name: "الورد الهولندي", value: 100 },
+  ]);
 
   useEffect(() => {
     let isMounted = true;
@@ -104,9 +124,26 @@ function Overview() {
 
           const computedWeekly = Object.entries(daysMap).map(([day, total]) => ({
             day,
-            total: total > 0 ? total : Math.floor(Math.random() * 8000 + 4000), // fallback baseline if today is new
+            total,
           }));
           setDynamicWeeklySales(computedWeekly);
+
+          // Calculate real hourly distribution from orders timestamps
+          const hourSlots: Record<string, number> = {
+            "09:00": 0, "11:00": 0, "13:00": 0, "15:00": 0, "17:00": 0, "19:00": 0,
+          };
+          for (const ord of ordersRes.data) {
+            if (ord.created_at) {
+              const hr = new Date(ord.created_at).getHours();
+              if (hr < 10) hourSlots["09:00"] = (hourSlots["09:00"] || 0) + 1;
+              else if (hr < 12) hourSlots["11:00"] = (hourSlots["11:00"] || 0) + 1;
+              else if (hr < 14) hourSlots["13:00"] = (hourSlots["13:00"] || 0) + 1;
+              else if (hr < 16) hourSlots["15:00"] = (hourSlots["15:00"] || 0) + 1;
+              else if (hr < 18) hourSlots["17:00"] = (hourSlots["17:00"] || 0) + 1;
+              else hourSlots["19:00"] = (hourSlots["19:00"] || 0) + 1;
+            }
+          }
+          setHourlyDistribution(Object.entries(hourSlots).map(([h, orders]) => ({ h, orders })));
 
           // Calculate real category share from orders items
           const catTotals: Record<string, number> = {};
@@ -282,7 +319,7 @@ function Overview() {
         <Panel title="توزيع أوقات الطلبات" action={<span className="text-xs text-muted-foreground">{orders.length} طلباً إجمالياً</span>}>
           <div className="h-52 p-4" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={hourlyOrders} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
+              <BarChart data={hourlyDistribution} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
                 <XAxis dataKey="h" tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} interval={1} />
                 <YAxis tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} width={28} />

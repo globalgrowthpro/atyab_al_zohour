@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowRight, Building2, CalendarDays, ClipboardList, FileText, Headset, MapPin, PackageCheck, Wallet, ShieldCheck } from "lucide-react";
 import {
-  adminClients, adminOrders, adminQuotes, adminTickets,
   clientStatusLabel, clientStatusTone, orderStatusLabel, orderStatusTone,
   quoteStatusLabel, quoteStatusTone, ticketStatusLabel, ticketStatusTone,
   tierDiscount, tierLabel, type AdminClient, type ClientStatus, type PriceTier,
+  type AdminOrder, type AdminQuote, type AdminTicket, type OrderStatus, type QuoteStatus, type TicketStatus,
 } from "@/features/admin/data";
 import { Badge, DataTable, KpiCard, Panel } from "@/features/admin/shared";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,43 +26,51 @@ function mapDbTierToPriceTier(tier?: string | null): PriceTier {
 
 function ClientDetails() {
   const { clientId } = Route.useParams();
-  const demoClient = adminClients.find((c) => c.id === clientId);
 
-  const [client, setClient] = useState<AdminClient>(
-    demoClient || {
-      id: clientId,
-      name: "عميل تجاري مسجل",
-      type: "منشأة معتمدة",
-      city: "الرياض",
-      cr: "1010xxxxxx",
-      orders: 0,
-      tier: "C",
-      status: "pending",
-      joined: new Date().toISOString().split("T")[0]!,
-    }
-  );
+  const [client, setClient] = useState<AdminClient>({
+    id: clientId,
+    name: "عميل تجاري مسجل",
+    type: "منشأة معتمدة",
+    city: "الرياض",
+    cr: "1010xxxxxx",
+    orders: 0,
+    tier: "C",
+    status: "pending",
+    joined: new Date().toISOString().split("T")[0]!,
+  });
 
-  const [status, setStatus] = useState<ClientStatus>(client.status);
-  const [tier, setTier] = useState<PriceTier>(client.tier);
+  const [status, setStatus] = useState<ClientStatus>("pending");
+  const [tier, setTier] = useState<PriceTier>("C");
   const [phone, setPhone] = useState<string>("");
   const [email, setEmail] = useState<string>("");
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [quotes, setQuotes] = useState<AdminQuote[]>([]);
+  const [tickets, setTickets] = useState<AdminTicket[]>([]);
 
   // Fetch real client data from Supabase
   useEffect(() => {
     let isMounted = true;
     async function loadClient() {
       try {
-        const [profileRes, clientRowRes] = await Promise.all([
+        const [profileRes, clientRowRes, ordersRes, quotesRes, ticketsRes] = await Promise.all([
           supabase.from("profiles").select("*").eq("id", clientId).maybeSingle(),
           supabase.from("clients").select("*").eq("id", clientId).maybeSingle(),
+          supabase.from("orders").select("*").order("created_at", { ascending: false }),
+          supabase.from("quotations").select("*").order("created_at", { ascending: false }),
+          supabase.from("tickets").select("*").order("created_at", { ascending: false }),
         ]);
 
         if (isMounted) {
+          let clientName = "";
+          let clientPhone = "";
+
           if (profileRes.data) {
             const p = profileRes.data;
+            clientName = p.company_name || p.full_name || "عميل تجاري";
+            clientPhone = p.phone || "";
             const loaded: AdminClient = {
               id: p.id,
-              name: p.company_name || p.full_name || "عميل تجاري",
+              name: clientName,
               type: p.company_name ? "منشأة تجارية" : "محل ورد",
               city: p.city || "الرياض",
               cr: p.commercial_register || "1010xxxxxx",
@@ -78,9 +86,11 @@ function ClientDetails() {
             if (p.email) setEmail(p.email);
           } else if (clientRowRes.data) {
             const c = clientRowRes.data;
+            clientName = c.company || c.name;
+            clientPhone = c.phone || "";
             const loaded: AdminClient = {
               id: c.id,
-              name: c.company || c.name,
+              name: clientName,
               type: c.company ? "منشأة تجارية" : "محل ورد",
               city: c.city || "الرياض",
               cr: c.cr_number || "1010xxxxxx",
@@ -95,6 +105,62 @@ function ClientDetails() {
             if (c.phone) setPhone(c.phone);
             if (c.email) setEmail(c.email);
           }
+
+          // Real filtered orders
+          if (ordersRes.data) {
+            const matched = ordersRes.data
+              .filter((o) => (clientPhone && o.client_phone === clientPhone) || (clientName && o.client_name === clientName))
+              .map((o) => {
+                const statusMap: Record<string, OrderStatus> = {
+                  received: "new",
+                  preparing: "preparing",
+                  ready: "ready",
+                  shipping: "shipping",
+                  delivered: "delivered",
+                  cancelled: "cancelled",
+                };
+                return {
+                  id: o.id,
+                  client: o.client_name,
+                  city: o.city,
+                  date: o.created_at ? o.created_at.split("T")[0]! : "2026-11-08",
+                  items: Array.isArray(o.items) ? o.items.length : 1,
+                  total: Number(o.total || 0),
+                  status: statusMap[o.status] || "new",
+                };
+              });
+            setOrders(matched);
+          }
+
+          // Real filtered quotes
+          if (quotesRes.data) {
+            const matched = quotesRes.data
+              .filter((q) => (clientPhone && q.client_phone === clientPhone) || (clientName && (q.client_name === clientName || q.company_name === clientName)))
+              .map((q) => ({
+                id: q.id,
+                date: q.created_at ? q.created_at.split("T")[0]! : "2026-11-08",
+                client: q.company_name || q.client_name,
+                contact: q.client_name,
+                items: Array.isArray(q.items) ? q.items.length : 1,
+                note: q.notes || `عرض سعر لـ ${q.city}`,
+                status: q.status as QuoteStatus,
+              }));
+            setQuotes(matched);
+          }
+
+          // Real filtered tickets
+          if (ticketsRes.data) {
+            const matched = ticketsRes.data
+              .filter((t) => clientPhone && t.client_phone === clientPhone)
+              .map((t) => ({
+                id: t.id,
+                client: t.client_phone,
+                subject: t.subject,
+                date: t.created_at ? t.created_at.split("T")[0]! : "2026-11-09",
+                status: (t.status === "closed" ? "closed" : t.status === "answered" ? "answered" : "open") as TicketStatus,
+              }));
+            setTickets(matched);
+          }
         }
       } catch (err) {
         console.warn("Client details load error:", err);
@@ -107,9 +173,6 @@ function ClientDetails() {
     };
   }, [clientId]);
 
-  const orders = adminOrders.filter((o) => o.client === client.name);
-  const quotes = adminQuotes.filter((q) => q.client === client.name);
-  const tickets = adminTickets.filter((t) => t.client === client.name);
   const recentValue = orders.reduce((s, o) => s + o.total, 0);
   const lastOrder = orders.map((o) => o.date).sort().at(-1);
 

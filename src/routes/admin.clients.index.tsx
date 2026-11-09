@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  adminClients,
   clientStatusLabel,
   clientStatusTone,
   tierLabel,
@@ -36,7 +35,7 @@ function mapDbTierToPriceTier(tier?: string | null): PriceTier {
 }
 
 function Clients() {
-  const [clients, setClients] = useState<AdminClient[]>(adminClients);
+  const [clients, setClients] = useState<AdminClient[]>([]);
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<ClientStatus | "all">("all");
@@ -101,11 +100,7 @@ function Clients() {
             }
           }
 
-          if (remoteClients.length > 0) {
-            const remoteIds = new Set(remoteClients.map((rc) => rc.id));
-            const uniqueDemo = adminClients.filter((dc) => !remoteIds.has(dc.id));
-            setClients([...remoteClients, ...uniqueDemo]);
-          }
+          setClients(remoteClients);
         }
       } catch (err) {
         console.warn("Clients Supabase fetch notice:", err);

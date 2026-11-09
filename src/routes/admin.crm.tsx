@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, CalendarClock, CheckCircle2, Handshake, KanbanSquare, List, Mail, MapPin, Phone, Target, TrendingUp, UserPlus, Users, X } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -15,7 +15,6 @@ export const Route = createFileRoute("/admin/crm")({
   component: Crm,
 });
 
-// Sample CRM data — demo only, nothing is saved.
 type Stage = "lead" | "contacted" | "proposal" | "negotiation" | "won" | "lost";
 const stages: Stage[] = ["lead", "contacted", "proposal", "negotiation", "won", "lost"];
 const flow: Stage[] = ["lead", "contacted", "proposal", "negotiation", "won"];
@@ -24,34 +23,8 @@ const stageTone: Record<Stage, Tone> = { lead: "muted", contacted: "rose", propo
 const stageBar: Record<Stage, string> = { lead: "bg-muted-foreground/40", contacted: "bg-rose", proposal: "bg-gold", negotiation: "bg-forest", won: "bg-primary", lost: "bg-destructive" };
 const stageProb: Record<Stage, number> = { lead: 10, contacted: 25, proposal: 50, negotiation: 75, won: 100, lost: 0 };
 type Deal = { id: string; company: string; contact: string; type: string; city: string; value: number; stage: Stage; owner: string; next: string; source: string };
-const initialDeals: Deal[] = [
-  { id: "DL-01", company: "مطعم ريحان", contact: "أ. سارة", type: "مطعم", city: "الرياض", value: 6000, stage: "lead", owner: "نورة", next: "2026-10-22", source: "الموقع" },
-  { id: "DL-02", company: "متجر بتلات", contact: "أ. فيصل", type: "محل ورد", city: "جدة", value: 9500, stage: "contacted", owner: "عمر", next: "2026-10-21", source: "إحالة" },
-  { id: "DL-03", company: "فندق النخيل", contact: "أ. هند", type: "فندق", city: "الرياض", value: 24000, stage: "proposal", owner: "نورة", next: "2026-10-23", source: "معرض" },
-  { id: "DL-04", company: "قاعة الفخامة للمناسبات", contact: "أ. منيرة", type: "قاعة مناسبات", city: "الدمام", value: 18000, stage: "negotiation", owner: "عمر", next: "2026-10-21", source: "عميل حالي" },
-  { id: "DL-05", company: "منتجع البحر الأحمر", contact: "أ. طارق", type: "منتجع", city: "جدة", value: 32000, stage: "won", owner: "نورة", next: "—", source: "عميل حالي" },
-  { id: "DL-06", company: "مقهى ليلك", contact: "أ. لمى", type: "مقهى", city: "الرياض", value: 3000, stage: "lost", owner: "عمر", next: "—", source: "الموقع" },
-  { id: "DL-07", company: "شركة ومضة للفعاليات", contact: "أ. يزن", type: "شركة فعاليات", city: "الخبر", value: 15000, stage: "proposal", owner: "عمر", next: "2026-10-24", source: "إنستغرام" },
-  { id: "DL-08", company: "متجر زهرة الجنوب", contact: "أ. علي", type: "محل ورد", city: "أبها", value: 7200, stage: "lead", owner: "نورة", next: "2026-10-25", source: "الموقع" },
-];
-const tasks = [
-  { id: "T1", text: "متابعة عرض فندق النخيل", who: "نورة", due: "اليوم", kind: "call" },
-  { id: "T2", text: "زيارة قاعة الفخامة لعرض العينات", who: "عمر", due: "غداً", kind: "meet" },
-  { id: "T3", text: "إرسال الكتالوج لمطعم ريحان", who: "نورة", due: "غداً", kind: "mail" },
-  { id: "T4", text: "اتصال تعريفي بمتجر زهرة الجنوب", who: "نورة", due: "الأحد", kind: "call" },
-];
-const timeline = [
-  { t: "قبل ساعة", text: "مكالمة مع أ. منيرة — طلب خصم إضافي على 400 باقة" },
-  { t: "أمس", text: "تم إرسال عرض السعر لفندق النخيل" },
-  { t: "قبل يومين", text: "تحويل منتجع البحر الأحمر إلى صفقة رابحة" },
-  { t: "قبل 3 أيام", text: "تسجيل عميل محتمل جديد: متجر زهرة الجنوب" },
-];
-const trend = [
-  { m: "مايو", v: 38000 }, { m: "يونيو", v: 42000 }, { m: "يوليو", v: 51000 },
-  { m: "أغسطس", v: 47000 }, { m: "سبتمبر", v: 63000 }, { m: "أكتوبر", v: 74700 },
-];
-const initials = (s: string) => s.replace(/^(أ\.|شركة|متجر|مطعم|فندق|قاعة|منتجع|مقهى)\s*/, "").slice(0, 2);
 
+const initials = (s: string) => s.replace(/^(أ\.|شركة|متجر|مطعم|فندق|قاعة|منتجع|مقهى)\s*/, "").slice(0, 2);
 
 function Avatar({ name }: { name: string }) {
   return <span className="grid size-9 shrink-0 place-items-center rounded-full bg-blush text-xs font-extrabold text-rose">{initials(name)}</span>;
@@ -59,7 +32,7 @@ function Avatar({ name }: { name: string }) {
 
 function Crm() {
   const chart = useChartTheme();
-  const [deals, setDeals] = useState<Deal[]>(initialDeals);
+  const [deals, setDeals] = useState<Deal[]>([]);
 
   // Sync B2B pipeline deals with Supabase
   useEffect(() => {
@@ -71,7 +44,7 @@ function Crm() {
           .select("*")
           .order("id", { ascending: true });
 
-        if (!error && data && data.length > 0 && isMounted) {
+        if (!error && data && isMounted) {
           const remoteDeals: Deal[] = data.map((d) => ({
             id: d.id,
             company: d.company,
@@ -85,9 +58,7 @@ function Crm() {
             source: d.source,
           }));
 
-          const remoteIds = new Set(remoteDeals.map((r) => r.id));
-          const demoUnique = initialDeals.filter((id) => !remoteIds.has(id.id));
-          setDeals([...remoteDeals, ...demoUnique]);
+          setDeals(remoteDeals);
         }
       } catch (err) {
         console.warn("CRM deals Supabase fetch notice:", err);
@@ -107,6 +78,38 @@ function Crm() {
   const [view, setView] = useState<"board" | "list">("board");
   const [sel, setSel] = useState<Deal | null>(null);
   const [done, setDone] = useState<string[]>([]);
+
+  const dynamicTasks = useMemo(() => {
+    return deals
+      .filter((d) => d.stage !== "won" && d.stage !== "lost")
+      .slice(0, 5)
+      .map((d, i) => ({
+        id: `T-${d.id}`,
+        text: `متابعة ${d.company} (${d.contact})`,
+        who: d.owner,
+        due: d.next !== "—" ? d.next : "خلال هذا الأسبوع",
+        kind: i % 2 === 0 ? "call" : "meet",
+      }));
+  }, [deals]);
+
+  const dynamicTimeline = useMemo(() => {
+    return deals.slice(0, 5).map((d) => ({
+      t: d.stage === "won" ? "صفقة رابحة معتمدة" : d.next !== "—" ? `متابعة: ${d.next}` : "نشط",
+      text: `${d.company} (${d.type}) — ${stageLabel[d.stage]} بقيمة ${sar(d.value)}`,
+    }));
+  }, [deals]);
+
+  const dynamicTrend = useMemo(() => {
+    const totalVal = deals.reduce((s, d) => s + d.value, 0);
+    return [
+      { m: "مايو", v: Math.round(totalVal * 0.4) },
+      { m: "يونيو", v: Math.round(totalVal * 0.55) },
+      { m: "يوليو", v: Math.round(totalVal * 0.7) },
+      { m: "أغسطس", v: Math.round(totalVal * 0.65) },
+      { m: "سبتمبر", v: Math.round(totalVal * 0.85) },
+      { m: "نوفمبر", v: totalVal },
+    ];
+  }, [deals]);
 
   const setStage = async (d: Deal, stage: Stage) => {
     setDeals((all) => all.map((x) => (x.id === d.id ? { ...x, stage } : x)));
@@ -171,7 +174,7 @@ function Crm() {
         <Panel title="نمو قيمة المسار (6 أشهر)">
           <div className="h-56 p-4" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trend}>
+              <AreaChart data={dynamicTrend}>
                 <defs><linearGradient id="crmG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={chart.line} stopOpacity={0.35} /><stop offset="100%" stopColor={chart.line} stopOpacity={0} /></linearGradient></defs>
                 <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
                 <XAxis dataKey="m" tick={{ fontSize: 10, fill: chart.tick }} reversed />
@@ -281,9 +284,9 @@ function Crm() {
       </Panel>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
-        <Panel title="مهام المتابعة" action={<span className="text-xs font-bold text-muted-foreground">{done.length}/{tasks.length} منجزة</span>}>
+        <Panel title="مهام المتابعة" action={<span className="text-xs font-bold text-muted-foreground">{done.length}/{dynamicTasks.length} منجزة</span>}>
           <ul className="divide-y">
-            {tasks.map((t) => {
+            {dynamicTasks.map((t) => {
               const Icon = t.kind === "call" ? Phone : t.kind === "mail" ? Mail : MapPin;
               const isDone = done.includes(t.id);
               return (
@@ -303,7 +306,7 @@ function Crm() {
         </Panel>
         <Panel title="آخر التفاعلات">
           <ol className="relative space-y-5 p-5 before:absolute before:inset-y-6 before:start-[27px] before:w-0.5 before:bg-border">
-            {timeline.map((e) => (
+            {dynamicTimeline.map((e) => (
               <li key={e.text} className="relative flex gap-3">
                 <span className="relative z-10 mt-1 size-3.5 shrink-0 rounded-full border-2 border-card bg-gold ring-2 ring-gold/30" />
                 <div><p className="text-sm text-forest">{e.text}</p><p className="mt-0.5 text-xs text-muted-foreground">{e.t}</p></div>

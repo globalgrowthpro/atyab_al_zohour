@@ -297,10 +297,8 @@ export const courierRepository: CourierRepository = {
             };
           });
 
-          // Combine remote with local/demo tasks
-          const remoteIds = new Set(formatted.map((f) => f.id));
-          const uniqueLocal = data.tasks.filter((lt) => !remoteIds.has(lt.id));
-          data = { ...data, tasks: [...formatted, ...uniqueLocal] };
+          // Remote tasks take precedence: replace any demo tasks with live data
+          data = { ...data, tasks: formatted };
           localStorage.setItem(COURIER_STORAGE_KEY, JSON.stringify(data));
         }
       } catch (err) {

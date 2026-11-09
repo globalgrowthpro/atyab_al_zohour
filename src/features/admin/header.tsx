@@ -8,8 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { ThemeToggle } from "./theme";
 import { adminNavigationItems } from "./navigation";
 import { useAuth, getRoleLabel, hasPermission } from "@/features/auth/context";
-
-import { adminClients, adminOrders, adminQuotes, adminCouriers, adminTickets } from "./data";
+import { supabase } from "@/integrations/supabase/client";
 import { products } from "@/lib/catalog";
 
 function DigitalClock() {
@@ -44,17 +43,43 @@ export function AdminHeader() {
   const searchRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
+  const [liveOrders, setLiveOrders] = useState<Array<{ id: string; client: string }>>([]);
+  const [liveClients, setLiveClients] = useState<Array<{ id: string; name: string }>>([]);
+  const [liveCouriers, setLiveCouriers] = useState<Array<{ id: string; name: string }>>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadSearchData() {
+      try {
+        const [oRes, pRes, cRes] = await Promise.all([
+          supabase.from("orders").select("id, client_name").limit(10),
+          supabase.from("profiles").select("id, full_name, company_name").limit(10),
+          supabase.from("couriers").select("id, name").limit(10),
+        ]);
+        if (isMounted) {
+          if (oRes.data) setLiveOrders(oRes.data.map((o) => ({ id: o.id, client: o.client_name })));
+          if (pRes.data) setLiveClients(pRes.data.map((p) => ({ id: p.id, name: p.company_name || p.full_name || "عميل مسجل" })));
+          if (cRes.data) setLiveCouriers(cRes.data.map((c) => ({ id: c.id, name: c.name })));
+        }
+      } catch {
+        // Safe fallback
+      }
+    }
+    void loadSearchData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Role-filtered navigation entries
   const accessibleNav = adminNavigationItems.filter((i) => hasPermission(role, i.permission));
 
   const searchEntries = [
     ...accessibleNav.map((i) => ({ id: i.to, to: i.to, label: i.label, detail: "أقسام الإدارة", Icon: i.icon })),
-    ...(hasPermission(role, "manage:orders") ? adminOrders.map((o) => ({ id: o.id, to: "/admin/orders" as const, label: o.id, detail: `الطلبات · ${o.client}`, Icon: accessibleNav[0]?.icon || Search })) : []),
-    ...(hasPermission(role, "manage:clients") ? adminClients.map((c) => ({ id: c.id, to: "/admin/clients" as const, label: c.name, detail: `العملاء · ${c.id} · ${c.city}`, Icon: UserRound })) : []),
-    ...(hasPermission(role, "manage:orders") ? adminQuotes.map((q) => ({ id: q.id, to: "/admin/quotes" as const, label: q.id, detail: `عروض الأسعار · ${q.client}`, Icon: accessibleNav[0]?.icon || Search })) : []),
+    ...(hasPermission(role, "manage:orders") ? liveOrders.map((o) => ({ id: o.id, to: "/admin/orders" as const, label: o.id, detail: `الطلبات · ${o.client}`, Icon: accessibleNav[0]?.icon || Search })) : []),
+    ...(hasPermission(role, "manage:clients") ? liveClients.map((c) => ({ id: c.id, to: "/admin/clients" as const, label: c.name, detail: `العملاء · ${c.name}`, Icon: UserRound })) : []),
     ...(hasPermission(role, "manage:products") ? products.map((p) => ({ id: p.slug, to: "/admin/products" as const, label: p.name, detail: "المنتجات والمخزون", Icon: accessibleNav[0]?.icon || Search })) : []),
-    ...(hasPermission(role, "manage:couriers") ? adminCouriers.map((c) => ({ id: c.id, to: "/admin/couriers" as const, label: c.name, detail: `المندوبون · ${c.zone}`, Icon: accessibleNav[0]?.icon || Search })) : []),
-    ...(hasPermission(role, "manage:support") ? adminTickets.map((t) => ({ id: t.id, to: "/admin/support" as const, label: t.id, detail: `الدعم · ${t.subject}`, Icon: accessibleNav[0]?.icon || Search })) : []),
+    ...(hasPermission(role, "manage:couriers") ? liveCouriers.map((c) => ({ id: c.id, to: "/admin/couriers" as const, label: c.name, detail: `المندوبون · ${c.name}`, Icon: accessibleNav[0]?.icon || Search })) : []),
   ];
 
   const term = query.trim().toLocaleLowerCase();

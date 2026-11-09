@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Star, Truck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { type AdminCourier, type CourierStatus, adminCouriers, courierStatusLabel, courierStatusTone } from "@/features/admin/data";
+import { type AdminCourier, type CourierStatus, courierStatusLabel, courierStatusTone } from "@/features/admin/data";
 import { Badge, ExportButton, FilterChips, PageTitle, Panel, SelectFilter, Toolbar, uniq } from "@/features/admin/shared";
 import { supabase } from "@/integrations/supabase/client";
 import { RequirePermission } from "@/features/admin/guard";
@@ -9,7 +9,7 @@ import { RequirePermission } from "@/features/admin/guard";
 export const Route = createFileRoute("/admin/couriers/")({ component: Couriers });
 
 function Couriers() {
-  const [couriers, setCouriers] = useState<AdminCourier[]>(adminCouriers);
+  const [couriers, setCouriers] = useState<AdminCourier[]>([]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<CourierStatus | "all">("all");
   const [zone, setZone] = useState("all");
@@ -24,7 +24,7 @@ function Couriers() {
           supabase.from("delivery_tasks").select("courier_id, status"),
         ]);
 
-        if (isMounted && couriersRes.data && couriersRes.data.length > 0) {
+        if (isMounted && couriersRes.data) {
           const tasks = tasksRes.data || [];
           const remoteList: AdminCourier[] = couriersRes.data.map((c) => {
             const courierTasks = tasks.filter((t) => t.courier_id === c.id);
@@ -44,9 +44,7 @@ function Couriers() {
             };
           });
 
-          const remoteIds = new Set(remoteList.map((r) => r.id));
-          const uniqueDemo = adminCouriers.filter((d) => !remoteIds.has(d.id));
-          setCouriers([...remoteList, ...uniqueDemo]);
+          setCouriers(remoteList);
         }
       } catch (err) {
         console.warn("Couriers load notice:", err);

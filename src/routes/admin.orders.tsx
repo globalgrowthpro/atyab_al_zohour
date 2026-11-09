@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { adminCouriers, adminOrders, orderStatusLabel, orderStatusTone, sar, type AdminOrder, type OrderStatus } from "@/features/admin/data";
+import { orderStatusLabel, orderStatusTone, sar, type AdminOrder, type OrderStatus } from "@/features/admin/data";
 import { Badge, DataTable, FilterChips, PageTitle, Panel, Toolbar, ExportButton, SelectFilter, uniq } from "@/features/admin/shared";
 import { supabase } from "@/integrations/supabase/client";
 import { RequirePermission } from "@/features/admin/guard";
@@ -11,45 +11,50 @@ export const Route = createFileRoute("/admin/orders")({ component: Orders });
 const flow: OrderStatus[] = ["new", "preparing", "ready", "shipping", "delivered"];
 
 function Orders() {
-  const [orders, setOrders] = useState<AdminOrder[]>(adminOrders);
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [couriersList, setCouriersList] = useState<Array<{ id: string; name: string }>>([]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<OrderStatus | "all">("all");
   const [city, setCity] = useState("all");
   const [courier, setCourier] = useState("all");
 
-  // Fetch real-time orders from Supabase on mount
+  // Fetch real-time orders and couriers from Supabase on mount
   useEffect(() => {
     let isMounted = true;
     async function loadSupabaseOrders() {
       try {
-        const { data, error } = await supabase
-          .from("orders")
-          .select("*")
-          .order("created_at", { ascending: false });
+        const [ordersRes, couriersRes] = await Promise.all([
+          supabase.from("orders").select("*").order("created_at", { ascending: false }),
+          supabase.from("couriers").select("id, name").order("name", { ascending: true }),
+        ]);
 
-        if (!error && data && data.length > 0 && isMounted) {
-          const statusMap: Record<string, OrderStatus> = {
-            received: "new",
-            preparing: "preparing",
-            ready: "ready",
-            shipping: "shipping",
-            delivered: "delivered",
-            cancelled: "cancelled",
-          };
+        if (isMounted) {
+          if (!couriersRes.error && couriersRes.data) {
+            setCouriersList(couriersRes.data);
+          }
 
-          const remoteList: AdminOrder[] = data.map((o) => ({
-            id: o.id,
-            client: o.client_name,
-            city: o.city,
-            date: o.created_at ? o.created_at.split("T")[0]! : "2026-11-08",
-            items: Array.isArray(o.items) ? o.items.length : 1,
-            total: Number(o.total || 0),
-            status: statusMap[o.status] || "new",
-          }));
+          if (!ordersRes.error && ordersRes.data) {
+            const statusMap: Record<string, OrderStatus> = {
+              received: "new",
+              preparing: "preparing",
+              ready: "ready",
+              shipping: "shipping",
+              delivered: "delivered",
+              cancelled: "cancelled",
+            };
 
-          const remoteIds = new Set(remoteList.map((r) => r.id));
-          const demoUnique = adminOrders.filter((d) => !remoteIds.has(d.id));
-          setOrders([...remoteList, ...demoUnique]);
+            const remoteList: AdminOrder[] = ordersRes.data.map((o) => ({
+              id: o.id,
+              client: o.client_name,
+              city: o.city,
+              date: o.created_at ? o.created_at.split("T")[0]! : "2026-11-08",
+              items: Array.isArray(o.items) ? o.items.length : 1,
+              total: Number(o.total || 0),
+              status: statusMap[o.status] || "new",
+            }));
+
+            setOrders(remoteList);
+          }
         }
       } catch (err) {
         console.warn("Admin orders Supabase load:", err);
@@ -121,7 +126,7 @@ function Orders() {
         <Toolbar q={q} setQ={setQ} placeholder="ابحث برقم الطلب أو العميل أو المدينة">
           <FilterChips value={status} onChange={setStatus} options={[["all", "الكل"], ...(Object.entries(orderStatusLabel) as [OrderStatus, string][])]} />
           <SelectFilter label="المدينة" value={city} onChange={setCity} options={uniq(orders.map((o) => o.city))} />
-          <SelectFilter label="المندوب" value={courier} onChange={setCourier} options={[["none", "غير معيّن"], ...adminCouriers.map((c) => [c.name, c.name] as [string, string])]} />
+          <SelectFilter label="المندوب" value={courier} onChange={setCourier} options={[["none", "غير معيّن"], ...couriersList.map((c) => [c.name, c.name] as [string, string])]} />
           <ExportButton file="orders" sheet="الطلبات" rows={() => list.map((o) => ({ "رقم الطلب": o.id, "العميل": o.client, "المدينة": o.city, "التاريخ": o.date, "الأصناف": o.items, "الإجمالي (ر.س)": o.total, "المندوب": o.courier ?? "", "الحالة": orderStatusLabel[o.status] }))} />
         </Toolbar>
         <DataTable head={["رقم الطلب", "العميل", "التاريخ", "الأصناف", "الإجمالي", "المندوب", "الحالة", ""]} empty={list.length === 0}>
@@ -137,7 +142,7 @@ function Orders() {
                   onChange={(e) => { update(o.id, { courier: e.target.value || undefined }); toast.success("تم تعيين المندوب"); }}
                   className="h-9 rounded-lg border bg-surface px-2 text-xs">
                   <option value="">— غير معيّن —</option>
-                  {adminCouriers.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  {couriersList.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>
               </td>
               <td><Badge tone={orderStatusTone[o.status]}>{orderStatusLabel[o.status]}</Badge></td>

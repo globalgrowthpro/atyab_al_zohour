@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { type TicketStatus, adminTickets, ticketStatusLabel, ticketStatusTone } from "@/features/admin/data";
+import { type TicketStatus, ticketStatusLabel, ticketStatusTone, type AdminTicket } from "@/features/admin/data";
 import { Badge, DataTable, ExportButton, FilterChips, PageTitle, Panel, Toolbar } from "@/features/admin/shared";
 import { supabase } from "@/integrations/supabase/client";
 import { RequirePermission } from "@/features/admin/guard";
@@ -9,7 +9,7 @@ import { RequirePermission } from "@/features/admin/guard";
 export const Route = createFileRoute("/admin/support")({ component: Support });
 
 function Support() {
-  const [tickets, setTickets] = useState(adminTickets);
+  const [tickets, setTickets] = useState<AdminTicket[]>([]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<TicketStatus | "all">("all");
 
@@ -23,8 +23,8 @@ function Support() {
           .select("*")
           .order("created_at", { ascending: false });
 
-        if (!error && data && data.length > 0 && isMounted) {
-          const remoteList = data.map((t) => {
+        if (!error && data && isMounted) {
+          const remoteList: AdminTicket[] = data.map((t) => {
             const rawStatus = t.status === "closed" ? "closed" : t.status === "answered" ? "answered" : "open";
             return {
               id: t.id,
@@ -35,9 +35,7 @@ function Support() {
             };
           });
 
-          const remoteIds = new Set(remoteList.map((r) => r.id));
-          const uniqueDemo = adminTickets.filter((dt) => !remoteIds.has(dt.id));
-          setTickets([...remoteList, ...uniqueDemo]);
+          setTickets(remoteList);
         }
       } catch (err) {
         console.warn("Tickets load notice:", err);

@@ -3,12 +3,22 @@ import { useEffect, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useChartTheme } from "@/features/admin/theme";
 
-import { adminOrders, orderStatusLabel, orderStatusTone, sar, weeklySales, type AdminOrder, type OrderStatus } from "@/features/admin/data";
+import { orderStatusLabel, orderStatusTone, sar, type AdminOrder, type OrderStatus } from "@/features/admin/data";
 import { Badge, ExportButton, Meter, PageTitle, Panel, SelectFilter, uniq } from "@/features/admin/shared";
 import { RequirePermission } from "@/features/admin/guard";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin/reports")({ component: Reports });
+
+const initialWeeklyDays = [
+  { day: "السبت", total: 0 },
+  { day: "الأحد", total: 0 },
+  { day: "الاثنين", total: 0 },
+  { day: "الثلاثاء", total: 0 },
+  { day: "الأربعاء", total: 0 },
+  { day: "الخميس", total: 0 },
+  { day: "الجمعة", total: 0 },
+];
 
 function Reports() {
   const chart = useChartTheme();
@@ -16,10 +26,10 @@ function Reports() {
     new: "#E7547A", preparing: "#D4AF37", ready: chart.sage, shipping: chart.line, delivered: "#9CA3AF", cancelled: "#DC2626",
   };
 
-  const [ordersList, setOrdersList] = useState<AdminOrder[]>(adminOrders);
+  const [ordersList, setOrdersList] = useState<AdminOrder[]>([]);
   const [city, setCity] = useState("all");
   const [status, setStatus] = useState("all");
-  const [dynamicWeekly, setDynamicWeekly] = useState(weeklySales);
+  const [dynamicWeekly, setDynamicWeekly] = useState(initialWeeklyDays);
 
   useEffect(() => {
     let isMounted = true;
@@ -30,7 +40,7 @@ function Reports() {
           .select("*")
           .order("created_at", { ascending: false });
 
-        if (!error && data && data.length > 0 && isMounted) {
+        if (!error && data && isMounted) {
           const statusMap: Record<string, OrderStatus> = {
             received: "new",
             preparing: "preparing",
@@ -69,7 +79,7 @@ function Reports() {
           setDynamicWeekly(
             Object.entries(dayTotals).map(([day, total]) => ({
               day,
-              total: total > 0 ? total : Math.floor(Math.random() * 8000 + 3000),
+              total,
             }))
           );
         }

@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowRight, Car, ClipboardList, Hash, MapPin, PackageCheck, Star, Truck, Wallet, ShieldCheck } from "lucide-react";
 import {
-  adminCouriers, adminOrders, courierStatusLabel, courierStatusTone,
+  courierStatusLabel, courierStatusTone,
   orderStatusLabel, orderStatusTone, type AdminCourier, type CourierStatus,
+  type AdminOrder, type OrderStatus,
 } from "@/features/admin/data";
 import { Badge, DataTable, KpiCard, Panel } from "@/features/admin/shared";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,33 +18,32 @@ export const Route = createFileRoute("/admin/couriers/$courierId")({
 
 function CourierDetails() {
   const { courierId } = Route.useParams();
-  const demoCourier = adminCouriers.find((c) => c.id === courierId);
 
-  const [courier, setCourier] = useState<AdminCourier>(
-    demoCourier || {
-      id: courierId,
-      name: "مندوب التوصيل المعتمد",
-      zone: "الرياض — فان مبرد",
-      vehicle: "فان تبريد (2°C - 4°C)",
-      today: 0,
-      done: 0,
-      rating: 4.8,
-      status: "available",
-    }
-  );
+  const [courier, setCourier] = useState<AdminCourier>({
+    id: courierId,
+    name: "مندوب التوصيل المعتمد",
+    zone: "الرياض — فان مبرد",
+    vehicle: "فان تبريد (2°C - 4°C)",
+    today: 0,
+    done: 0,
+    rating: 4.8,
+    status: "available",
+  });
 
-  const [status, setStatus] = useState<CourierStatus>(courier.status);
+  const [status, setStatus] = useState<CourierStatus>("available");
   const [phone, setPhone] = useState("");
   const [temperature, setTemperature] = useState<number | null>(3.2);
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
 
   // Load live courier details from Supabase
   useEffect(() => {
     let isMounted = true;
     async function loadCourier() {
       try {
-        const [courierRes, tasksRes] = await Promise.all([
+        const [courierRes, tasksRes, ordersRes] = await Promise.all([
           supabase.from("couriers").select("*").eq("id", courierId).maybeSingle(),
           supabase.from("delivery_tasks").select("*").eq("courier_id", courierId),
+          supabase.from("orders").select("*").order("created_at", { ascending: false }),
         ]);
 
         if (isMounted) {
@@ -69,6 +69,33 @@ function CourierDetails() {
             setStatus(cStatus);
             if (c.phone) setPhone(c.phone);
             if (c.temperature_celsius !== null) setTemperature(Number(c.temperature_celsius));
+
+            if (ordersRes.data) {
+              const taskOrderIds = new Set(tasks.map((t) => t.order_id).filter(Boolean));
+              const statusMap: Record<string, OrderStatus> = {
+                received: "new",
+                preparing: "preparing",
+                ready: "ready",
+                shipping: "shipping",
+                delivered: "delivered",
+                cancelled: "cancelled",
+              };
+
+              const matched = ordersRes.data
+                .filter((o) => taskOrderIds.has(o.id) || (o.city === c.city && o.status === "shipping"))
+                .map((o) => ({
+                  id: o.id,
+                  client: o.client_name,
+                  city: o.city,
+                  date: o.created_at ? o.created_at.split("T")[0]! : "2026-11-08",
+                  items: Array.isArray(o.items) ? o.items.length : 1,
+                  total: Number(o.total || 0),
+                  status: statusMap[o.status] || "new",
+                  courier: c.name,
+                }));
+
+              setOrders(matched);
+            }
           }
         }
       } catch (err) {
@@ -81,8 +108,6 @@ function CourierDetails() {
       isMounted = false;
     };
   }, [courierId]);
-
-  const orders = adminOrders.filter((o) => o.courier === courier.name);
   const delivered = orders.filter((o) => o.status === "delivered").length;
   const value = orders.reduce((s, o) => s + o.total, 0);
   const pct = courier.today ? Math.round((courier.done / courier.today) * 100) : 0;
