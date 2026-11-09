@@ -1,25 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ChevronDown, Search, X, LogOut, Settings, UserRound, ArrowUpLeft, Clock3 } from "lucide-react";
+import { ChevronDown, Search, X, LogOut, Settings, UserRound, ArrowUpLeft, Clock3, Shield } from "lucide-react";
 import logo from "@/assets/nav-logo.png";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "./theme";
-import { adminNavigation } from "./navigation";
+import { adminNavigationItems } from "./navigation";
+import { useAuth, getRoleLabel, hasPermission } from "@/features/auth/context";
 
 import { adminClients, adminOrders, adminQuotes, adminCouriers, adminTickets } from "./data";
 import { products } from "@/lib/catalog";
-
-const searchEntries = [
-  ...adminNavigation.map(([to, label, Icon]) => ({ id: to, to, label, detail: "أقسام الإدارة", Icon })),
-  ...adminOrders.map((o) => ({ id: o.id, to: "/admin/orders" as const, label: o.id, detail: `الطلبات · ${o.client}`, Icon: adminNavigation[1][2] })),
-  ...adminClients.map((c) => ({ id: c.id, to: "/admin/clients" as const, label: c.name, detail: `العملاء · ${c.id} · ${c.city}`, Icon: UserRound })),
-  ...adminQuotes.map((q) => ({ id: q.id, to: "/admin/quotes" as const, label: q.id, detail: `عروض الأسعار · ${q.client}`, Icon: adminNavigation[2][2] })),
-  ...products.map((p) => ({ id: p.slug, to: "/admin/products" as const, label: p.name, detail: "المنتجات والمخزون", Icon: adminNavigation[3][2] })),
-  ...adminCouriers.map((c) => ({ id: c.id, to: "/admin/couriers" as const, label: c.name, detail: `المندوبون · ${c.zone}`, Icon: adminNavigation[7][2] })),
-  ...adminTickets.map((t) => ({ id: t.id, to: "/admin/support" as const, label: t.id, detail: `الدعم · ${t.subject}`, Icon: adminNavigation[8][2] })),
-];
 
 function DigitalClock() {
   const [now, setNow] = useState<Date | null>(null);
@@ -46,11 +37,26 @@ function DigitalClock() {
 }
 
 export function AdminHeader() {
+  const { profile, role, signOut } = useAuth();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const searchRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // Role-filtered navigation entries
+  const accessibleNav = adminNavigationItems.filter((i) => hasPermission(role, i.permission));
+
+  const searchEntries = [
+    ...accessibleNav.map((i) => ({ id: i.to, to: i.to, label: i.label, detail: "أقسام الإدارة", Icon: i.icon })),
+    ...(hasPermission(role, "manage:orders") ? adminOrders.map((o) => ({ id: o.id, to: "/admin/orders" as const, label: o.id, detail: `الطلبات · ${o.client}`, Icon: accessibleNav[0]?.icon || Search })) : []),
+    ...(hasPermission(role, "manage:clients") ? adminClients.map((c) => ({ id: c.id, to: "/admin/clients" as const, label: c.name, detail: `العملاء · ${c.id} · ${c.city}`, Icon: UserRound })) : []),
+    ...(hasPermission(role, "manage:orders") ? adminQuotes.map((q) => ({ id: q.id, to: "/admin/quotes" as const, label: q.id, detail: `عروض الأسعار · ${q.client}`, Icon: accessibleNav[0]?.icon || Search })) : []),
+    ...(hasPermission(role, "manage:products") ? products.map((p) => ({ id: p.slug, to: "/admin/products" as const, label: p.name, detail: "المنتجات والمخزون", Icon: accessibleNav[0]?.icon || Search })) : []),
+    ...(hasPermission(role, "manage:couriers") ? adminCouriers.map((c) => ({ id: c.id, to: "/admin/couriers" as const, label: c.name, detail: `المندوبون · ${c.zone}`, Icon: accessibleNav[0]?.icon || Search })) : []),
+    ...(hasPermission(role, "manage:support") ? adminTickets.map((t) => ({ id: t.id, to: "/admin/support" as const, label: t.id, detail: `الدعم · ${t.subject}`, Icon: accessibleNav[0]?.icon || Search })) : []),
+  ];
+
   const term = query.trim().toLocaleLowerCase();
   const results = (term ? searchEntries.filter((e) => `${e.label} ${e.detail}`.toLocaleLowerCase().includes(term)) : searchEntries.slice(0, 6)).slice(0, 8);
   useEffect(() => {
@@ -59,6 +65,15 @@ export function AdminHeader() {
     return () => document.removeEventListener("pointerdown", close);
   }, []);
   const dismissSearch = () => { setOpen(false); setQuery(""); setActive(0); };
+
+  const handleSignOut = async () => {
+    await signOut();
+    void navigate({ to: "/login" });
+  };
+
+  const displayName = profile?.fullName || "مستخدم الإدارة";
+  const roleTitle = getRoleLabel(role);
+  const initials = displayName.slice(0, 2).trim();
 
   return (
     <header aria-label="شريط الإدارة" className="relative z-30 mb-6 flex flex-wrap items-center gap-4 rounded-2xl border border-emerald-950/40 bg-gradient-to-r from-[#062619] via-[#0B3D2A] to-[#072418] px-4 py-3 shadow-xl text-white md:px-5">
@@ -135,30 +150,37 @@ export function AdminHeader() {
       <div className="ms-auto flex items-center gap-2 md:ms-0">
         <ThemeToggle />
         <DropdownMenu dir="rtl">
-
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-auto gap-3 px-2 py-1.5 text-white hover:bg-white/10 hover:text-white rounded-xl" aria-label="قائمة المستخدم">
               <Avatar className="size-10 border-2 border-white/20 shadow-xs">
-                <AvatarFallback className="bg-emerald-800 text-white">
-                  <UserRound className="size-5" />
+                <AvatarFallback className="bg-emerald-800 text-white font-bold text-xs">
+                  {initials || <UserRound className="size-5" />}
                 </AvatarFallback>
               </Avatar>
               <span className="hidden text-start lg:block">
-                <span className="block text-sm font-bold text-white">مدير النظام</span>
-                <span className="block text-[11px] text-emerald-200/80">أطيب الزهور</span>
+                <span className="block text-sm font-bold text-white">{displayName}</span>
+                <span className="block text-[11px] text-emerald-200/80">{roleTitle}</span>
               </span>
               <ChevronDown className="text-white/70" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>مدير النظام</DropdownMenuLabel>
+            <DropdownMenuLabel className="font-bold">{displayName}</DropdownMenuLabel>
+            <div className="px-2 pb-1 text-[11px] text-muted-foreground">{roleTitle}</div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/admin/settings"><Settings />إعدادات الحساب</Link>
-            </DropdownMenuItem>
+            {hasPermission(role, "manage:settings") && (
+              <DropdownMenuItem asChild>
+                <Link to="/admin/settings"><Settings className="size-4" />إعدادات المنصة</Link>
+              </DropdownMenuItem>
+            )}
+            {hasPermission(role, "manage:security") && (
+              <DropdownMenuItem asChild>
+                <Link to="/admin/security"><Shield className="size-4" />إدارة الصلاحيات والأمان</Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => void navigate({ to: "/login" })} className="text-destructive">
-              <LogOut />تسجيل الخروج
+            <DropdownMenuItem onSelect={handleSignOut} className="text-destructive font-semibold">
+              <LogOut className="size-4" />تسجيل الخروج
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -168,7 +190,7 @@ export function AdminHeader() {
           aria-label="تسجيل الخروج"
           title="تسجيل الخروج"
           className="text-white/80 hover:text-rose-300 hover:bg-white/10 rounded-xl"
-          onClick={() => void navigate({ to: "/login" })}
+          onClick={handleSignOut}
         >
           <LogOut />
         </Button>

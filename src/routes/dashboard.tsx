@@ -1,7 +1,9 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { Home } from "lucide-react";
+import { Home, ShieldAlert, LogIn, ArrowLeft } from "lucide-react";
 import { ClientHeader, clientNavigation } from "@/features/client/header";
 import { useAdminThemeClass } from "@/features/admin/theme";
+import { useAuth, hasPermission, getRoleLabel } from "@/features/auth/context";
+import { Button } from "@/components/ui/button";
 
 import { ClientProvider, useClientData } from "@/features/client/context";
 import { emptyClientData } from "@/features/client/data";
@@ -18,6 +20,65 @@ export const Route = createFileRoute("/dashboard")({
 
 function DashboardLayout() {
   useAdminThemeClass();
+  const { role, isAuthenticated, isLoading } = useAuth();
+  const canAccessClient = hasPermission(role, "portal:client");
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="flex items-center gap-3 text-sm font-bold text-forest">
+          <span className="size-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span>جاري التحقق من حساب العميل...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !canAccessClient) {
+    return (
+      <section className="container-x flex min-h-[70vh] items-center justify-center py-16">
+        <div className="max-w-md rounded-3xl border border-destructive/20 bg-card p-8 text-center shadow-lift">
+          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+            <ShieldAlert className="size-8" />
+          </div>
+          <h2 className="text-xl font-bold text-forest">غير مصرح بالدخول للوحة العميل</h2>
+          <p className="mt-2 text-xs leading-6 text-muted-foreground">
+            لوحة العميل مخصصة للمنشآت والمتاجر المسجلة. دورك الحالي في النظام هو:{" "}
+            <span className="font-bold text-forest">{getRoleLabel(role)}</span>
+          </p>
+
+          <div className="mt-6 flex flex-col gap-2.5">
+            {role === "courier" && (
+              <Button asChild className="btn btn-primary w-full gap-2">
+                <Link to="/courier">
+                  <span>الانتقال إلى لوحة المندوب</span>
+                  <ArrowLeft className="size-4" />
+                </Link>
+              </Button>
+            )}
+            {hasPermission(role, "portal:admin") && (
+              <Button asChild className="btn btn-primary w-full gap-2">
+                <Link to="/admin">
+                  <span>الانتقال إلى لوحة الإدارة</span>
+                  <ArrowLeft className="size-4" />
+                </Link>
+              </Button>
+            )}
+            <Button asChild variant="outline" className="w-full gap-2">
+              <Link to="/login">
+                <LogIn className="size-4" />
+                <span>تسجيل الدخول بحساب منشأة</span>
+              </Link>
+            </Button>
+            <Link to="/" className="mt-2 text-xs text-muted-foreground hover:text-forest">
+              العودة إلى الصفحة الرئيسية
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
 
     <ClientProvider>

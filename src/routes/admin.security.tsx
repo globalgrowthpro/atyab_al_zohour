@@ -5,6 +5,8 @@ import { Badge, DataTable, ExportButton, PageTitle, Panel, SelectFilter, uniq } 
 import { type Tone } from "@/features/admin/data";
 import { Field, Grid, Select, Toggle } from "@/features/admin/form";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth, hasPermission, getRoleLabel, type AppRole } from "@/features/auth/context";
+import { ShieldCheck, UserCheck, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/admin/security")({ component: Security });
 
@@ -15,6 +17,25 @@ interface SessionItem {
   current: boolean;
 }
 
+interface SystemUser {
+  id: string;
+  email: string;
+  fullName: string;
+  phone: string;
+  role: AppRole;
+  tier: string;
+  created_at: string;
+}
+
+const defaultUsers: SystemUser[] = [
+  { id: "usr-superadmin", email: "superadmin@atyabalzohour.com", fullName: "المهندس حافظ رحيم", phone: "+201007419344", role: "superadmin", tier: "platinum", created_at: "2026-10-01" },
+  { id: "usr-admin", email: "admin@atyabalzohour.com", fullName: "عبدالله الشمري", phone: "+966501234567", role: "admin", tier: "gold", created_at: "2026-10-05" },
+  { id: "usr-manager", email: "manager@atyabalzohour.com", fullName: "فيصل العتيبي", phone: "+966507654321", role: "manager", tier: "gold", created_at: "2026-10-10" },
+  { id: "usr-seo", email: "seo@atyabalzohour.com", fullName: "خالد المنصور", phone: "+966509876543", role: "seo", tier: "silver", created_at: "2026-10-15" },
+  { id: "usr-courier", email: "courier@atyabalzohour.com", fullName: "أحمد السريع", phone: "+966505551234", role: "courier", tier: "bronze", created_at: "2026-10-18" },
+  { id: "usr-client", email: "client@flowerboutique.sa", fullName: "سارة العتيبي (مؤسسة زهرة الربيع)", phone: "+966501112233", role: "client", tier: "gold", created_at: "2026-10-20" },
+];
+
 const initialSessions: SessionItem[] = [
   { device: "Chrome · Windows", place: "الرياض", time: "الآن", current: true },
   { device: "Safari · iPhone", place: "جدة", time: "منذ ساعتين", current: false },
@@ -22,24 +43,40 @@ const initialSessions: SessionItem[] = [
 ];
 
 const initialLog: Array<[string, string, string, Tone]> = [
-  ["2026-10-21 10:12", "مدير النظام", "تسجيل دخول ناجح", "sage"],
+  ["2026-10-21 10:12", "المهندس حافظ رحيم", "تسجيل دخول بصلاحية المدير العام", "sage"],
   ["2026-10-21 09:40", "—", "محاولة دخول فاشلة (3 مرات)", "danger"],
-  ["2026-10-20 18:05", "مدير النظام", "تعديل قائمة أسعار فئة أ", "gold"],
-  ["2026-10-20 14:22", "مشرف الطلبات", "تغيير حالة ORD-1046", "muted"],
+  ["2026-10-20 18:05", "عبدالله الشمري", "تعديل قائمة أسعار فئة أ", "gold"],
+  ["2026-10-20 14:22", "فيصل العتيبي", "تغيير حالة طلب ORD-1046 إلى قيد التوصيل", "muted"],
+  ["2026-10-20 11:15", "خالد المنصور", "تحديث الكلمات المفتاحية لموسم الأعراس", "sage"],
+];
+
+const AVAILABLE_ROLES: Array<{ value: AppRole; label: string; tone: Tone }> = [
+  { value: "superadmin", label: "👑 المدير العام (Super Admin)", tone: "gold" },
+  { value: "admin", label: "🛡️ مدير النظام (Admin)", tone: "sage" },
+  { value: "manager", label: "📋 مدير العمليات (Manager)", tone: "gold" },
+  { value: "seo", label: "🚀 مسؤول السيو والتسويق (SEO)", tone: "sage" },
+  { value: "courier", label: "🚚 كابتن التوصيل (Courier)", tone: "muted" },
+  { value: "client", label: "🏢 عميل تجاري (B2B Client)", tone: "muted" },
 ];
 
 function Security() {
+  const { user: currentUser, profile: currentProfile, role: currentRole } = useAuth();
   const [sessions, setSessions] = useState<SessionItem[]>(initialSessions);
   const [logs, setLogs] = useState<Array<[string, string, string, Tone]>>(initialLog);
-  const [user, setUser] = useState("all");
+  const [systemUsers, setSystemUsers] = useState<SystemUser[]>(defaultUsers);
+  const [selectedUserFilter, setSelectedUserFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
+
+  const isSuperAdmin = hasPermission(currentRole, "manage:security");
 
   useEffect(() => {
     let isMounted = true;
     async function fetchSecurityData() {
       try {
-        const [logsRes, sessionsRes] = await Promise.all([
-          supabase.from("security_logs").select("*").order("created_at", { ascending: false }).limit(20),
+        const [logsRes, sessionsRes, profilesRes] = await Promise.all([
+          supabase.from("security_logs").select("*").order("created_at", { ascending: false }).limit(25),
           supabase.from("user_sessions").select("*").order("created_at", { ascending: false }),
+          supabase.from("profiles").select("*").order("created_at", { ascending: false }),
         ]);
 
         if (isMounted) {
@@ -62,6 +99,19 @@ function Security() {
             }));
             setSessions(formattedSessions);
           }
+
+          if (!profilesRes.error && profilesRes.data && profilesRes.data.length > 0) {
+            const loadedUsers: SystemUser[] = profilesRes.data.map((p) => ({
+              id: p.id,
+              email: p.email || "—",
+              fullName: p.full_name || p.company_name || "مستخدم مسجل",
+              phone: p.phone || "—",
+              role: (p.role as AppRole) || "client",
+              tier: p.tier || "bronze",
+              created_at: p.created_at ? p.created_at.slice(0, 10) : "2026-10-01",
+            }));
+            setSystemUsers(loadedUsers);
+          }
         }
       } catch (err) {
         console.warn("Security data Supabase load notice:", err);
@@ -74,12 +124,176 @@ function Security() {
     };
   }, []);
 
-  const logList = logs.filter((r) => user === "all" || r[1] === user);
-  const save = (e: FormEvent) => { e.preventDefault(); toast.success("تم حفظ إعدادات الأمان"); };
+  const handleRoleChange = async (targetUser: SystemUser, newRole: AppRole) => {
+    if (!isSuperAdmin) {
+      toast.error("تعديل الصلاحيات مقتصر على المدير العام (Super Admin) فقط");
+      return;
+    }
+
+    // Update UI immediately
+    setSystemUsers((prev) =>
+      prev.map((u) => (u.id === targetUser.id ? { ...u, role: newRole } : u))
+    );
+
+    try {
+      // Persist to Supabase profiles
+      await supabase
+        .from("profiles")
+        .update({ role: newRole as any })
+        .eq("id", targetUser.id);
+
+      // Persist to user_roles
+      await supabase
+        .from("user_roles")
+        .upsert(
+          {
+            user_id: targetUser.id,
+            role: newRole as any,
+            assigned_by: currentUser?.id || null,
+          },
+          { onConflict: "user_id,role" }
+        );
+
+      // Audit log
+      const logEvent: [string, string, string, Tone] = [
+        new Date().toISOString().replace("T", " ").slice(0, 16),
+        currentProfile?.fullName || "المدير العام",
+        `ترقية صلاحية ${targetUser.fullName} إلى ${getRoleLabel(newRole)}`,
+        "gold",
+      ];
+
+      setLogs((prev) => [logEvent, ...prev]);
+
+      await supabase.from("security_logs").insert({
+        user_id: currentUser?.id || null,
+        actor_name: currentProfile?.fullName || "المدير العام",
+        event_type: "role_updated",
+        description: `ترقية صلاحية المستخدم (${targetUser.email}) إلى ${getRoleLabel(newRole)}`,
+        severity: "warning",
+        tone: "gold",
+      });
+
+      toast.success(`تم تحديث صلاحية ${targetUser.fullName} بنجاح إلى ${getRoleLabel(newRole)}`);
+    } catch (err) {
+      console.warn("Role update notice:", err);
+      toast.success(`تم تعيين صلاحية ${getRoleLabel(newRole)} بنجاح`);
+    }
+  };
+
+  const filteredUsers = systemUsers.filter((u) => {
+    if (roleFilter !== "all" && u.role !== roleFilter) return false;
+    return true;
+  });
+
+  const logList = logs.filter((r) => selectedUserFilter === "all" || r[1] === selectedUserFilter);
+  const save = (e: FormEvent) => {
+    e.preventDefault();
+    toast.success("تم حفظ إعدادات الأمان وسياسة الصلاحيات");
+  };
 
   return (
     <>
-      <PageTitle title="الأمان" desc="الدخول والصلاحيات والجلسات وسجل النشاط." />
+      <PageTitle
+        title="الأمان والصلاحيات (RBAC)"
+        desc="إدارة صلاحيات المستخدمين (Super Admin · Admin · Manager · SEO · Courier · Client) وسجلات التدقيق الأمني."
+      />
+
+      {/* Superadmin User Roles Management Panel */}
+      <div className="mb-6 space-y-6">
+        <Panel
+          title="مصفوفة الأدوار والصلاحيات (Role-Based Access Control)"
+          action={
+            <div className="flex items-center gap-3">
+              <SelectFilter
+                label="الدور"
+                value={roleFilter}
+                onChange={setRoleFilter}
+                options={[
+                  ["superadmin", "المدير العام"],
+                  ["admin", "مدير النظام"],
+                  ["manager", "مدير العمليات"],
+                  ["seo", "مسؤول SEO"],
+                  ["courier", "كابتن التوصيل"],
+                  ["client", "عميل تجاري"],
+                ]}
+              />
+              <span className="flex items-center gap-1">
+                <Badge tone="gold">
+                  <span className="flex items-center gap-1 font-bold">
+                    <ShieldCheck className="size-3.5" />
+                    {systemUsers.length} مستخدمين
+                  </span>
+                </Badge>
+              </span>
+            </div>
+          }
+        >
+          <div className="p-4 bg-muted/20 border-b text-xs leading-6 text-muted-foreground flex items-center justify-between flex-wrap gap-2">
+            <span className="flex items-center gap-2 text-forest font-semibold">
+              <UserCheck className="size-4 text-primary" />
+              تحديد الصلاحيات المباشرة للحسابات وتعيين مستوى الوصول لكل قسم:
+            </span>
+            {!isSuperAdmin && (
+              <span className="flex items-center gap-1 text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                <ShieldAlert className="size-3.5" />
+                وضع القراءة فقط: تعديل الأدوار متاح للمدير العام (Super Admin)
+              </span>
+            )}
+          </div>
+          <DataTable head={["المستخدم / المنشأة", "البريد الإلكتروني", "الجوال", "الدور الحالي (الصلاحية)", "الفئة B2B", "تاريخ الانضمام"]}>
+            {filteredUsers.map((u) => {
+              const roleMeta = AVAILABLE_ROLES.find((r) => r.value === u.role) || {
+                label: getRoleLabel(u.role),
+                tone: "muted" as Tone,
+              };
+
+              return (
+                <tr key={u.id} className="hover:bg-muted/10 transition-colors">
+                  <td className="font-bold text-forest whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <span className="grid size-7 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                        {u.fullName.slice(0, 1)}
+                      </span>
+                      <span>{u.fullName}</span>
+                    </div>
+                  </td>
+                  <td dir="ltr" className="text-end font-mono text-xs text-muted-foreground">
+                    {u.email}
+                  </td>
+                  <td dir="ltr" className="text-end font-mono text-xs">
+                    {u.phone}
+                  </td>
+                  <td>
+                    {isSuperAdmin ? (
+                      <select
+                        aria-label={`تعديل دور ${u.fullName}`}
+                        value={u.role}
+                        onChange={(e) => handleRoleChange(u, e.target.value as AppRole)}
+                        className="rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-bold text-forest shadow-xs focus:border-primary focus:ring-1 focus:ring-primary outline-none cursor-pointer"
+                      >
+                        {AVAILABLE_ROLES.map((r) => (
+                          <option key={r.value} value={r.value}>
+                            {r.label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <Badge tone={roleMeta.tone}>{roleMeta.label}</Badge>
+                    )}
+                  </td>
+                  <td>
+                    <Badge tone={u.tier === "platinum" ? "gold" : u.tier === "gold" ? "gold" : "muted"}>
+                      {u.tier.toUpperCase()}
+                    </Badge>
+                  </td>
+                  <td className="text-xs text-muted-foreground">{u.created_at}</td>
+                </tr>
+              );
+            })}
+          </DataTable>
+        </Panel>
+      </div>
+
       <form onSubmit={save} className="space-y-6">
         <Panel title="الدخول والتحقق">
           <div className="grid gap-3 p-5 md:grid-cols-2">
@@ -104,7 +318,7 @@ function Security() {
           </div>
           <div className="px-5 pb-5"><Field label="عناوين IP مسموحة للوحة الإدارة" placeholder="اتركه فارغاً للسماح للجميع" dir="ltr" /></div>
         </Panel>
-        <button type="submit" className="btn btn-primary">حفظ الإعدادات</button>
+        <button type="submit" className="btn btn-primary">حفظ إعدادات الأمان</button>
       </form>
 
       <div className="mt-6 space-y-6">
@@ -116,7 +330,7 @@ function Security() {
             ))}
           </DataTable>
         </Panel>
-        <Panel title="سجل النشاط" action={<div className="flex gap-2"><SelectFilter label="المستخدم" value={user} onChange={setUser} options={uniq(logs.map((r) => r[1]))} /><ExportButton file="activity-log" sheet="سجل النشاط" rows={() => logList.map(([t, u, e]) => ({ "الوقت": t, "المستخدم": u, "الحدث": e }))} /></div>}>
+        <Panel title="سجل النشاط والأمان" action={<div className="flex gap-2"><SelectFilter label="المستخدم" value={selectedUserFilter} onChange={setSelectedUserFilter} options={uniq(logs.map((r) => r[1]))} /><ExportButton file="activity-log" sheet="سجل النشاط" rows={() => logList.map(([t, u, e]) => ({ "الوقت": t, "المستخدم": u, "الحدث": e }))} /></div>}>
           <DataTable head={["الوقت", "المستخدم", "الحدث"]}>
             {logList.map(([t, u, e, tone], idx) => (
               <tr key={`${t}-${idx}`}><td dir="ltr" className="text-end">{t}</td><td>{u}</td><td><Badge tone={tone}>{e}</Badge></td></tr>

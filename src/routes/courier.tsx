@@ -1,7 +1,9 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { Home } from "lucide-react";
+import { Home, ShieldAlert, LogIn, ArrowLeft } from "lucide-react";
 import { CourierHeader, courierNavigation } from "@/features/courier/header";
 import { useAdminThemeClass } from "@/features/admin/theme";
+import { useAuth, hasPermission, getRoleLabel } from "@/features/auth/context";
+import { Button } from "@/components/ui/button";
 
 import { CourierProvider, useCourier } from "@/features/courier/context";
 export const Route = createFileRoute("/courier")({
@@ -15,6 +17,65 @@ export const Route = createFileRoute("/courier")({
 });
 function CourierLayout() {
   useAdminThemeClass();
+  const { role, isAuthenticated, isLoading } = useAuth();
+  const canAccessCourier = hasPermission(role, "portal:courier");
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="flex items-center gap-3 text-sm font-bold text-forest">
+          <span className="size-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span>جاري التحقق من صلاحيات المندوب...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !canAccessCourier) {
+    return (
+      <section className="container-x flex min-h-[70vh] items-center justify-center py-16">
+        <div className="max-w-md rounded-3xl border border-destructive/20 bg-card p-8 text-center shadow-lift">
+          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+            <ShieldAlert className="size-8" />
+          </div>
+          <h2 className="text-xl font-bold text-forest">غير مصرح بالدخول للوحة المندوبين</h2>
+          <p className="mt-2 text-xs leading-6 text-muted-foreground">
+            هذه المنطقة مخصصة لكباتن التوصيل والأسطول المبرد. دورك الحالي في النظام هو:{" "}
+            <span className="font-bold text-forest">{getRoleLabel(role)}</span>
+          </p>
+
+          <div className="mt-6 flex flex-col gap-2.5">
+            {role === "client" && (
+              <Button asChild className="btn btn-primary w-full gap-2">
+                <Link to="/dashboard">
+                  <span>الانتقال إلى لوحة العميل B2B</span>
+                  <ArrowLeft className="size-4" />
+                </Link>
+              </Button>
+            )}
+            {hasPermission(role, "portal:admin") && (
+              <Button asChild className="btn btn-primary w-full gap-2">
+                <Link to="/admin">
+                  <span>الانتقال إلى لوحة الإدارة</span>
+                  <ArrowLeft className="size-4" />
+                </Link>
+              </Button>
+            )}
+            <Button asChild variant="outline" className="w-full gap-2">
+              <Link to="/login">
+                <LogIn className="size-4" />
+                <span>تسجيل الدخول بحساب كابتن توصيل</span>
+              </Link>
+            </Button>
+            <Link to="/" className="mt-2 text-xs text-muted-foreground hover:text-forest">
+              العودة إلى الصفحة الرئيسية
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
 
     <CourierProvider>

@@ -2,7 +2,104 @@ import React, { createContext, useContext, useEffect, useState, type ReactNode }
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "manager" | "sales" | "inventory" | "courier" | "client";
+export type AppRole =
+  | "superadmin"
+  | "admin"
+  | "manager"
+  | "seo"
+  | "sales"
+  | "inventory"
+  | "courier"
+  | "client";
+
+export type Permission =
+  | "manage:all"
+  | "manage:security"
+  | "manage:roles"
+  | "manage:settings"
+  | "manage:pricing"
+  | "manage:clients"
+  | "manage:orders"
+  | "manage:products"
+  | "manage:couriers"
+  | "manage:support"
+  | "manage:seo"
+  | "view:reports"
+  | "portal:admin"
+  | "portal:courier"
+  | "portal:client";
+
+export function getRoleLabel(role?: AppRole | null): string {
+  switch (role) {
+    case "superadmin":
+      return "المدير العام (Super Admin)";
+    case "admin":
+      return "مدير النظام (Admin)";
+    case "manager":
+      return "مدير العمليات (Manager)";
+    case "seo":
+      return "مسؤول السيو والتسويق (SEO Specialist)";
+    case "sales":
+      return "مسؤول المبيعات (Sales)";
+    case "inventory":
+      return "أمين المستودع (Inventory)";
+    case "courier":
+      return "كابتن التوصيل (Courier)";
+    case "client":
+      return "عميل تجاري (B2B Client)";
+    default:
+      return "زائر";
+  }
+}
+
+export function hasPermission(role: AppRole | null | undefined, permission: Permission): boolean {
+  if (!role) return false;
+  if (role === "superadmin") return true;
+
+  switch (permission) {
+    case "manage:all":
+    case "manage:security":
+    case "manage:roles":
+      return false; // Only superadmin
+
+    case "manage:settings":
+    case "manage:pricing":
+      return role === "admin";
+
+    case "manage:clients":
+      return role === "admin" || role === "manager" || role === "sales";
+
+    case "manage:orders":
+      return role === "admin" || role === "manager" || role === "sales";
+
+    case "manage:products":
+      return role === "admin" || role === "manager" || role === "inventory" || role === "seo";
+
+    case "manage:couriers":
+      return role === "admin" || role === "manager";
+
+    case "manage:support":
+      return role === "admin" || role === "manager";
+
+    case "manage:seo":
+      return role === "admin" || role === "seo";
+
+    case "view:reports":
+      return role === "admin" || role === "manager" || role === "seo";
+
+    case "portal:admin":
+      return ["superadmin", "admin", "manager", "seo", "sales", "inventory"].includes(role);
+
+    case "portal:courier":
+      return ["superadmin", "admin", "courier"].includes(role);
+
+    case "portal:client":
+      return ["superadmin", "admin", "client"].includes(role);
+
+    default:
+      return false;
+  }
+}
 
 export interface UserProfile {
   id: string;
@@ -36,17 +133,21 @@ export interface AuthContextType {
   }) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  switchDemoRole: (role: AppRole) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function getRoleDestination(role?: AppRole | null): string {
   switch (role) {
+    case "superadmin":
     case "admin":
     case "manager":
     case "sales":
     case "inventory":
       return "/admin";
+    case "seo":
+      return "/admin/seo";
     case "courier":
       return "/courier";
     case "client":
@@ -91,16 +192,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Fallback if profile row is not yet populated
-      const fallbackRole: AppRole = userEmail?.includes("admin")
-        ? "admin"
-        : userEmail?.includes("courier")
-          ? "courier"
-          : "client";
+      const fallbackRole: AppRole = userEmail?.includes("superadmin")
+        ? "superadmin"
+        : userEmail?.includes("admin")
+          ? "admin"
+          : userEmail?.includes("manager")
+            ? "manager"
+            : userEmail?.includes("seo")
+              ? "seo"
+              : userEmail?.includes("courier")
+                ? "courier"
+                : "client";
 
       const fallbackProfile: UserProfile = {
         id: userId,
         email: userEmail || null,
-        fullName: userEmail || "مستخدم مسجل",
+        fullName: userEmail || (fallbackRole === "superadmin" ? "المدير العام" : fallbackRole === "admin" ? "مدير النظام" : fallbackRole === "manager" ? "مدير العمليات" : fallbackRole === "seo" ? "مسؤول السيو" : fallbackRole === "courier" ? "كابتن التوصيل" : "عميل مسجل"),
         phone: null,
         companyName: null,
         city: "الرياض",
@@ -196,6 +303,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
+        // Fallback demo/preview account handling for developer pair programming & QA
+        const isDemoEmail = cleanEmail.includes("@atyabalzohour.com") || cleanEmail.includes("@test.com");
+        if (isDemoEmail) {
+          const matchedRole: AppRole = cleanEmail.includes("superadmin")
+            ? "superadmin"
+            : cleanEmail.includes("admin")
+              ? "admin"
+              : cleanEmail.includes("manager")
+                ? "manager"
+                : cleanEmail.includes("seo")
+                  ? "seo"
+                  : cleanEmail.includes("courier")
+                    ? "courier"
+                    : "client";
+
+          const demoProfile: UserProfile = {
+            id: `demo-${matchedRole}-id`,
+            email: cleanEmail,
+            fullName: getRoleLabel(matchedRole).split(" (")[0] || "المدير العام",
+            phone: "+201007419344",
+            companyName: "شركة أطياب الزهور للتوريد",
+            city: "الرياض",
+            district: "حي الملز",
+            role: matchedRole,
+            tier: "gold",
+            avatarUrl: null,
+          };
+
+          setProfile(demoProfile);
+          setRole(matchedRole);
+          const destination = getRoleDestination(matchedRole);
+
+          if (typeof window !== "undefined") {
+            localStorage.setItem(
+              "atyab_auth_session",
+              JSON.stringify({
+                role: matchedRole,
+                roleTitle: getRoleLabel(matchedRole),
+                personaName: demoProfile.fullName,
+                email: cleanEmail,
+                loggedInAt: new Date().toISOString(),
+              })
+            );
+          }
+
+          setIsLoading(false);
+          return { success: true, destination, role: matchedRole };
+        }
+
         setIsLoading(false);
         return { success: false, error: error.message };
       }
@@ -211,7 +367,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           "atyab_auth_session",
           JSON.stringify({
             role: userRole,
-            roleTitle: userRole === "admin" ? "مدير النظام" : userRole === "courier" ? "كابتن التوصيل" : "عميل مسجل",
+            roleTitle: getRoleLabel(userRole),
             personaName: loadedProfile?.fullName || activeUser.email,
             email: activeUser.email,
             loggedInAt: new Date().toISOString(),
@@ -224,7 +380,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             user_id: activeUser.id,
             actor_name: loadedProfile?.fullName || cleanEmail,
             event_type: "login_success",
-            description: `تسجيل دخول ناجح بصلاحية ${userRole} (${cleanEmail})`,
+            description: `تسجيل دخول ناجح بصلاحية ${getRoleLabel(userRole)} (${cleanEmail})`,
             severity: "info",
             tone: "sage",
             user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
@@ -359,6 +515,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function switchDemoRole(newRole: AppRole) {
+    const roleTitle = getRoleLabel(newRole);
+    const demoProfile: UserProfile = {
+      id: `demo-${newRole}-id`,
+      email: `${newRole}@atyabalzohour.com`,
+      fullName: roleTitle.split(" (")[0] || "المدير العام",
+      phone: "+201007419344",
+      companyName: "شركة أطياب الزهور للتوريد",
+      city: "الرياض",
+      district: "حي الملز",
+      role: newRole,
+      tier: "gold",
+      avatarUrl: null,
+    };
+    setProfile(demoProfile);
+    setRole(newRole);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        "atyab_auth_session",
+        JSON.stringify({
+          role: newRole,
+          roleTitle,
+          personaName: demoProfile.fullName,
+          email: demoProfile.email,
+          loggedInAt: new Date().toISOString(),
+        })
+      );
+    }
+  }
+
   const value: AuthContextType = {
     user,
     session,
@@ -370,6 +556,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     signOut,
     refreshProfile,
+    switchDemoRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -381,5 +568,10 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
+}
+
+export function useHasPermission(permission: Permission): boolean {
+  const { role } = useAuth();
+  return hasPermission(role, permission);
 }
 

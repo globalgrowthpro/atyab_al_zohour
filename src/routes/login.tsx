@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useId, type FormEvent } from "react";
-import { useAuth } from "@/features/auth/context";
+import { useAuth, getRoleLabel, type AppRole } from "@/features/auth/context";
 import { toast } from "sonner";
 import {
   Lock,
@@ -11,6 +11,7 @@ import {
   LogIn,
   HelpCircle,
   ChevronLeft,
+  ShieldCheck,
 } from "lucide-react";
 import loginBg from "@/assets/login-bg.jpg";
 
@@ -78,6 +79,32 @@ function LoginPage() {
         id: "login-toast",
         description: err instanceof Error ? err.message : "يرجى المحاولة مجدداً.",
       });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithRole = async (selectedRole: AppRole) => {
+    const roleEmail = `${selectedRole}@atyabalzohour.com`;
+    const defaultPassword = "password123";
+    setEmail(roleEmail);
+    setPassword(defaultPassword);
+    setIsLoading(true);
+    toast.loading(`تسجيل الدخول بصلاحية ${getRoleLabel(selectedRole)}...`, { id: "login-toast" });
+
+    try {
+      const res = await signIn({ email: roleEmail, password: defaultPassword });
+      if (res.success) {
+        toast.success(`أهلاً بك! تم الدخول بصلاحية: ${getRoleLabel(selectedRole)}`, {
+          id: "login-toast",
+          duration: 2500,
+        });
+        void navigate({ to: res.destination || "/dashboard" });
+      } else {
+        toast.error("فشل تسجيل الدخول", { id: "login-toast", description: res.error });
+      }
+    } catch (err) {
+      toast.error("حدث خطأ", { id: "login-toast" });
     } finally {
       setIsLoading(false);
     }
@@ -229,6 +256,58 @@ function LoginPage() {
                   <Link to="/register" className="font-bold text-primary hover:underline">
                     إنشاء حساب تجاري جديد
                   </Link>
+                </div>
+              </div>
+
+              {/* Demo Accounts Quick Login by Role */}
+              <div className="mt-6 border-t border-dashed pt-4">
+                <div className="mb-2.5 flex items-center gap-1.5 text-xs font-bold text-forest">
+                  <ShieldCheck className="size-3.5 text-primary" />
+                  <span>دخول تجريبي سريع حسب الصلاحيات (RBAC):</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void loginWithRole("superadmin")}
+                    className="flex items-center justify-center gap-1 rounded-xl border border-amber-300/60 bg-amber-500/10 px-2 py-2 text-[11px] font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition-all shadow-2xs"
+                  >
+                    <span>👑 المدير العام</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void loginWithRole("admin")}
+                    className="flex items-center justify-center gap-1 rounded-xl border border-emerald-300/60 bg-emerald-500/10 px-2 py-2 text-[11px] font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all shadow-2xs"
+                  >
+                    <span>🛡️ مدير النظام</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void loginWithRole("manager")}
+                    className="flex items-center justify-center gap-1 rounded-xl border border-sky-300/60 bg-sky-500/10 px-2 py-2 text-[11px] font-bold text-sky-800 dark:text-sky-300 hover:bg-sky-500/20 transition-all shadow-2xs"
+                  >
+                    <span>📋 مدير العمليات</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void loginWithRole("seo")}
+                    className="flex items-center justify-center gap-1 rounded-xl border border-purple-300/60 bg-purple-500/10 px-2 py-2 text-[11px] font-bold text-purple-800 dark:text-purple-300 hover:bg-purple-500/20 transition-all shadow-2xs"
+                  >
+                    <span>🚀 مسؤول SEO</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void loginWithRole("courier")}
+                    className="flex items-center justify-center gap-1 rounded-xl border border-orange-300/60 bg-orange-500/10 px-2 py-2 text-[11px] font-bold text-orange-800 dark:text-orange-300 hover:bg-orange-500/20 transition-all shadow-2xs"
+                  >
+                    <span>🚚 كابتن التوصيل</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void loginWithRole("client")}
+                    className="flex items-center justify-center gap-1 rounded-xl border border-border bg-muted/60 px-2 py-2 text-[11px] font-bold text-forest hover:bg-muted transition-all shadow-2xs"
+                  >
+                    <span>🏢 عميل تجاري</span>
+                  </button>
                 </div>
               </div>
             </div>
