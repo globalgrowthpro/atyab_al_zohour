@@ -10,7 +10,26 @@ import {
 import { Badge, DataTable, ExportButton, KpiCard, Panel, Radial } from "@/features/admin/shared";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/admin/")({ component: Overview });
+function AdminIndexError({ error }: { error: unknown }) {
+  return (
+    <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center">
+      <h3 className="text-lg font-bold text-destructive">حدث خطأ أثناء عرض لوحة الإحصائيات</h3>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {error instanceof Error ? error.message : String(error)}
+      </p>
+      {error instanceof Error && error.stack && (
+        <pre className="mt-4 max-h-48 overflow-auto rounded bg-card p-3 font-mono text-[11px] text-destructive text-start" dir="ltr">
+          {error.stack}
+        </pre>
+      )}
+    </div>
+  );
+}
+
+export const Route = createFileRoute("/admin/")({
+  component: Overview,
+  errorComponent: AdminIndexError,
+});
 
 const activityIcon: Record<string, typeof ClipboardList> = {
   order: ClipboardList,
@@ -43,6 +62,7 @@ const initialHourlySlots = [
 function Overview() {
   const chart = useChartTheme();
 
+  const [isClientMounted, setIsClientMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [clientsCount, setClientsCount] = useState(0);
@@ -59,6 +79,10 @@ function Overview() {
   const [dynamicCategoryShare, setDynamicCategoryShare] = useState<Array<{ name: string; value: number }>>([
     { name: "الورد الهولندي", value: 100 },
   ]);
+
+  useEffect(() => {
+    setIsClientMounted(true);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -270,36 +294,50 @@ function Overview() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <Panel title="المبيعات الأسبوعية للطلبات" action={<span className="text-xs text-muted-foreground">بيانات حية</span>}>
           <div className="h-64 p-4" dir="ltr">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={dynamicWeeklySales} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={chart.line} stopOpacity={0.35} />
-                    <stop offset="100%" stopColor={chart.line} stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
-                <XAxis dataKey="day" tick={{ fontSize: 12, fill: chart.tick }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} width={48}
-                  tickFormatter={(v: number) => `${Math.round(v / 1000)}k`} />
-                <Tooltip formatter={(v) => [sar(Number(v)), "المبيعات"]} labelStyle={{ fontWeight: 700 }}
-                  contentStyle={chart.tooltip} />
-                <Area type="monotone" dataKey="total" stroke={chart.line} strokeWidth={2.5} fill="url(#salesFill)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            {isClientMounted ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={dynamicWeeklySales} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={chart.line} stopOpacity={0.35} />
+                      <stop offset="100%" stopColor={chart.line} stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
+                  <XAxis dataKey="day" tick={{ fontSize: 12, fill: chart.tick }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} width={48}
+                    tickFormatter={(v: number) => `${Math.round((v || 0) / 1000)}k`} />
+                  <Tooltip formatter={(v) => [sar(Number(v || 0)), "المبيعات"]} labelStyle={{ fontWeight: 700 }}
+                    contentStyle={chart.tooltip} />
+                  <Area type="monotone" dataKey="total" stroke={chart.line} strokeWidth={2.5} fill="url(#salesFill)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                <Loader2 className="size-4 animate-spin me-2 text-primary" />
+                جاري تجهيز الرسم البياني...
+              </div>
+            )}
           </div>
         </Panel>
         <Panel title="توزيع الطلبات حسب الأصناف" action={<span className="text-xs text-muted-foreground">النسب المئوية</span>}>
           <div className="flex flex-col items-center gap-4 p-5">
             <div className="h-44 w-full" dir="ltr">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={dynamicCategoryShare} dataKey="value" nameKey="name" innerRadius={52} outerRadius={78} paddingAngle={3} strokeWidth={0}>
-                    {dynamicCategoryShare.map((c, i) => <Cell key={c.name} fill={chart.pieColors[i % chart.pieColors.length] ?? chart.line} />)}
-                  </Pie>
-                  <Tooltip formatter={(v) => [`${v}%`, "الحصة"]} contentStyle={chart.tooltip} />
-                </PieChart>
-              </ResponsiveContainer>
+              {isClientMounted ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={dynamicCategoryShare} dataKey="value" nameKey="name" innerRadius={52} outerRadius={78} paddingAngle={3} strokeWidth={0}>
+                      {dynamicCategoryShare.map((c, i) => <Cell key={c.name} fill={chart.pieColors[i % chart.pieColors.length] ?? chart.line} />)}
+                    </Pie>
+                    <Tooltip formatter={(v) => [`${v || 0}%`, "الحصة"]} contentStyle={chart.tooltip} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin me-2 text-primary" />
+                  جاري تجهيز الرسم البياني...
+                </div>
+              )}
             </div>
             <ul className="grid w-full grid-cols-2 gap-x-4 gap-y-2 text-xs">
               {dynamicCategoryShare.map((c, i) => (
@@ -318,15 +356,22 @@ function Overview() {
       <div className="grid gap-6 xl:grid-cols-3">
         <Panel title="توزيع أوقات الطلبات" action={<span className="text-xs text-muted-foreground">{orders.length} طلباً إجمالياً</span>}>
           <div className="h-52 p-4" dir="ltr">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={hourlyDistribution} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
-                <XAxis dataKey="h" tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} interval={1} />
-                <YAxis tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} width={28} />
-                <Tooltip formatter={(v) => [v, "طلبات"]} contentStyle={chart.tooltip} />
-                <Bar dataKey="orders" radius={[6, 6, 0, 0]} fill={chart.rose} />
-              </BarChart>
-            </ResponsiveContainer>
+            {isClientMounted ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={hourlyDistribution} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
+                  <XAxis dataKey="h" tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} interval={1} />
+                  <YAxis tick={{ fontSize: 11, fill: chart.tick }} axisLine={false} tickLine={false} width={28} />
+                  <Tooltip formatter={(v) => [v ?? 0, "طلبات"]} contentStyle={chart.tooltip} />
+                  <Bar dataKey="orders" radius={[6, 6, 0, 0]} fill={chart.rose} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                <Loader2 className="size-4 animate-spin me-2 text-primary" />
+                جاري تجهيز الرسم البياني...
+              </div>
+            )}
           </div>
         </Panel>
         <Panel title="مؤشرات أداء العمليات (KPIs)">

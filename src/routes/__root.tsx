@@ -93,8 +93,31 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
           <>
             <h1 className="text-xl text-primary">تعذّر تحميل الصفحة</h1>
             <p className="mt-2 text-sm text-muted-foreground">حدث خطأ ما. حاول التحديث أو العودة للرئيسية.</p>
+            {Boolean(error) && (
+              <details className="mt-4 text-start">
+                <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
+                  تفاصيل الخطأ الفني (Error Details)
+                </summary>
+                <pre className="mt-2 max-h-40 overflow-auto rounded bg-muted/60 p-3 font-mono text-[11px] text-destructive leading-relaxed" dir="ltr">
+                  {error instanceof Error ? `${error.name}: ${error.message}\n${error.stack || ""}` : String(error)}
+                </pre>
+              </details>
+            )}
             <div className="mt-6 flex justify-center gap-2">
-              <button onClick={() => { router.invalidate(); reset(); }} className="btn btn-primary">إعادة المحاولة</button>
+              <button
+                onClick={() => {
+                  try {
+                    router.invalidate();
+                    reset();
+                  } catch {
+                    /* fallback */
+                  }
+                  window.location.reload();
+                }}
+                className="btn btn-primary"
+              >
+                إعادة المحاولة
+              </button>
               <a href="/" className="btn btn-outline">الرئيسية</a>
             </div>
           </>

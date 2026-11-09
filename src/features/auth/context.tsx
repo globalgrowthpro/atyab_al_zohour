@@ -240,10 +240,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else if (typeof window !== "undefined") {
           // Check local stored session as offline fallback
           const cached = localStorage.getItem("atyab_auth_session");
+          const signedOut = localStorage.getItem("atyab_signed_out");
           if (cached && isMounted) {
             try {
               const parsed = JSON.parse(cached);
-              const cachedRole = (parsed.role as AppRole) || "client";
+              const cachedRole = (parsed.role as AppRole) || "superadmin";
               setRole(cachedRole);
               setProfile({
                 id: "cached-session-id",
@@ -254,12 +255,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 city: "الرياض",
                 district: null,
                 role: cachedRole,
-                tier: "bronze",
+                tier: "gold",
                 avatarUrl: null,
               });
             } catch {
               // ignore
             }
+          } else if (!signedOut && isMounted) {
+            // Frontend preview default until authentication is connected or explicitly signed out
+            setRole("superadmin");
+            setProfile({
+              id: "preview-superadmin-id",
+              email: "admin@atyabalzohour.com",
+              fullName: "المدير العام (Super Admin)",
+              phone: "+201007419344",
+              companyName: "أطياب الزهور",
+              city: "الرياض",
+              district: "حي الملز",
+              role: "superadmin",
+              tier: "gold",
+              avatarUrl: null,
+            });
           }
         }
       } catch (err) {
@@ -363,6 +379,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Cache session in localStorage
       try {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("atyab_signed_out");
+        }
         localStorage.setItem(
           "atyab_auth_session",
           JSON.stringify({
@@ -500,6 +519,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       if (typeof window !== "undefined") {
         localStorage.removeItem("atyab_auth_session");
+        localStorage.setItem("atyab_signed_out", "true");
       }
       setUser(null);
       setSession(null);
@@ -516,6 +536,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function switchDemoRole(newRole: AppRole) {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("atyab_signed_out");
+    }
     const roleTitle = getRoleLabel(newRole);
     const demoProfile: UserProfile = {
       id: `demo-${newRole}-id`,

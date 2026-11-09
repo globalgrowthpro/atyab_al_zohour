@@ -7,6 +7,27 @@ import { useAdminThemeClass } from "@/features/admin/theme";
 import { useAuth, hasPermission, getRoleLabel } from "@/features/auth/context";
 import { Button } from "@/components/ui/button";
 
+function AdminLayoutError({ error }: { error: unknown }) {
+  return (
+    <div className="container-x flex min-h-[60vh] items-center justify-center py-12">
+      <div className="max-w-lg rounded-2xl border border-destructive/20 bg-card p-6 text-center shadow-lift">
+        <h3 className="text-lg font-bold text-destructive">حدث خطأ في واجهة لوحة الإدارة</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {error instanceof Error ? error.message : String(error)}
+        </p>
+        <div className="mt-4 flex justify-center gap-2">
+          <Button onClick={() => window.location.reload()} className="btn btn-primary text-xs">
+            إعادة تحميل الصفحة
+          </Button>
+          <Button asChild variant="outline" className="text-xs">
+            <Link to="/">الرئيسية</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
@@ -18,6 +39,7 @@ export const Route = createFileRoute("/admin")({
     ],
   }),
   component: AdminLayout,
+  errorComponent: AdminLayoutError,
 });
 
 function AdminLayout() {

@@ -104,7 +104,7 @@ export const weeklySales = [
   { day: "الجمعة", total: 7200 },
 ];
 
-export const sar = (n: number) => `${n.toLocaleString("en-US")} ر.س`;
+export const sar = (n: number | null | undefined) => `${Number(n || 0).toLocaleString("en-US")} ر.س`;
 
 // Hourly order volume for today (demo).
 export const hourlyOrders = [
