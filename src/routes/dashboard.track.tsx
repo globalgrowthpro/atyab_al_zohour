@@ -125,6 +125,18 @@ function Track() {
                       : (order.deliveryWindow ?? "بانتظار تأكيد الموعد")}
                   </p>
                 </div>
+                {order.paymentMethod === "cash_on_delivery" && (
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs space-y-1">
+                    <p className="font-bold text-amber-800 dark:text-amber-300">
+                      💵 الدفع عند الاستلام (COD)
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {order.status === "delivered"
+                        ? "تم التحصيل بنجاح ✓"
+                        : `المبلغ المطلوب سداده للمندوب: ${order.total ? order.total + " ر.س" : "حسب الفاتورة"}`}
+                    </p>
+                  </div>
+                )}
                 <p className="text-[11px] leading-6 text-muted-foreground">
                   {orderMapState(order).location}. الموقع ثابت للعرض، ولا يُحدّث لحظياً.
                 </p>

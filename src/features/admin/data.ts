@@ -27,6 +27,16 @@ export type AdminOrder = {
   total: number;
   status: OrderStatus;
   courier?: string | undefined;
+  paymentMethod?: string | undefined;
+  paymentStatus?: "paid" | "pending_cod" | "collected" | undefined;
+};
+
+export const paymentMethodLabels: Record<string, string> = {
+  cash_on_delivery: "الدفع عند الاستلام (COD)",
+  card: "بطاقة مدى / فيزا",
+  apple_pay: "Apple Pay",
+  bank_transfer: "تحويل بنكي",
+  credit_terms: "دفع آجل B2B",
 };
 
 export const adminOrders: AdminOrder[] = [

@@ -120,6 +120,19 @@ export function TaskDrawer({
               </ul>
             </section>
             <p className="rounded-xl bg-blush/40 p-4 text-sm leading-7">{task.instruction}</p>
+            {(task.paymentMethod === "cash_on_delivery" || Boolean(task.amountToCollect) || task.instruction?.includes("تحصيل")) && (
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs">
+                <div className="flex items-center justify-between font-bold text-amber-900 dark:text-amber-300">
+                  <span className="flex items-center gap-1.5 text-sm">
+                    💵 الدفع عند الاستلام (COD)
+                  </span>
+                  <span className="font-mono text-sm">{task.amountToCollect ? `${task.amountToCollect} ر.س` : "حسب الفاتورة"}</span>
+                </div>
+                <p className="mt-1.5 text-amber-950/80 dark:text-amber-200/80 leading-relaxed">
+                  يلزم تحصيل المبلغ كاملاً من العميل نقداً أو عبر جهاز مدى POS قبل تسليم شحنة الزهور المبردة.
+                </p>
+              </div>
+            )}
             <div className="border-t pt-5">
               <h3 className="mb-4 text-base">إجراء المهمة</h3>
               <TaskActions key={task.id} task={task} />

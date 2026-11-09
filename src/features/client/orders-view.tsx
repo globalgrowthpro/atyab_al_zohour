@@ -182,6 +182,15 @@ export function OrdersView({
                       </td>
                       <td className="whitespace-nowrap px-5 py-5 align-top">
                         <StatusBadge status={order.status} />
+                        {order.paymentMethod === "cash_on_delivery" ? (
+                          <span className="mt-1.5 inline-block rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
+                            💵 دفع عند الاستلام
+                          </span>
+                        ) : order.paymentMethod === "bank_transfer" ? (
+                          <span className="mt-1.5 inline-block rounded bg-blue-500/15 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300">
+                            🏦 تحويل بنكي
+                          </span>
+                        ) : null}
                       </td>
                       <td className="whitespace-nowrap px-5 py-5 align-top text-xs font-medium">
                         {orderAmount(order)}

@@ -126,6 +126,11 @@ export function TaskList({
                         أولوية مرتفعة
                       </span>
                     )}
+                    {(task.paymentMethod === "cash_on_delivery" || Boolean(task.amountToCollect) || task.instruction?.includes("تحصيل")) && (
+                      <span className="mt-1 block rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-200">
+                        💵 دفع عند الاستلام
+                      </span>
+                    )}
                   </td>
                   <td className="max-w-56 px-4 py-5 align-top">
                     <p className="max-w-48 truncate font-medium" title={task.customer}>
@@ -196,6 +201,12 @@ export function TaskList({
                   </span>
                   <strong>{taskCount(task)}</strong>
                 </div>
+                {(task.paymentMethod === "cash_on_delivery" || Boolean(task.amountToCollect) || task.instruction?.includes("تحصيل")) && (
+                  <div className="flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-800 dark:text-amber-200">
+                    <span>💵 دفع عند الاستلام:</span>
+                    <span>{task.amountToCollect ? `${task.amountToCollect} ر.س` : "حسب الفاتورة"}</span>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     aria-label={`تفاصيل المهمة ${task.id}`}

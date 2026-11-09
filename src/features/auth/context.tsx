@@ -585,10 +585,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    return {
+      user: null,
+      session: null,
+      profile: null,
+      role: null,
+      isAuthenticated: false,
+      isLoading: false,
+      signIn: async () => ({ success: false, error: "Auth provider missing" }),
+      signUp: async () => ({ success: false, error: "Auth provider missing" }),
+      signOut: async () => {},
+      refreshProfile: async () => {},
+      switchDemoRole: () => {},
+    };
   }
   return context;
 }

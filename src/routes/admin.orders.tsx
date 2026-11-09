@@ -17,6 +17,7 @@ function Orders() {
   const [status, setStatus] = useState<OrderStatus | "all">("all");
   const [city, setCity] = useState("all");
   const [courier, setCourier] = useState("all");
+  const [payment, setPayment] = useState("all");
 
   // Fetch real-time orders and couriers from Supabase on mount
   useEffect(() => {
@@ -43,15 +44,22 @@ function Orders() {
               cancelled: "cancelled",
             };
 
-            const remoteList: AdminOrder[] = ordersRes.data.map((o) => ({
-              id: o.id,
-              client: o.client_name,
-              city: o.city,
-              date: o.created_at ? o.created_at.split("T")[0]! : "2026-11-08",
-              items: Array.isArray(o.items) ? o.items.length : 1,
-              total: Number(o.total || 0),
-              status: statusMap[o.status] || "new",
-            }));
+            const remoteList: AdminOrder[] = ordersRes.data.map((o) => {
+              const ordStatus = statusMap[o.status] || "new";
+              const pm = o.payment_method || "card";
+              const ps = pm === "cash_on_delivery" ? (ordStatus === "delivered" ? "collected" : "pending_cod") : "paid";
+              return {
+                id: o.id,
+                client: o.client_name,
+                city: o.city,
+                date: o.created_at ? o.created_at.split("T")[0]! : "2026-11-08",
+                items: Array.isArray(o.items) ? o.items.length : 1,
+                total: Number(o.total || 0),
+                status: ordStatus,
+                paymentMethod: pm,
+                paymentStatus: ps as any,
+              };
+            });
 
             setOrders(remoteList);
           }
@@ -68,8 +76,16 @@ function Orders() {
   }, []);
 
   const list = useMemo(
-    () => orders.filter((o) => (status === "all" || o.status === status) && (city === "all" || o.city === city) && (courier === "all" || (courier === "none" ? !o.courier : o.courier === courier)) && (o.id + o.client + o.city).includes(q.trim())),
-    [orders, q, status, city, courier],
+    () =>
+      orders.filter(
+        (o) =>
+          (status === "all" || o.status === status) &&
+          (city === "all" || o.city === city) &&
+          (courier === "all" || (courier === "none" ? !o.courier : o.courier === courier)) &&
+          (payment === "all" || o.paymentMethod === payment) &&
+          (o.id + o.client + o.city).includes(q.trim()),
+      ),
+    [orders, q, status, city, courier, payment],
   );
   const update = (id: string, patch: Partial<(typeof orders)[number]>) =>
     setOrders((all) => all.map((o) => (o.id === id ? { ...o, ...patch } : o)));
@@ -127,16 +143,43 @@ function Orders() {
           <FilterChips value={status} onChange={setStatus} options={[["all", "الكل"], ...(Object.entries(orderStatusLabel) as [OrderStatus, string][])]} />
           <SelectFilter label="المدينة" value={city} onChange={setCity} options={uniq(orders.map((o) => o.city))} />
           <SelectFilter label="المندوب" value={courier} onChange={setCourier} options={[["none", "غير معيّن"], ...couriersList.map((c) => [c.name, c.name] as [string, string])]} />
-          <ExportButton file="orders" sheet="الطلبات" rows={() => list.map((o) => ({ "رقم الطلب": o.id, "العميل": o.client, "المدينة": o.city, "التاريخ": o.date, "الأصناف": o.items, "الإجمالي (ر.س)": o.total, "المندوب": o.courier ?? "", "الحالة": orderStatusLabel[o.status] }))} />
+          <SelectFilter
+            label="طريقة الدفع"
+            value={payment}
+            onChange={setPayment}
+            options={[
+              ["cash_on_delivery", "الدفع عند الاستلام (COD)"],
+              ["card", "بطاقة مدى / فيزا"],
+              ["bank_transfer", "تحويل بنكي"],
+              ["credit_terms", "آجل B2B"],
+            ]}
+          />
+          <ExportButton file="orders" sheet="الطلبات" rows={() => list.map((o) => ({ "رقم الطلب": o.id, "العميل": o.client, "المدينة": o.city, "التاريخ": o.date, "الأصناف": o.items, "الإجمالي (ر.س)": o.total, "طريقة الدفع": o.paymentMethod ?? "", "المندوب": o.courier ?? "", "الحالة": orderStatusLabel[o.status] }))} />
         </Toolbar>
-        <DataTable head={["رقم الطلب", "العميل", "التاريخ", "الأصناف", "الإجمالي", "المندوب", "الحالة", ""]} empty={list.length === 0}>
+        <DataTable head={["رقم الطلب", "العميل", "التاريخ", "الأصناف", "الإجمالي", "طريقة الدفع", "المندوب", "الحالة", ""]} empty={list.length === 0}>
           {list.map((o) => (
             <tr key={o.id}>
               <td className="font-bold" dir="ltr">{o.id}</td>
               <td>{o.client}<div className="text-xs text-muted-foreground">{o.city}</div></td>
               <td dir="ltr" className="text-end">{o.date}</td>
               <td>{o.items}</td>
-              <td className="whitespace-nowrap">{sar(o.total)}</td>
+              <td className="whitespace-nowrap font-bold text-rose">{sar(o.total)}</td>
+              <td>
+                {o.paymentMethod === "cash_on_delivery" ? (
+                  <div className="space-y-1">
+                    <Badge tone="gold">💵 عند الاستلام</Badge>
+                    <span className="block text-[10px] font-bold text-muted-foreground">
+                      {o.status === "delivered" ? "تم التحصيل ✓" : "بانتظار التحصيل"}
+                    </span>
+                  </div>
+                ) : o.paymentMethod === "bank_transfer" ? (
+                  <Badge tone="forest">🏦 تحويل بنكي</Badge>
+                ) : o.paymentMethod === "credit_terms" ? (
+                  <Badge tone="rose">📄 آجل B2B</Badge>
+                ) : (
+                  <Badge tone="sage">💳 مدى / فيزا</Badge>
+                )}
+              </td>
               <td>
                 <select aria-label={`مندوب ${o.id}`} value={o.courier ?? ""} disabled={o.status === "cancelled" || o.status === "delivered"}
                   onChange={(e) => { update(o.id, { courier: e.target.value || undefined }); toast.success("تم تعيين المندوب"); }}

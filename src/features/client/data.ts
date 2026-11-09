@@ -29,6 +29,8 @@ const orderSchema = z.object({
   address: z.object({ district: z.string(), street: z.string() }).optional(),
   deliveryWindow: z.string().optional(),
   total: z.number().finite().nonnegative().optional(),
+  paymentMethod: z.string().optional(),
+  paymentStatus: z.enum(["paid", "pending_cod", "collected"]).optional(),
   items: z.array(
     z.object({
       name: z.string(),

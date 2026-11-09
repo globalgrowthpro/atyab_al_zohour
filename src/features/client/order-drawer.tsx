@@ -105,6 +105,28 @@ export function OrderDrawer({
                 ))}
               </div>
             </section>
+            <div className="rounded-2xl border p-4 text-xs space-y-2 bg-muted/20">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">طريقة الدفع:</span>
+                <span className="font-bold text-forest">
+                  {order.paymentMethod === "cash_on_delivery"
+                    ? "💵 الدفع عند الاستلام (COD)"
+                    : order.paymentMethod === "bank_transfer"
+                    ? "🏦 تحويل بنكي"
+                    : order.paymentMethod === "credit_terms"
+                    ? "📄 دفع آجل B2B"
+                    : "💳 بطاقة مدى / فيزا"}
+                </span>
+              </div>
+              {order.paymentMethod === "cash_on_delivery" && (
+                <div className="flex justify-between items-center pt-2 border-t text-[11px]">
+                  <span className="text-muted-foreground">حالة السداد:</span>
+                  <span className={`font-bold ${order.status === "delivered" ? "text-primary" : "text-amber-700 dark:text-amber-300"}`}>
+                    {order.status === "delivered" ? "تم التحصيل بنجاح ✓" : "مطلوب سدادها للمندوب عند الاستلام"}
+                  </span>
+                </div>
+              )}
+            </div>
             <div className="flex items-center justify-between rounded-2xl bg-forest p-5 text-forest-foreground">
               <div>
                 <p className="text-sm opacity-80">إجمالي الطلب</p>
@@ -140,6 +162,14 @@ export function OrderDrawer({
               <button
                 type="button"
                 onClick={() => {
+                  const paymentLabel =
+                    order.paymentMethod === "cash_on_delivery"
+                      ? "الدفع عند الاستلام المبرد (COD)"
+                      : order.paymentMethod === "bank_transfer"
+                      ? "تحويل بنكي رسمي"
+                      : order.paymentMethod === "credit_terms"
+                      ? "دفع آجل 30 يوماً"
+                      : "بطاقة مدى / فيزا";
                   const receiptData: ReceiptOrderData = {
                     id: order.id,
                     date: order.date,
@@ -150,7 +180,7 @@ export function OrderDrawer({
                     street: order.address?.street || "طريق هارون الرشيد",
                     deliveryMethodLabel: "توصيل مبرد سريع (2°C — 4°C)",
                     deliverySlotLabel: order.deliveryWindow || "الفترة الصباحية (8:00 ص — 12:00 م)",
-                    paymentMethodLabel: "بطاقة مدى / فيزا (مسدد)",
+                    paymentMethodLabel: paymentLabel,
                     clientTierLabel: "عميل معتمد",
                     total: order.total || 1500,
                     items: order.items.map((it) => ({

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageBanner } from "@/components/site/PageBanner";
 import { Link } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import {
   Download,
   ShoppingCart,
@@ -25,7 +25,10 @@ import {
   Check,
   Smartphone,
   Banknote,
+  CheckCheck,
+  BadgeCheck,
 } from "lucide-react";
+import { useAuth } from "@/features/auth/context";
 import { QtyStepper } from "@/components/site/ProductCard";
 import { useCart } from "@/lib/cart";
 import { products, productImage } from "@/lib/catalog";
@@ -79,6 +82,7 @@ export function QuotePage() {
   const [tier] = useClientTier();
   const tierConfig = CLIENT_TIERS[tier];
   const { getProductSummary, reserveForQuote } = useFlowerBatches();
+  const { profile } = useAuth();
 
   const [step, setStep] = useState(0); // 0: Cart, 1: Details, 2: Review & Options, 3: Completed Order
   const [showClearModal, setShowClearModal] = useState(false);
@@ -98,7 +102,21 @@ export function QuotePage() {
   // Delivery & Payment Choices State
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("refrigerated_express");
   const [deliverySlot, setDeliverySlot] = useState<DeliverySlot>("morning");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash_on_delivery");
+  const [codAgreed, setCodAgreed] = useState(true);
+
+  useEffect(() => {
+    if (profile) {
+      setCustomer((prev) => ({
+        ...prev,
+        name: prev.name || profile.fullName || profile.companyName || "",
+        phone: prev.phone || profile.phone || "",
+        email: prev.email || profile.email || "",
+        city: prev.city || profile.city || "الرياض",
+        district: prev.district || profile.district || "",
+      }));
+    }
+  }, [profile]);
 
   // Order Submission State
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
@@ -174,12 +192,40 @@ export function QuotePage() {
     },
   };
 
-  const paymentMethodLabels: Record<PaymentMethod, { label: string; icon: string }> = {
-    card: { label: "بطاقة مدى / فيزا / ماستركارد", icon: "💳" },
-    apple_pay: { label: "Apple Pay", icon: "🍏" },
-    bank_transfer: { label: "تحويل بنكي (الراجحي / الأهلي)", icon: "🏦" },
-    credit_terms: { label: "دفع آجل 30 يوماً (عقود B2B)", icon: "📄" },
-    cash_on_delivery: { label: "الدفع عند الاستلام المبرد", icon: "💵" },
+  const paymentMethodLabels: Record<
+    PaymentMethod,
+    { label: string; icon: string; badge: string; desc: string }
+  > = {
+    cash_on_delivery: {
+      label: "الدفع عند الاستلام المبرد (COD)",
+      icon: "💵",
+      badge: "معاينة النضارة أولاً",
+      desc: "فحص جودة باقات الزهور عند باب المنشأة، ثم السداد نقداً أو عبر بطاقة مدى POS مع المندوب.",
+    },
+    card: {
+      label: "بطاقة مدى / فيزا / ماستركارد",
+      icon: "💳",
+      badge: "دفع فوري آمن",
+      desc: "بوابة سداد مشفرة 256-bit بمعايير أمان البنك المركزي السعودي SAMA.",
+    },
+    apple_pay: {
+      label: "Apple Pay",
+      icon: "🍏",
+      badge: "نقرة واحدة",
+      desc: "دفع فوري سريع ومعتمد بنقرة واحدة لأجهزة iPhone و Mac.",
+    },
+    bank_transfer: {
+      label: "تحويل بنكي رسمي",
+      icon: "🏦",
+      badge: "حسابات الشركات",
+      desc: "التحويل المباشر لحسابات أطياب الزهور في مصرف الراجحي أو البنك الأهلي السعودي.",
+    },
+    credit_terms: {
+      label: "دفع آجل 30 يوماً (B2B)",
+      icon: "📄",
+      badge: "عقود معتمدة",
+      desc: "تسهيلات سداد مخصصة للمنشآت والفنادق المتعاقدة ذات السجل التجاري الموثق.",
+    },
   };
 
   const receiptData: ReceiptOrderData | null = completedOrder
@@ -281,6 +327,12 @@ export function QuotePage() {
     setIsSubmittingOrder(true);
     setError("");
 
+    if (paymentMethod === "cash_on_delivery" && !codAgreed) {
+      setError("يرجى تأكيد الموافقة على شروط الدفع عند الاستلام لتأكيد أمر التجهيز.");
+      setIsSubmittingOrder(false);
+      return;
+    }
+
     try {
       // 0. Attempt Server-Side Order Checkout via Supabase Edge Function
       let assignedOrderId = `ORD-2026-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -372,7 +424,7 @@ export function QuotePage() {
               city: customer.city.trim(),
               district: customer.district.trim(),
               street: customer.street.trim(),
-              instruction: customer.notes.trim() || "التسليم مع مراعاة سلسلة التبريد المباشر (2°C - 4°C)",
+              instruction: customer.notes.trim() || (paymentMethod === "cash_on_delivery" ? `طلب دفع عند الاستلام (COD) - تحصيل نقدي/شبكة: ${sar(finalTotal)}` : "مدفوع مسبقاً - التسليم المبرد"),
               status: "assigned",
               priority: finalTotal > 2000 ? "high" : "normal",
               items: items.map(({ p, qty }) => ({
@@ -417,6 +469,8 @@ export function QuotePage() {
         },
         deliveryWindow: deliverySlotLabels[deliverySlot],
         total: finalTotal,
+        paymentMethod,
+        paymentStatus: paymentMethod === "cash_on_delivery" ? "pending_cod" : "paid",
         items: items.map(({ p, qty }) => ({
           name: p.name,
           sku: p.sku,
@@ -427,7 +481,10 @@ export function QuotePage() {
           {
             label: "تم قبول الطلب",
             at: nowFormatted,
-            detail: `تم اعتماد الطلب وتأكيد الحجز بنجاح عبر بوابة أطياب الزهور. طريقة الدفع: ${paymentMethodLabels[paymentMethod].label}.`,
+            detail:
+              paymentMethod === "cash_on_delivery"
+                ? `تم اعتماد الطلب وتأكيد الحجز بنجاح. طريقة الدفع: الدفع عند الاستلام المبرد (COD) - المبلغ المطلوب سداده عند الاستلام: ${sar(finalTotal)}.`
+                : `تم اعتماد الطلب وتأكيد الحجز بنجاح عبر بوابة أطياب الزهور. طريقة الدفع: ${paymentMethodLabels[paymentMethod].label}.`,
           },
           {
             label: "حجز المستودع المبرد",
@@ -662,7 +719,18 @@ export function QuotePage() {
                     تاريخ الطلب: <strong className="text-foreground">{completedOrder.date}</strong>
                   </p>
                   <p className="text-muted-foreground">
-                    الإجمالي المدفوع: <strong className="text-lg font-black text-rose">{sar(completedOrder.total)}</strong>
+                    {completedOrder.paymentMethod === "cash_on_delivery" ? (
+                      <>
+                        المبلغ المطلوب سداده عند الاستلام: <strong className="text-lg font-black text-emerald-700">{sar(completedOrder.total)}</strong>
+                        <span className="block mt-1 text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                          (نقداً أو عبر جهاز مدى POS مع المندوب)
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        الإجمالي: <strong className="text-lg font-black text-rose">{sar(completedOrder.total)}</strong>
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
@@ -1109,37 +1177,173 @@ export function QuotePage() {
                     </div>
 
                     {/* Payment Method Selection */}
-                    <div className="space-y-3 rounded-3xl border bg-card p-6 shadow-soft">
-                      <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                        <CreditCard className="size-4.5 text-forest" />
-                        طريقة الدفع وتأكيد الحجز
-                      </h3>
-                      <div className="grid gap-2.5 sm:grid-cols-2">
-                        {(["card", "apple_pay", "bank_transfer", "credit_terms", "cash_on_delivery"] as PaymentMethod[]).map((pm) => (
-                          <label
-                            key={pm}
-                            className={`flex items-center justify-between rounded-2xl border p-3.5 cursor-pointer transition ${
-                              paymentMethod === pm
-                                ? "border-forest bg-forest/5 shadow-xs"
-                                : "border-slate-200 bg-slate-50/50 hover:bg-slate-100"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2.5">
-                              <span className="text-lg">{paymentMethodLabels[pm].icon}</span>
-                              <span className="text-xs font-bold text-foreground">
-                                {paymentMethodLabels[pm].label}
-                              </span>
-                            </div>
-                            <input
-                              type="radio"
-                              name="paymentMethod"
-                              checked={paymentMethod === pm}
-                              onChange={() => setPaymentMethod(pm)}
-                              className="size-4 text-forest"
-                            />
-                          </label>
-                        ))}
+                    <div className="space-y-4 rounded-3xl border bg-card p-6 shadow-soft">
+                      <div className="flex items-center justify-between border-b pb-3">
+                        <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                          <CreditCard className="size-4.5 text-forest" />
+                          طريقة الدفع وتأكيد الحجز
+                        </h3>
+                        <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                          خيارات دفع B2B متعددة
+                        </span>
                       </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {(["cash_on_delivery", "card", "apple_pay", "bank_transfer", "credit_terms"] as PaymentMethod[]).map((pm) => {
+                          const info = paymentMethodLabels[pm];
+                          const selected = paymentMethod === pm;
+                          return (
+                            <label
+                              key={pm}
+                              className={`relative flex flex-col justify-between rounded-2xl border p-4 cursor-pointer transition ${
+                                selected
+                                  ? "border-forest bg-forest/5 shadow-xs ring-2 ring-forest/20"
+                                  : "border-slate-200 bg-slate-50/50 hover:bg-slate-100"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <div className="flex items-center gap-2.5">
+                                  <span className="text-2xl">{info.icon}</span>
+                                  <div>
+                                    <span className="block text-xs font-extrabold text-foreground">
+                                      {info.label}
+                                    </span>
+                                    <span className="inline-block mt-0.5 rounded-full bg-forest/10 px-2 py-0.5 text-[10px] font-bold text-forest">
+                                      {info.badge}
+                                    </span>
+                                  </div>
+                                </div>
+                                <input
+                                  type="radio"
+                                  name="paymentMethod"
+                                  checked={selected}
+                                  onChange={() => setPaymentMethod(pm)}
+                                  className="size-4 text-forest accent-forest mt-1"
+                                />
+                              </div>
+                              <p className="text-[11px] text-muted-foreground leading-relaxed mt-1">
+                                {info.desc}
+                              </p>
+                            </label>
+                          );
+                        })}
+                      </div>
+
+                      {/* Payment-Specific Assurance & Details Panel */}
+                      {paymentMethod === "cash_on_delivery" && (
+                        <div className="rounded-2xl border-2 border-emerald-600/30 bg-emerald-50/60 dark:bg-emerald-950/20 p-5 space-y-4">
+                          <div className="flex items-center justify-between text-emerald-900 dark:text-emerald-300">
+                            <div className="flex items-center gap-2.5">
+                              <span className="flex size-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
+                                <Banknote className="size-5" />
+                              </span>
+                              <div>
+                                <h4 className="text-sm font-bold">شروط وضمانات الدفع عند الاستلام (Cash on Delivery)</h4>
+                                <p className="text-[11px] text-emerald-800/80 dark:text-emerald-300/80">خدمة موثوقة ومخصصة لمتاجر الزهور والمنشآت المعتمدة</p>
+                              </div>
+                            </div>
+                            <span className="hidden sm:inline-flex rounded-full bg-emerald-200/70 dark:bg-emerald-800/50 px-2.5 py-0.5 text-[11px] font-extrabold text-emerald-900 dark:text-emerald-200">
+                              رسوم إضافية: 0 ر.س (مجاناً)
+                            </span>
+                          </div>
+
+                          <div className="grid gap-2.5 sm:grid-cols-2 text-xs">
+                            <div className="rounded-xl bg-white/80 dark:bg-card p-3 border border-emerald-100 dark:border-emerald-900/50">
+                              <strong className="text-forest block mb-1">🔍 1. فحص النضارة أولاً عند باب المنشأة</strong>
+                              <p className="text-muted-foreground text-[11px] leading-5">يحق لك فتح كراتين الزهور المبردة ومعاينة درجات التفتح والسيقان قبل سداد أي مبلغ للمندوب.</p>
+                            </div>
+                            <div className="rounded-xl bg-white/80 dark:bg-card p-3 border border-emerald-100 dark:border-emerald-900/50">
+                              <strong className="text-forest block mb-1">💳 2. سداد نقدي أو ببطاقة مدى / فيزا</strong>
+                              <p className="text-muted-foreground text-[11px] leading-5">جميع مناديب أسطولنا المبرد مجهزون بأجهزة نقاط بيع لاسلكية (مدى، فيزا، Apple Pay) بالإضافة للنقد.</p>
+                            </div>
+                            <div className="rounded-xl bg-white/80 dark:bg-card p-3 border border-emerald-100 dark:border-emerald-900/50">
+                              <strong className="text-forest block mb-1">🚚 3. رسوم الخدمة: مجاناً</strong>
+                              <p className="text-muted-foreground text-[11px] leading-5">لا توجد أي رسوم أو عمولات خفية على خدمة الدفع عند الاستلام لطلبات الجملة B2B.</p>
+                            </div>
+                            <div className="rounded-xl bg-white/80 dark:bg-card p-3 border border-emerald-100 dark:border-emerald-900/50">
+                              <strong className="text-forest block mb-1">❄️ 4. سلسلة التبريد المباشر (2°C - 4°C)</strong>
+                              <p className="text-muted-foreground text-[11px] leading-5">نضمن بقاء الورود في درجة حرارة مثالية من مستودعنا المبرد حتى باب منشأتك.</p>
+                            </div>
+                          </div>
+
+                          <label className="flex items-start gap-3 rounded-xl bg-white dark:bg-card p-3.5 border border-emerald-200 dark:border-emerald-900 cursor-pointer text-xs leading-6">
+                            <input
+                              type="checkbox"
+                              checked={codAgreed}
+                              onChange={(e) => setCodAgreed(e.target.checked)}
+                              className="mt-1 size-4 accent-emerald-600 rounded"
+                            />
+                            <span>
+                              أؤكد التزامي باستلام شحنة الزهور وتجهيز المبلغ المطلوب (<strong>{sar(finalTotal)}</strong>) نقداً أو بالشبكة فور وصول كابتن التوصيل.
+                            </span>
+                          </label>
+                        </div>
+                      )}
+
+                      {paymentMethod === "bank_transfer" && (
+                        <div className="rounded-2xl border border-blue-500/30 bg-blue-50/50 dark:bg-blue-950/20 p-5 space-y-3 text-xs">
+                          <div className="flex items-center gap-2 font-bold text-blue-900 dark:text-blue-300">
+                            <Building2 className="size-4.5 text-blue-600" />
+                            <span>الحسابات البنكية الرسمية لشركة أطياب الزهور للتوريد</span>
+                          </div>
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            <div className="rounded-xl bg-white dark:bg-card p-3 border border-blue-100 dark:border-blue-900">
+                              <p className="font-bold text-forest">مصرف الراجحي (Al Rajhi Bank)</p>
+                              <p className="font-mono text-[11px] text-muted-foreground mt-1" dir="ltr">SA03 8000 0456 6080 1010 1019</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">شركة أطياب الزهور للتجارة والتوريد</p>
+                            </div>
+                            <div className="rounded-xl bg-white dark:bg-card p-3 border border-blue-100 dark:border-blue-900">
+                              <p className="font-bold text-forest">البنك الأهلي السعودي (SNB)</p>
+                              <p className="font-mono text-[11px] text-muted-foreground mt-1" dir="ltr">SA44 1000 0012 3456 7890 1234</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">شركة أطياب الزهور للتجارة والتوريد</p>
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-blue-800/80 dark:text-blue-300/80 leading-5">
+                            * سيتم حجز أصناف الزهور المبردة لمدة 48 ساعة. يرجى إرفاق إشعار التحويل عبر واتساب لممثلي المبيعات لتأكيد أمر التجهيز.
+                          </p>
+                        </div>
+                      )}
+
+                      {paymentMethod === "card" && (
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 dark:bg-card p-4 space-y-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                              <ShieldCheck className="size-4 text-emerald-600" />
+                              بوابة الدفع الإلكتروني المشفرة
+                            </span>
+                            <div className="flex items-center gap-1.5 text-xs font-bold font-mono text-muted-foreground">
+                              <span>مدى</span> · <span>VISA</span> · <span>Mastercard</span>
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-5">
+                            معالجة الدفع تتم عبر اتصال آمن 256-bit SSL متوافق مع اشتراطات البنك المركزي السعودي وحماية 3D Secure لتأكيد العملية برمز OTP البنكي.
+                          </p>
+                        </div>
+                      )}
+
+                      {paymentMethod === "apple_pay" && (
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 dark:bg-card p-4 space-y-2 text-xs">
+                          <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
+                            <BadgeCheck className="size-4 text-emerald-600" />
+                            <span>الدفع السريع المباشر عبر Apple Pay</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-5">
+                            يمكنك إتمام الطلب بلمسة واحدة باستخدام Face ID أو Touch ID على جهازك المدعوم بأمان فائق دون مشاركة أرقام بطاقتك الفعلية.
+                          </p>
+                        </div>
+                      )}
+
+                      {paymentMethod === "credit_terms" && (
+                        <div className="rounded-2xl border border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 p-4 space-y-2 text-xs">
+                          <div className="flex items-center gap-2 font-bold text-amber-900 dark:text-amber-200">
+                            <Building2 className="size-4 text-amber-600" />
+                            <span>تسهيلات الدفع الآجل (30 يوماً B2B)</span>
+                          </div>
+                          <p className="text-[11px] text-amber-950/80 dark:text-amber-200/80 leading-5">
+                            مخصصة لعملاء العقود الموثقة والفنادق الكبرى بالسعودية. سيتم إصدار أمر التوريد وإرفاق الفاتورة الضريبية ZATCA للاستحقاق الشهري المعتمد.
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     {/* Items List Preview */}
@@ -1230,16 +1434,24 @@ export function QuotePage() {
                       <span>ضريبة القيمة المضافة (15% ZATCA):</span>
                       <span className="font-mono">{sar(vatAmount)}</span>
                     </div>
-                    <div className="flex justify-between text-sm font-black text-rose pt-1.5 border-t">
-                      <span>الإجمالي التقديري:</span>
-                      <span>{sar(finalTotal)}</span>
+                    {paymentMethod === "cash_on_delivery" && (
+                      <div className="flex justify-between text-emerald-700 font-bold">
+                        <span>رسوم الدفع عند الاستلام:</span>
+                        <span>مجاناً (0 ر.س)</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm font-black pt-1.5 border-t">
+                      <span>{paymentMethod === "cash_on_delivery" ? "المطلوب سداده عند الاستلام:" : "الإجمالي التقديري:"}</span>
+                      <span className={paymentMethod === "cash_on_delivery" ? "text-emerald-700" : "text-rose"}>{sar(finalTotal)}</span>
                     </div>
                   </div>
                 )}
 
                 <div className="gold-rule" />
                 <p className="text-xs leading-6 text-muted-foreground">
-                  القيمة المالية تُحدد بدقة في عرض السعر. الأسعار والتوفر وسلسلة التبريد تخضع لتأكيد فريق المبيعات.
+                  {paymentMethod === "cash_on_delivery"
+                    ? "الدفع عند الاستلام يتيح لك فحص باقات الزهور والتأكد من مطابقتها وسلسلة التبريد (2°C - 4°C) قبل السداد."
+                    : "القيمة المالية تُحدد بدقة في عرض السعر. الأسعار والتوفر وسلسلة التبريد تخضع لتأكيد فريق المبيعات."}
                 </p>
 
                 {step === 0 ? (
@@ -1267,7 +1479,11 @@ export function QuotePage() {
                       ) : (
                         <>
                           <CheckCircle2 className="size-4.5" />
-                          <span>تأكيد وإتمام الطلب ({sar(finalTotal)})</span>
+                          <span>
+                            {paymentMethod === "cash_on_delivery"
+                              ? `تأكيد الطلب والدفع عند الاستلام (${sar(finalTotal)})`
+                              : `تأكيد وإتمام الطلب (${sar(finalTotal)})`}
+                          </span>
                         </>
                       )}
                     </button>

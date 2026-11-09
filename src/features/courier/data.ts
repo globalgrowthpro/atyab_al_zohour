@@ -37,6 +37,9 @@ const taskSchema = z.object({
   events: z.array(z.object({ at: z.string(), label: z.string(), note: z.string() })),
   recipient: z.string().optional(),
   failureReason: z.enum(["unavailable", "address", "vehicle", "other"]).optional(),
+  paymentMethod: z.string().optional(),
+  amountToCollect: z.number().optional(),
+  codCollected: z.boolean().optional(),
 });
 export const courierProfileSchema = z.object({
   name: z.string().trim().min(2, "أدخل اسم المندوب").max(120),

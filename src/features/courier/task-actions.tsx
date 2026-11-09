@@ -1,28 +1,46 @@
 import { useState, type FormEvent } from "react";
-import { Check, Truck, PackageCheck, AlertTriangle, RotateCcw } from "lucide-react";
+import { Check, Truck, PackageCheck, AlertTriangle, RotateCcw, Banknote } from "lucide-react";
 import { useCourier } from "./context";
 import { failureReasons, taskActionSchema, type CourierTask, type TaskAction } from "./data";
+import { sar } from "@/features/admin/data";
 
 export function TaskActions({ task }: { task: CourierTask }) {
   const { updateTask, saving } = useCourier();
   const [mode, setMode] = useState<"none" | "deliver" | "fail">("none");
   const [recipient, setRecipient] = useState("");
   const [verified, setVerified] = useState(false);
+  const [codCollected, setCodCollected] = useState(false);
   const [reason, setReason] = useState<keyof typeof failureReasons>("unavailable");
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+
+  const isCod =
+    task.paymentMethod === "cash_on_delivery" ||
+    Boolean(task.amountToCollect && task.amountToCollect > 0) ||
+    task.instruction?.includes("تحصيل") ||
+    task.instruction?.includes("الدفع عند الاستلام");
+
   async function act(input: unknown) {
+    if (mode === "deliver" && isCod && !codCollected) {
+      setError("يرجى تأكيد تحصيل مبلغ الدفع عند الاستلام (نقداً أو شبكة) قبل إنهاء المهمة.");
+      return;
+    }
     const parsed = taskActionSchema.safeParse(input);
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "راجع بيانات التأكيد.");
       return;
     }
     setError("");
-    if (await updateTask(task.id, parsed.data as TaskAction)) {
+    const actionData = {
+      ...(parsed.data as TaskAction),
+      ...(mode === "deliver" && isCod ? { note: `${note ? note + " | " : ""}تم تحصيل الدفع عند الاستلام` } : {}),
+    };
+    if (await updateTask(task.id, actionData as TaskAction)) {
       setMode("none");
       setNote("");
       setRecipient("");
       setVerified(false);
+      setCodCollected(false);
     }
   }
   function submit(event: FormEvent) {
@@ -140,6 +158,32 @@ export function TaskActions({ task }: { task: CourierTask }) {
                 />
                 <span>أؤكد مراجعة المنتجات والكميات وتسليمها للمستلم في هذه التجربة.</span>
               </label>
+
+              {isCod && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-amber-900 dark:text-amber-300">
+                    <span className="flex items-center gap-1.5">
+                      <Banknote className="size-4 text-amber-600" />
+                      طلب دفع عند الاستلام (COD)
+                    </span>
+                    {task.amountToCollect ? (
+                      <span className="font-mono text-sm">{sar(task.amountToCollect)}</span>
+                    ) : (
+                      <span className="text-xs">المبلغ حسب الفاتورة</span>
+                    )}
+                  </div>
+                  <label className="flex items-start gap-2.5 text-xs font-semibold cursor-pointer text-amber-950 dark:text-amber-200">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 accent-amber-600"
+                      required
+                      checked={codCollected}
+                      onChange={(e) => setCodCollected(e.target.checked)}
+                    />
+                    <span>تم استلام وتحصيل كامل المبلغ المطلوب (نقداً أو عبر جهاز شبكة POS).</span>
+                  </label>
+                </div>
+              )}
             </>
           ) : (
             <label className="block space-y-2 text-sm">
