@@ -3,13 +3,52 @@ import { useState } from "react";
 import { Lock, ShoppingCart, FileText, Snowflake, Truck, ShieldCheck, Sparkles, Plane, Clock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ProductCard, QtyStepper } from "@/components/site/ProductCard";
-import { categoryOf, productImage, products } from "@/lib/catalog";
+import { categoryOf, productImage, products, type Product } from "@/lib/catalog";
 import { useCart } from "@/lib/cart";
 import { useClientTier, calculateTierPrice, CLIENT_TIERS, type ClientTier } from "@/features/b2b/tier-pricing";
 import { getProductInventorySummary } from "@/features/inventory/batches";
 
 export const Route = createFileRoute("/products/$slug")({
-  loader: ({ params }) => {
+  loader: async ({ params }) => {
+    if (!import.meta.env["TEST"]) {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .eq("slug", params.slug)
+          .maybeSingle();
+
+        if (!error && data) {
+          const item: Product = {
+            slug: data.slug,
+            sku: data.sku,
+            name: data.name,
+            en: data.name_en,
+            category: data.category_slug,
+            origin: data.origin,
+            grade: data.grade,
+            stem: data.stem_length || "60 سم",
+            color: data.color,
+            colorCode: data.color_code || "#e11d48",
+            unit: data.unit,
+            moq: data.moq,
+            stemsPerBunch: data.stems_per_bunch || 10,
+            bunchesPerCarton: data.bunches_per_carton || 8,
+            price: Number(data.base_price || 0),
+            priceUnit: data.unit || "باقة",
+            storage: data.storage_temp || "2°C - 4°C مبرد",
+            available: data.available,
+            description: data.description || "",
+            image: data.image || "",
+          };
+          return item;
+        }
+      } catch (err) {
+        console.warn("Product loader Supabase fetch:", err);
+      }
+    }
+
     const p = products.find((x) => x.slug === params.slug);
     if (!p) throw notFound();
     return p;

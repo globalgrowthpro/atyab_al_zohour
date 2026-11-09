@@ -315,10 +315,87 @@ export function QuotePage() {
       const orderDate = new Date().toISOString().split("T")[0]!;
       const nowFormatted = new Date().toISOString().replace("T", " ").slice(0, 16);
 
-      // 1. Reserve flower batches in cold storage
+      // 1. Reserve flower batches in cold storage (local memory)
       items.forEach(({ p, qty }) => {
         reserveForQuote(orderId, p.slug, qty);
       });
+
+      // 1.b Direct Supabase persistence (orders, delivery_tasks, atomic stock reservation)
+      if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
+        import("@/integrations/supabase/client").then(async ({ supabase }) => {
+          try {
+            await supabase.from("orders").upsert({
+              id: orderId,
+              client_name: customer.name.trim(),
+              client_phone: customer.phone.trim(),
+              client_email: customer.email.trim() || null,
+                            city: customer.city.trim(),
+              district: customer.district.trim(),
+              street: customer.street.trim(),
+              delivery_method: deliveryMethod,
+              delivery_slot: deliverySlotLabels[deliverySlot] || deliverySlot,
+              payment_method: paymentMethod,
+              client_tier: tier,
+              status: "received",
+              items: items.map(({ p, qty }) => ({
+                name: p.name,
+                sku: p.sku,
+                qty,
+                unit: p.unit,
+                price: calculateTierPrice(p.price ?? 0, tier),
+              })),
+              subtotal: tierSubtotal,
+              vat_amount: vatAmount,
+              total: finalTotal,
+              notes: customer.notes.trim() || null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+
+            // Call atomic stock reservation in Supabase
+            for (const { p, qty } of items) {
+              await (supabase.rpc as any)("reserve_flower_stock", {
+                p_order_id: orderId,
+                p_product_slug: p.slug,
+                p_quantity: qty,
+              });
+            }
+
+            // Create assigned delivery task in Supabase
+            await supabase.from("delivery_tasks").upsert({
+              id: `TSK-${orderId.replace("ORD-", "").replace("2026-", "")}`,
+              order_id: orderId,
+              delivery_date: orderDate,
+              delivery_slot: deliverySlotLabels[deliverySlot] || deliverySlot,
+              customer_name: customer.name.trim(),
+              customer_phone: customer.phone.trim(),
+              city: customer.city.trim(),
+              district: customer.district.trim(),
+              street: customer.street.trim(),
+              instruction: customer.notes.trim() || "التسليم مع مراعاة سلسلة التبريد المباشر (2°C - 4°C)",
+              status: "assigned",
+              priority: finalTotal > 2000 ? "high" : "normal",
+              items: items.map(({ p, qty }) => ({
+                name: p.name,
+                sku: p.sku,
+                qty,
+                unit: p.unit,
+              })),
+              timeline: [
+                {
+                  at: new Date().toISOString(),
+                  label: "تم استلام الطلب وإنشاء مهمة التوصيل",
+                  note: "مسجل تلقائياً في سلسلة التبريد المباشرة عبر المتجر",
+                },
+              ],
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+          } catch (dbErr) {
+            console.warn("Direct order Supabase insertion notice:", dbErr);
+          }
+        }).catch(() => {});
+      }
 
       // 2. Trigger WhatsApp Business Hub Instant Notification (Meta Cloud API)
       const whatsappResult = whatsAppHubStore.triggerAutomation("ORDER_PLACED", {
