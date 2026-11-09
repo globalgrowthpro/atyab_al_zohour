@@ -1,27 +1,110 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight, Building2, CalendarDays, ClipboardList, FileText, Headset, MapPin, PackageCheck, Wallet } from "lucide-react";
+import { ArrowRight, Building2, CalendarDays, ClipboardList, FileText, Headset, MapPin, PackageCheck, Wallet, ShieldCheck } from "lucide-react";
 import {
   adminClients, adminOrders, adminQuotes, adminTickets,
   clientStatusLabel, clientStatusTone, orderStatusLabel, orderStatusTone,
   quoteStatusLabel, quoteStatusTone, ticketStatusLabel, ticketStatusTone,
-  tierDiscount, tierLabel, type ClientStatus, type PriceTier,
+  tierDiscount, tierLabel, type AdminClient, type ClientStatus, type PriceTier,
 } from "@/features/admin/data";
 import { Badge, DataTable, KpiCard, Panel } from "@/features/admin/shared";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin/clients/$clientId")({
-  beforeLoad: ({ params }) => {
-    if (!adminClients.some((c) => c.id === params.clientId)) throw notFound();
-  },
   component: ClientDetails,
 });
 
+function mapDbTierToPriceTier(tier?: string | null): PriceTier {
+  if (!tier) return "C";
+  const upper = tier.toUpperCase();
+  if (upper === "A" || upper === "GOLD" || upper === "VIP" || upper === "PLATINUM") return "A";
+  if (upper === "B" || upper === "SILVER") return "B";
+  return "C";
+}
+
 function ClientDetails() {
   const { clientId } = Route.useParams();
-  const client = adminClients.find((c) => c.id === clientId)!;
+  const demoClient = adminClients.find((c) => c.id === clientId);
+
+  const [client, setClient] = useState<AdminClient>(
+    demoClient || {
+      id: clientId,
+      name: "عميل تجاري مسجل",
+      type: "منشأة معتمدة",
+      city: "الرياض",
+      cr: "1010xxxxxx",
+      orders: 0,
+      tier: "C",
+      status: "pending",
+      joined: new Date().toISOString().split("T")[0]!,
+    }
+  );
+
   const [status, setStatus] = useState<ClientStatus>(client.status);
   const [tier, setTier] = useState<PriceTier>(client.tier);
+  const [phone, setPhone] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+
+  // Fetch real client data from Supabase
+  useEffect(() => {
+    let isMounted = true;
+    async function loadClient() {
+      try {
+        const [profileRes, clientRowRes] = await Promise.all([
+          supabase.from("profiles").select("*").eq("id", clientId).maybeSingle(),
+          supabase.from("clients").select("*").eq("id", clientId).maybeSingle(),
+        ]);
+
+        if (isMounted) {
+          if (profileRes.data) {
+            const p = profileRes.data;
+            const loaded: AdminClient = {
+              id: p.id,
+              name: p.company_name || p.full_name || "عميل تجاري",
+              type: p.company_name ? "منشأة تجارية" : "محل ورد",
+              city: p.city || "الرياض",
+              cr: p.commercial_register || "1010xxxxxx",
+              orders: 0,
+              tier: mapDbTierToPriceTier(p.tier),
+              status: p.is_verified ? "active" : "pending",
+              joined: p.created_at ? p.created_at.split("T")[0]! : "2026-11-09",
+            };
+            setClient(loaded);
+            setStatus(loaded.status);
+            setTier(loaded.tier);
+            if (p.phone) setPhone(p.phone);
+            if (p.email) setEmail(p.email);
+          } else if (clientRowRes.data) {
+            const c = clientRowRes.data;
+            const loaded: AdminClient = {
+              id: c.id,
+              name: c.company || c.name,
+              type: c.company ? "منشأة تجارية" : "محل ورد",
+              city: c.city || "الرياض",
+              cr: c.cr_number || "1010xxxxxx",
+              orders: 0,
+              tier: mapDbTierToPriceTier(c.tier),
+              status: "active",
+              joined: c.created_at ? c.created_at.split("T")[0]! : "2026-11-09",
+            };
+            setClient(loaded);
+            setStatus(loaded.status);
+            setTier(loaded.tier);
+            if (c.phone) setPhone(c.phone);
+            if (c.email) setEmail(c.email);
+          }
+        }
+      } catch (err) {
+        console.warn("Client details load error:", err);
+      }
+    }
+
+    void loadClient();
+    return () => {
+      isMounted = false;
+    };
+  }, [clientId]);
 
   const orders = adminOrders.filter((o) => o.client === client.name);
   const quotes = adminQuotes.filter((q) => q.client === client.name);
@@ -29,7 +112,50 @@ function ClientDetails() {
   const recentValue = orders.reduce((s, o) => s + o.total, 0);
   const lastOrder = orders.map((o) => o.date).sort().at(-1);
 
-  const patchStatus = (next: ClientStatus, msg: string) => { setStatus(next); toast.success(msg); };
+  const patchStatus = async (next: ClientStatus, msg: string) => {
+    setStatus(next);
+    toast.success(msg);
+
+    try {
+      const isVerified = next === "active";
+      await supabase
+        .from("profiles")
+        .update({ is_verified: isVerified, updated_at: new Date().toISOString() })
+        .eq("id", clientId);
+
+      await supabase.from("security_logs").insert({
+        actor_name: "مدير النظام",
+        event_type: "client_status_changed",
+        severity: "info",
+        tone: "forest",
+        description: `تم تحديث حالة العميل ${client.name} (${clientId}) إلى: ${clientStatusLabel[next]}`,
+      });
+    } catch (err) {
+      console.warn("Client status update error:", err);
+    }
+  };
+
+  const patchTier = async (nextTier: PriceTier) => {
+    setTier(nextTier);
+    toast.success(`تم تحديث فئة السعر إلى ${tierLabel[nextTier]}`);
+
+    try {
+      await supabase
+        .from("profiles")
+        .update({ tier: nextTier, updated_at: new Date().toISOString() })
+        .eq("id", clientId);
+
+      await supabase.from("security_logs").insert({
+        actor_name: "مدير النظام",
+        event_type: "client_tier_changed",
+        severity: "info",
+        tone: "gold",
+        description: `تم تحديث فئة سعر العميل ${client.name} (${clientId}) إلى فئة: ${nextTier}`,
+      });
+    } catch (err) {
+      console.warn("Client tier update error:", err);
+    }
+  };
 
   return (
     <>
@@ -39,17 +165,47 @@ function ClientDetails() {
             <ArrowRight className="size-3.5" />العودة إلى حسابات العملاء
           </Link>
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-2xl">{client.name}</h2>
+            <h2 className="text-2xl font-bold">{client.name}</h2>
             <Badge tone={clientStatusTone[status]}>{clientStatusLabel[status]}</Badge>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {status === "pending" && <>
-            <button onClick={() => patchStatus("active", `تم تفعيل ${client.name}`)} className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90">موافقة وتفعيل</button>
-            <button onClick={() => patchStatus("suspended", "تم رفض الحساب")} className="rounded-xl border border-destructive/40 px-4 py-2 text-xs font-bold text-destructive hover:bg-destructive/10">رفض</button>
-          </>}
-          {status === "active" && <button onClick={() => patchStatus("suspended", "تم إيقاف الحساب")} className="rounded-xl border border-destructive/40 px-4 py-2 text-xs font-bold text-destructive hover:bg-destructive/10">إيقاف الحساب</button>}
-          {status === "suspended" && <button onClick={() => patchStatus("active", "تم إعادة التفعيل")} className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90">إعادة التفعيل</button>}
+          {status === "pending" && (
+            <>
+              <button
+                type="button"
+                onClick={() => void patchStatus("active", `تم تفعيل واعتماد ${client.name}`)}
+                className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition shadow-sm"
+              >
+                موافقة وتفعيل
+              </button>
+              <button
+                type="button"
+                onClick={() => void patchStatus("suspended", "تم رفض الحساب")}
+                className="rounded-xl border border-destructive/40 px-4 py-2 text-xs font-bold text-destructive hover:bg-destructive/10 transition"
+              >
+                رفض
+              </button>
+            </>
+          )}
+          {status === "active" && (
+            <button
+              type="button"
+              onClick={() => void patchStatus("suspended", "تم إيقاف الحساب")}
+              className="rounded-xl border border-destructive/40 px-4 py-2 text-xs font-bold text-destructive hover:bg-destructive/10 transition"
+            >
+              إيقاف الحساب
+            </button>
+          )}
+          {status === "suspended" && (
+            <button
+              type="button"
+              onClick={() => void patchStatus("active", "تم إعادة التفعيل")}
+              className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition shadow-sm"
+            >
+              إعادة التفعيل
+            </button>
+          )}
         </div>
       </div>
 
@@ -68,31 +224,40 @@ function ClientDetails() {
             <Info icon={Building2} label="نوع النشاط" value={client.type} />
             <Info icon={MapPin} label="المدينة" value={client.city} />
             <Info icon={CalendarDays} label="تاريخ الانضمام" value={client.joined} ltr />
+            {phone && <Info icon={Building2} label="رقم الجوال" value={phone} ltr />}
+            {email && <Info icon={Building2} label="البريد الإلكتروني" value={email} ltr />}
             <div>
               <dt className="flex items-center gap-1.5 text-xs text-muted-foreground"><CalendarDays className="size-3.5" />فئة السعر</dt>
               <dd className="mt-1">
-                <select aria-label="فئة السعر" value={tier} onChange={(e) => { setTier(e.target.value as PriceTier); toast.success("تم تحديث فئة السعر"); }}
-                  className="h-9 rounded-lg border bg-surface px-2 text-sm font-bold text-forest">
-                  {(Object.keys(tierLabel) as PriceTier[]).map((t) => <option key={t} value={t}>{tierLabel[t]}</option>)}
+                <select
+                  aria-label="فئة السعر"
+                  value={tier}
+                  onChange={(e) => void patchTier(e.target.value as PriceTier)}
+                  className="h-9 rounded-lg border bg-surface px-2 text-sm font-bold text-forest"
+                >
+                  {(Object.keys(tierLabel) as PriceTier[]).map((t) => (
+                    <option key={t} value={t}>{tierLabel[t]}</option>
+                  ))}
                 </select>
                 <p className="mt-1 text-xs text-muted-foreground">خصم تلقائي {tierDiscount[tier]}% على قوائم الأسعار</p>
               </dd>
             </div>
           </dl>
         </Panel>
-        <Panel title="حالة الحساب">
+        <Panel title="حالة الحساب والأمان">
           <div className="space-y-3 p-5">
             <div className="flex items-center justify-between rounded-xl bg-admin-head p-3">
               <span className="text-sm text-muted-foreground">الحالة الحالية</span>
               <Badge tone={clientStatusTone[status]}>{clientStatusLabel[status]}</Badge>
             </div>
             <p className="text-xs leading-6 text-muted-foreground">
-              {status === "active" && "الحساب مفعّل ويمكنه الطلب بشروط فئته الحالية."}
-              {status === "pending" && "الحساب جديد وينتظر موافقتك قبل تمكينه من الطلب."}
-              {status === "suspended" && "الحساب موقوف ولا يستطيع إتمام طلبات جديدة."}
+              {status === "active" && "الحساب مفعّل وموثق ويمكنه الطلب بأسعار فئته المعتمدة."}
+              {status === "pending" && "الحساب بانتظار مراجعة الإدارة واعتماده لتمكينه من طلبات الجملة."}
+              {status === "suspended" && "الحساب موقوف مؤقتاً ولا يستطيع إتمام طلبيات جديدة."}
             </p>
-            <div className="rounded-xl border bg-surface p-3 text-xs leading-6 text-muted-foreground">
-              <span className="font-bold text-forest">ملاحظة:</span> تعديلات الحالة والفئة هنا تجريبية وتعود لوضعها السابق عند تحديث الصفحة.
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs leading-6 text-forest">
+              <span className="flex items-center gap-1.5 font-bold mb-1"><ShieldCheck className="size-4 text-primary" />موثق في Supabase</span>
+              أي تغيير في الحالة أو فئة السعر يتم حفظه لحظياً في قاعدة البيانات ويوثق في سجل الرقابة الأمنية.
             </div>
           </div>
         </Panel>

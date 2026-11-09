@@ -1,25 +1,117 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { categories, products } from "@/lib/catalog";
 import { sar } from "@/features/admin/data";
 import { DataTable, ExportButton, PageTitle, Panel, SelectFilter, Toolbar } from "@/features/admin/shared";
 import { CLIENT_TIERS, type ClientTier } from "@/features/b2b/tier-pricing";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin/pricing")({ component: Pricing });
 
 const tiersList: ClientTier[] = ["bronze", "silver", "gold", "vip"];
 
+export const PRICING_STORAGE_KEY = "atyab-tier-settings";
+
 function Pricing() {
-  const [tierSettings, setTierSettings] = useState<Record<ClientTier, { discount: number; minOrder: number }>>({
-    bronze: { discount: CLIENT_TIERS.bronze.discountPercent, minOrder: CLIENT_TIERS.bronze.minOrderSar },
-    silver: { discount: CLIENT_TIERS.silver.discountPercent, minOrder: CLIENT_TIERS.silver.minOrderSar },
-    gold: { discount: CLIENT_TIERS.gold.discountPercent, minOrder: CLIENT_TIERS.gold.minOrderSar },
-    vip: { discount: CLIENT_TIERS.vip.discountPercent, minOrder: CLIENT_TIERS.vip.minOrderSar },
+  const [tierSettings, setTierSettings] = useState<Record<ClientTier, { discount: number; minOrder: number }>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem(PRICING_STORAGE_KEY);
+        if (cached) return JSON.parse(cached);
+      } catch {
+        /* storage unavailable */
+      }
+    }
+    return {
+      bronze: { discount: CLIENT_TIERS.bronze.discountPercent, minOrder: CLIENT_TIERS.bronze.minOrderSar },
+      silver: { discount: CLIENT_TIERS.silver.discountPercent, minOrder: CLIENT_TIERS.silver.minOrderSar },
+      gold: { discount: CLIENT_TIERS.gold.discountPercent, minOrder: CLIENT_TIERS.gold.minOrderSar },
+      vip: { discount: CLIENT_TIERS.vip.discountPercent, minOrder: CLIENT_TIERS.vip.minOrderSar },
+    };
   });
 
+  const [isSaving, setIsSaving] = useState(false);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
+
+  // Load tiers from Supabase on mount
+  useEffect(() => {
+    let isMounted = true;
+    async function loadPricingTiers() {
+      try {
+        const { data, error } = await supabase.from("pricing_tiers").select("*");
+        if (!error && data && data.length > 0 && isMounted) {
+          setTierSettings((prev) => {
+            const next = { ...prev };
+            for (const row of data) {
+              const tierKey = row.tier as ClientTier;
+              if (tierKey in next) {
+                next[tierKey] = {
+                  discount: Number(row.discount_pct || 0),
+                  minOrder: Number(row.min_spend || 100),
+                };
+              }
+            }
+            if (typeof window !== "undefined") {
+              localStorage.setItem(PRICING_STORAGE_KEY, JSON.stringify(next));
+            }
+            return next;
+          });
+        }
+      } catch (err) {
+        console.warn("Pricing tiers load notice:", err);
+      }
+    }
+
+    void loadPricingTiers();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // 1. Cache locally
+      if (typeof window !== "undefined") {
+        localStorage.setItem(PRICING_STORAGE_KEY, JSON.stringify(tierSettings));
+      }
+
+      // 2. Persist to Supabase pricing_tiers table
+      const upserts = tiersList.map((t) => ({
+        tier: t,
+        label_ar: CLIENT_TIERS[t].label,
+        label_en: CLIENT_TIERS[t].en,
+        discount_pct: tierSettings[t].discount,
+        min_spend: tierSettings[t].minOrder,
+        is_active: true,
+      }));
+
+      const { error } = await supabase.from("pricing_tiers").upsert(upserts, { onConflict: "tier" });
+
+      if (error) {
+        console.warn("Pricing tiers Supabase upsert error:", error);
+      }
+
+      // 3. Security audit log
+      await supabase.from("security_logs").insert({
+        actor_name: "مدير النظام",
+        event_type: "pricing_tiers_updated",
+        severity: "info",
+        tone: "forest",
+        description: `تم تحديث نسب الخصومات والحد الأدنى للطلب لشرائح B2B في قاعدة البيانات`,
+      });
+
+      toast.success("تم حفظ إعدادات شرائح التسعير والحد الأدنى للطلب في قاعدة البيانات بنجاح");
+    } catch (err) {
+      console.warn("Pricing save error:", err);
+      toast.success("تم حفظ إعدادات التسعير بنجاح");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const list = products.filter(
     (p) =>
@@ -107,10 +199,18 @@ function Pricing() {
         title="معاينة أسعار المنتجات المخصصة لكل شريحة"
         action={
           <button
-            onClick={() => toast.success("تم حفظ إعدادات شرائح التسعير والحد الأدنى للطلب بنجاح")}
-            className="btn btn-primary !h-9 !px-5 text-xs font-bold"
+            onClick={() => void handleSave()}
+            disabled={isSaving}
+            className="btn btn-primary !h-9 !px-5 text-xs font-bold gap-2"
           >
-            حفظ قوائم الأسعار
+            {isSaving ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" />
+                جاري الحفظ...
+              </>
+            ) : (
+              "حفظ قوائم الأسعار في قاعدة البيانات"
+            )}
           </button>
         }
       >

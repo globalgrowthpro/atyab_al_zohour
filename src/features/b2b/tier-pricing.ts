@@ -95,11 +95,45 @@ export function useClientTier(): [ClientTier, (tier: ClientTier) => void] {
   return [tier, setTier];
 }
 
+export function getTierDiscount(tier: ClientTier): number {
+  if (typeof window !== "undefined") {
+    try {
+      const cached = localStorage.getItem("atyab-tier-settings");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed[tier]?.discount !== undefined) {
+          return Number(parsed[tier].discount);
+        }
+      }
+    } catch {
+      /* storage unavailable */
+    }
+  }
+  return CLIENT_TIERS[tier]?.discountPercent ?? 0;
+}
+
+export function getTierMinOrder(tier: ClientTier): number {
+  if (typeof window !== "undefined") {
+    try {
+      const cached = localStorage.getItem("atyab-tier-settings");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed[tier]?.minOrder !== undefined) {
+          return Number(parsed[tier].minOrder);
+        }
+      }
+    } catch {
+      /* storage unavailable */
+    }
+  }
+  return CLIENT_TIERS[tier]?.minOrderSar ?? 500;
+}
+
 /**
  * يحسب سعر الجملة المخصص حسب شريحة العميل مع التقريب لأقرب ريال
  */
 export function calculateTierPrice(basePrice: number, tier: ClientTier): number {
-  const discount = CLIENT_TIERS[tier]?.discountPercent ?? 0;
+  const discount = getTierDiscount(tier);
   if (discount <= 0) return basePrice;
   return Math.round(basePrice * (1 - discount / 100));
 }
@@ -120,7 +154,7 @@ export function validateMoq(
   tier: ClientTier = currentTier
 ): MoqValidationResult {
   const config = CLIENT_TIERS[tier];
-  const minOrderSar = config.minOrderSar;
+  const minOrderSar = getTierMinOrder(tier);
 
   const itemErrors: MoqValidationResult["itemErrors"] = [];
   let currentSubtotal = 0;
