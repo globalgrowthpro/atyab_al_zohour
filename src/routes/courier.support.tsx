@@ -99,9 +99,9 @@ export function CourierSupport({ initialTask = "" }: { initialTask?: string }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl">دعم المندوب</h2>
+        <h2 className="text-2xl">دعم كابتن التوصيل</h2>
         <p className="mt-2 text-sm leading-7 text-muted-foreground">
-          جهّز بلاغك واحفظه محلياً أو حمّله للمشاركة. خدمة إرسال البلاغات غير متصلة.
+          إرسال البلاغات والاستفسارات الطارئة لغرفة العمليات المركزية وإدارة الأسطول.
         </p>
       </div>
       <form

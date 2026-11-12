@@ -80,21 +80,34 @@ export function TaskDrawer({
                 العميل
               </h3>
               <p className="font-bold">{task.customer}</p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                رقم هاتف العميل غير متاح في العرض التجريبي.
-              </p>
+              {task.customerPhone ? (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">رقم الجوال:</span>
+                  <a
+                    href={`tel:${task.customerPhone}`}
+                    className="font-mono text-xs font-bold text-primary hover:underline"
+                    dir="ltr"
+                  >
+                    {task.customerPhone}
+                  </a>
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  رقم التواصل متاح عبر نظام التوجيه اللوجستي.
+                </p>
+              )}
             </section>
             <section className="rounded-2xl bg-muted/50 p-5">
               <h3 className="mb-3 flex items-center gap-2 text-sm">
                 <MapPin className="size-4 text-rose" />
-                عنوان التسليم (مثال)
+                عنوان التسليم
               </h3>
               <p className="font-bold">
                 {task.city}، {task.district}
               </p>
               <p className="mt-2 text-sm text-muted-foreground">{task.street}</p>
               <p className="mt-4 border-t pt-3 text-xs">
-                نافذة التسليم التجريبية: <bdi>{task.slot}</bdi> · {task.date}
+                نافذة التسليم: <bdi>{task.slot}</bdi> · {task.date}
               </p>
             </section>
             <section>

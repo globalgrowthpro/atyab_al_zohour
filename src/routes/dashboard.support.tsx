@@ -34,8 +34,42 @@ export function SupportPage({ initialOrder = "" }: { initialOrder?: string }) {
     message: "",
   });
   const [error, setError] = useState("");
+  const [replyText, setReplyText] = useState("");
+  const [replying, setReplying] = useState(false);
   const [selected, setSelected] = useState(data.tickets[0]?.id ?? "");
   const ticket = data.tickets.find((t) => t.id === selected);
+
+  async function handleSendReply(e: FormEvent) {
+    e.preventDefault();
+    if (!replyText.trim() || !ticket) return;
+    setReplying(true);
+    const newReply = {
+      author: "client" as const,
+      message: replyText.trim(),
+      at: new Date().toISOString(),
+    };
+    const updatedReplies = [...ticket.replies, newReply];
+    const updatedTickets = data.tickets.map((t) =>
+      t.id === ticket.id ? { ...t, replies: updatedReplies } : t,
+    );
+
+    if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
+      import("@/integrations/supabase/client").then(async ({ supabase }) => {
+        try {
+          await supabase
+            .from("tickets")
+            .update({ replies: updatedReplies })
+            .eq("id", ticket.id);
+        } catch {
+          // fallback
+        }
+      }).catch(() => {});
+    }
+
+    await save({ ...data, tickets: updatedTickets });
+    setReplyText("");
+    setReplying(false);
+  }
   async function submit(event: FormEvent) {
     event.preventDefault();
     const parsed = ticketInputSchema.safeParse(form);
@@ -255,10 +289,30 @@ export function SupportPage({ initialOrder = "" }: { initialOrder?: string }) {
               ? "الحالة والردود بيانات توضيحية ثابتة، ولا تمثل تواصلاً فعلياً مع فريق الدعم."
               : "لا توجد ردود أو تحديثات حالة من الشركة لأن التذكرة لم تُرسل."}
           </p>
-          <button className="btn btn-outline" onClick={downloadTicket}>
-            <Download className="size-4" />
-            {ticket.origin === "demo" ? "تحميل المحادثة التوضيحية" : "تحميل المسودة"}
-          </button>
+          {ticket.status !== "closed" && (
+            <form onSubmit={handleSendReply} className="mt-4 flex gap-2 border-t pt-4">
+              <input
+                type="text"
+                className="field flex-1 text-sm"
+                placeholder="اكتب ردك أو استفسارك الإضافي هنا..."
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+              />
+              <button
+                type="submit"
+                disabled={replying || !replyText.trim()}
+                className="btn btn-primary whitespace-nowrap text-xs"
+              >
+                {replying ? "جاري الإرسال..." : "إرسال الرد"}
+              </button>
+            </form>
+          )}
+          <div className="pt-2">
+            <button className="btn btn-outline" onClick={downloadTicket}>
+              <Download className="size-4" />
+              {ticket.origin === "demo" ? "تحميل المحادثة التوضيحية" : "تحميل المسودة"}
+            </button>
+          </div>
         </section>
       )}
     </div>

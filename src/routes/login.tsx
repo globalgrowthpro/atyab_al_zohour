@@ -48,30 +48,34 @@ function LoginPage() {
     e.preventDefault();
 
     if (!email.trim()) {
-      toast.error("يرجى إدخال البريد الإلكتروني");
+      toast.error("يرجى إدخال البريد الإلكتروني أو اسم المستخدم");
       return;
     }
     if (!password.trim()) {
       toast.error("يرجى إدخال كلمة المرور");
       return;
     }
+    if (password.length < 6) {
+      toast.error("كلمة المرور يجب أن تكون 6 خانات على الأقل");
+      return;
+    }
 
     setIsLoading(true);
-    toast.loading("جاري التحقق من بيانات الدخول...", { id: "login-toast" });
+    toast.loading("جاري التحقق الآمن من بيانات الدخول...", { id: "login-toast" });
 
     try {
       const res = await signIn({ email, password });
       if (res.success) {
-        toast.success("تم تسجيل الدخول بنجاح!", {
+        toast.success("تم التحقق بنجاح!", {
           id: "login-toast",
-          description: "أهلاً بك في منصة أطياب الزهور. جاري توجيهك...",
+          description: "أهلاً بك في منصة أطياب الزهور. جاري فتح لوحة التحكم المخصصة...",
           duration: 3000,
         });
         void navigate({ to: res.destination || "/dashboard" });
       } else {
-        toast.error("فشل تسجيل الدخول", {
+        toast.error("تعذّر تسجيل الدخول", {
           id: "login-toast",
-          description: res.error || "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+          description: res.error || "البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى إدخال بيانات حقيقية مسجلة.",
         });
       }
     } catch (err) {
@@ -79,32 +83,6 @@ function LoginPage() {
         id: "login-toast",
         description: err instanceof Error ? err.message : "يرجى المحاولة مجدداً.",
       });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loginWithRole = async (selectedRole: AppRole) => {
-    const roleEmail = `${selectedRole}@atyabalzohour.com`;
-    const defaultPassword = "password123";
-    setEmail(roleEmail);
-    setPassword(defaultPassword);
-    setIsLoading(true);
-    toast.loading(`تسجيل الدخول بصلاحية ${getRoleLabel(selectedRole)}...`, { id: "login-toast" });
-
-    try {
-      const res = await signIn({ email: roleEmail, password: defaultPassword });
-      if (res.success) {
-        toast.success(`أهلاً بك! تم الدخول بصلاحية: ${getRoleLabel(selectedRole)}`, {
-          id: "login-toast",
-          duration: 2500,
-        });
-        void navigate({ to: res.destination || "/dashboard" });
-      } else {
-        toast.error("فشل تسجيل الدخول", { id: "login-toast", description: res.error });
-      }
-    } catch (err) {
-      toast.error("حدث خطأ", { id: "login-toast" });
     } finally {
       setIsLoading(false);
     }
@@ -259,55 +237,13 @@ function LoginPage() {
                 </div>
               </div>
 
-              {/* Demo Accounts Quick Login by Role */}
-              <div className="mt-6 border-t border-dashed pt-4">
-                <div className="mb-2.5 flex items-center gap-1.5 text-xs font-bold text-forest">
-                  <ShieldCheck className="size-3.5 text-primary" />
-                  <span>دخول تجريبي سريع حسب الصلاحيات (RBAC):</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void loginWithRole("superadmin")}
-                    className="flex items-center justify-center gap-1 rounded-xl border border-amber-300/60 bg-amber-500/10 px-2 py-2 text-[11px] font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition-all shadow-2xs"
-                  >
-                    <span>👑 المدير العام</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void loginWithRole("admin")}
-                    className="flex items-center justify-center gap-1 rounded-xl border border-emerald-300/60 bg-emerald-500/10 px-2 py-2 text-[11px] font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all shadow-2xs"
-                  >
-                    <span>🛡️ مدير النظام</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void loginWithRole("manager")}
-                    className="flex items-center justify-center gap-1 rounded-xl border border-sky-300/60 bg-sky-500/10 px-2 py-2 text-[11px] font-bold text-sky-800 dark:text-sky-300 hover:bg-sky-500/20 transition-all shadow-2xs"
-                  >
-                    <span>📋 مدير العمليات</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void loginWithRole("seo")}
-                    className="flex items-center justify-center gap-1 rounded-xl border border-purple-300/60 bg-purple-500/10 px-2 py-2 text-[11px] font-bold text-purple-800 dark:text-purple-300 hover:bg-purple-500/20 transition-all shadow-2xs"
-                  >
-                    <span>🚀 مسؤول SEO</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void loginWithRole("courier")}
-                    className="flex items-center justify-center gap-1 rounded-xl border border-orange-300/60 bg-orange-500/10 px-2 py-2 text-[11px] font-bold text-orange-800 dark:text-orange-300 hover:bg-orange-500/20 transition-all shadow-2xs"
-                  >
-                    <span>🚚 كابتن التوصيل</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void loginWithRole("client")}
-                    className="flex items-center justify-center gap-1 rounded-xl border border-border bg-muted/60 px-2 py-2 text-[11px] font-bold text-forest hover:bg-muted transition-all shadow-2xs"
-                  >
-                    <span>🏢 عميل تجاري</span>
-                  </button>
+              {/* Security & Access Protection Notice */}
+              <div className="mt-6 border-t border-border/80 pt-4">
+                <div className="flex items-center gap-2 rounded-2xl bg-muted/50 p-3 text-xs text-muted-foreground">
+                  <ShieldCheck className="size-4 shrink-0 text-primary" />
+                  <p className="leading-relaxed">
+                    منطقة دخول محمية ومشفرة. الدخول مقصور على الحسابات المعتمدة بكلمة مرور حقيقية.
+                  </p>
                 </div>
               </div>
             </div>

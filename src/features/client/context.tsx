@@ -14,7 +14,18 @@ type ClientContextValue = {
 const ClientContext = createContext<ClientContextValue | null>(null);
 export function useClientData() {
   const context = useContext(ClientContext);
-  if (!context) throw new Error("ClientProvider is required");
+  if (!context) {
+    return {
+      data: emptyClientData(),
+      saving: false,
+      save: async () => true,
+      notice: "",
+      error: "",
+      loading: false,
+      loadFailed: false,
+      retry: () => {},
+    };
+  }
   return context;
 }
 export function ClientProvider({ children }: { children: ReactNode }) {

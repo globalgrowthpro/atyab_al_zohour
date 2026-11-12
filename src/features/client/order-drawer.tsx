@@ -1,8 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { MapPin, CalendarDays, Package, Truck, CircleHelp, Printer } from "lucide-react";
+import { useState } from "react";
+import { MapPin, CalendarDays, Package, Truck, CircleHelp, Printer, Ban, Loader2 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { StatusBadge } from "./shared";
-import { type ClientOrder } from "./data";
+import { cancelClientOrder, type ClientOrder } from "./data";
+import { useClientData } from "./context";
+import { toast } from "sonner";
 import { formatOrderDate, orderAddress, orderAmount, orderQuantity } from "./order-presentation";
 import {
   openReceiptPrintWindow,
@@ -18,7 +21,34 @@ export function OrderDrawer({
   open: boolean;
   onClose: () => void;
 }) {
+  const { data, save } = useClientData();
+  const [cancelling, setCancelling] = useState(false);
   const address = order ? orderAddress(order) : undefined;
+
+  const handleCancelOrder = async () => {
+    if (!order) return;
+    const confirm = window.confirm(`هل أنت متأكد من رغبتك في إلغاء الطلب رقم #${order.id}؟`);
+    if (!confirm) return;
+
+    setCancelling(true);
+    try {
+      const ok = await cancelClientOrder(order.id, "إلغاء مباشر من لوحة العميل");
+      if (ok) {
+        const updatedOrders = data.orders.map((o) =>
+          o.id === order.id ? { ...o, status: "cancelled" as const } : o,
+        );
+        await save({ ...data, orders: updatedOrders });
+        toast.success(`تم إلغاء الطلب #${order.id} بنجاح وتحديث النظام.`);
+        onClose();
+      } else {
+        toast.error("تعذر إلغاء الطلب. يرجى التواصل مع الدعم.");
+      }
+    } catch {
+      toast.error("حدث خطأ أثناء محاولة الإلغاء.");
+    } finally {
+      setCancelling(false);
+    }
+  };
   return (
     <Sheet
       open={open}
@@ -198,6 +228,17 @@ export function OrderDrawer({
                 <Printer className="size-4" />
                 تحميل / طباعة إيصال الفاتورة الرسمية PDF
               </button>
+              {(order.status === "received" || order.status === "preparing") && (
+                <button
+                  type="button"
+                  disabled={cancelling}
+                  onClick={handleCancelOrder}
+                  className="btn btn-outline sm:col-span-2 flex items-center justify-center gap-2 font-bold !py-2.5 text-destructive border-destructive/30 hover:bg-destructive/10"
+                >
+                  {cancelling ? <Loader2 className="size-4 animate-spin" /> : <Ban className="size-4" />}
+                  طلب إلغاء هذا الطلب
+                </button>
+              )}
             </div>
           </div>
         )}

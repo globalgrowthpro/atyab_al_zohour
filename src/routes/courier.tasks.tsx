@@ -21,8 +21,8 @@ function CourierTasks() {
             كل المهام المسندة إليك، وتفاصيل كل عملية تسليم.
           </p>
         </div>
-        <span className="rounded-lg border bg-card px-3 py-2 text-xs text-primary">
-          {data.tasks.length} مهام · جولة تجريبية
+        <span className="rounded-lg border bg-card px-3 py-2 text-xs text-primary font-bold">
+          {data.tasks.length} مهمة توصيل مسندة
         </span>
       </div>
       <TaskList

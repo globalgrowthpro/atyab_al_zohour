@@ -233,10 +233,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function initAuth() {
       try {
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
-        if (!error && initialSession?.user && isMounted) {
-          setSession(initialSession);
-          setUser(initialSession.user);
-          await fetchProfile(initialSession.user.id, initialSession.user.email);
+        
+        // Session token expiry validation & refresh protection
+        let activeSession = initialSession;
+        if (initialSession && initialSession.expires_at) {
+          const isExpired = initialSession.expires_at * 1000 < Date.now();
+          if (isExpired) {
+            const { data: refreshData, error: refreshErr } = await supabase.auth.refreshSession();
+            if (!refreshErr && refreshData.session) {
+              activeSession = refreshData.session;
+            } else {
+              activeSession = null;
+              if (typeof window !== "undefined") {
+                localStorage.removeItem("atyab_auth_session");
+              }
+            }
+          }
+        }
+
+        if (!error && activeSession?.user && isMounted) {
+          setSession(activeSession);
+          setUser(activeSession.user);
+          await fetchProfile(activeSession.user.id, activeSession.user.email);
         } else if (typeof window !== "undefined") {
           // Check local stored session as offline fallback
           const cached = localStorage.getItem("atyab_auth_session");
@@ -244,20 +262,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (cached && isMounted) {
             try {
               const parsed = JSON.parse(cached);
-              const cachedRole = (parsed.role as AppRole) || "superadmin";
-              setRole(cachedRole);
-              setProfile({
-                id: "cached-session-id",
-                email: parsed.email || null,
-                fullName: parsed.personaName || "مستخدم مسجل",
-                phone: null,
-                companyName: null,
-                city: "الرياض",
-                district: null,
-                role: cachedRole,
-                tier: "gold",
-                avatarUrl: null,
-              });
+              // Inactivity check: 4 hours maximum session lifetime without refresh
+              const loggedTime = new Date(parsed.lastActiveAt || parsed.loggedInAt || 0).getTime();
+              const now = Date.now();
+              if (now - loggedTime > 4 * 60 * 60 * 1000) {
+                localStorage.removeItem("atyab_auth_session");
+                setRole(null);
+                setProfile(null);
+              } else {
+                parsed.lastActiveAt = new Date().toISOString();
+                localStorage.setItem("atyab_auth_session", JSON.stringify(parsed));
+                const cachedRole = (parsed.role as AppRole) || "superadmin";
+                setRole(cachedRole);
+                setProfile({
+                  id: "cached-session-id",
+                  email: parsed.email || null,
+                  fullName: parsed.personaName || "مستخدم مسجل",
+                  phone: null,
+                  companyName: null,
+                  city: "الرياض",
+                  district: null,
+                  role: cachedRole,
+                  tier: "gold",
+                  avatarUrl: null,
+                });
+              }
             } catch {
               // ignore
             }
@@ -294,6 +323,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
 
+        if (event === "SIGNED_OUT") {
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("atyab_auth_session");
+          }
+          setProfile(null);
+          setRole(null);
+          return;
+        }
+
         if (currentSession?.user) {
           await fetchProfile(currentSession.user.id, currentSession.user.email);
         } else {
@@ -313,63 +351,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const cleanEmail = email.trim().toLowerCase();
+
+      // Rate limiting / Brute-force protection
+      if (typeof window !== "undefined") {
+        try {
+          const attemptData = JSON.parse(sessionStorage.getItem("atyab:login-guard") || "{}");
+          const now = Date.now();
+          if (attemptData.lockedUntil && now < attemptData.lockedUntil) {
+            const remainingMins = Math.ceil((attemptData.lockedUntil - now) / 60000);
+            setIsLoading(false);
+            return {
+              success: false,
+              error: `تم إيقاف محاولات الدخول مؤقتاً لحماية أمان الحساب. يرجى الانتظار ${remainingMins} دقيقة قبل المحاولة مجدداً.`,
+            };
+          }
+        } catch {
+          // fallback
+        }
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password,
       });
 
       if (error) {
-        // Fallback demo/preview account handling for developer pair programming & QA
-        const isDemoEmail = cleanEmail.includes("@atyabalzohour.com") || cleanEmail.includes("@test.com");
-        if (isDemoEmail) {
-          const matchedRole: AppRole = cleanEmail.includes("superadmin")
-            ? "superadmin"
-            : cleanEmail.includes("admin")
-              ? "admin"
-              : cleanEmail.includes("manager")
-                ? "manager"
-                : cleanEmail.includes("seo")
-                  ? "seo"
-                  : cleanEmail.includes("courier")
-                    ? "courier"
-                    : "client";
-
-          const demoProfile: UserProfile = {
-            id: `demo-${matchedRole}-id`,
-            email: cleanEmail,
-            fullName: getRoleLabel(matchedRole).split(" (")[0] || "المدير العام",
-            phone: "+201007419344",
-            companyName: "شركة أطياب الزهور للتوريد",
-            city: "الرياض",
-            district: "حي الملز",
-            role: matchedRole,
-            tier: "gold",
-            avatarUrl: null,
-          };
-
-          setProfile(demoProfile);
-          setRole(matchedRole);
-          const destination = getRoleDestination(matchedRole);
-
-          if (typeof window !== "undefined") {
-            localStorage.setItem(
-              "atyab_auth_session",
-              JSON.stringify({
-                role: matchedRole,
-                roleTitle: getRoleLabel(matchedRole),
-                personaName: demoProfile.fullName,
-                email: cleanEmail,
-                loggedInAt: new Date().toISOString(),
-              })
-            );
+        // Record failed attempt
+        if (typeof window !== "undefined") {
+          try {
+            const attemptData = JSON.parse(sessionStorage.getItem("atyab:login-guard") || "{\"count\": 0}");
+            const count = (attemptData.count || 0) + 1;
+            const now = Date.now();
+            if (count >= 5) {
+              sessionStorage.setItem("atyab:login-guard", JSON.stringify({ count: 0, lockedUntil: now + 5 * 60 * 1000 }));
+            } else {
+              sessionStorage.setItem("atyab:login-guard", JSON.stringify({ count, lastAttempt: now }));
+            }
+          } catch {
+            // fallback
           }
+        }
 
-          setIsLoading(false);
-          return { success: true, destination, role: matchedRole };
+        if (!import.meta.env["TEST"]) {
+          await supabase.from("security_logs").insert({
+            actor_name: cleanEmail,
+            event_type: "login_failed",
+            description: `فشل تسجيل الدخول للبريد (${cleanEmail}): بيانات الدخول غير صحيحة أو غير مسجلة`,
+            severity: "warning",
+            tone: "destructive",
+            user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+          });
         }
 
         setIsLoading(false);
-        return { success: false, error: error.message };
+        return {
+          success: false,
+          error: error.message.includes("Invalid login credentials")
+            ? "البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى إدخال بيانات حساب حقيقي مسجل."
+            : error.message,
+        };
+      }
+
+      // Successful login: reset guard
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("atyab:login-guard");
       }
 
       const activeUser = data.user;
@@ -519,7 +564,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       if (typeof window !== "undefined") {
         localStorage.removeItem("atyab_auth_session");
+        localStorage.removeItem("atyab-client-demo-v1");
+        localStorage.removeItem("atyab-courier-demo-v1");
         localStorage.setItem("atyab_signed_out", "true");
+        try {
+          sessionStorage.clear();
+        } catch {
+          // ignore
+        }
       }
       setUser(null);
       setSession(null);

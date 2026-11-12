@@ -101,69 +101,98 @@ export const clientRepository: ClientRepository = {
     let data = raw ? stateSchema.parse(JSON.parse(raw)) : withDemonstrationData(emptyClientData());
 
     // Live Supabase Sync (Non-blocking for instant responsiveness)
-    if (typeof window !== "undefined" && !import.meta.env["TEST"] && data.profile.phone) {
+    if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
       try {
         const { supabase } = await import("@/integrations/supabase/client");
-        const [ordersRes, ticketsRes] = await Promise.all([
-          supabase
-            .from("orders")
+        const { data: authData } = await supabase.auth.getUser();
+        let targetPhone = data.profile.phone;
+
+        if (authData?.user) {
+          const { data: userProfile } = await supabase
+            .from("profiles")
             .select("*")
-            .eq("client_phone", data.profile.phone)
-            .order("created_at", { ascending: false }),
-          supabase
-            .from("tickets")
-            .select("*")
-            .eq("client_phone", data.profile.phone)
-            .order("created_at", { ascending: false }),
-        ]);
+            .eq("id", authData.user.id)
+            .maybeSingle();
 
-        if (!ordersRes.error && ordersRes.data && ordersRes.data.length > 0) {
-          const remoteOrders: ClientOrder[] = ordersRes.data.map((o) => {
-            const rawItems = Array.isArray(o.items) ? o.items : [];
-            const parsedItems = rawItems.map((item: any) => ({
-              name: String(item.name || "صنف زهور"),
-              sku: String(item.sku || "FLR-001"),
-              qty: Number(item.qty || 1),
-              unit: String(item.unit || "باقة"),
-            }));
-
-            const status = (["received", "preparing", "ready", "shipping", "delivered", "cancelled"].includes(o.status)
-              ? o.status
-              : "received") as ClientOrder["status"];
-
-            return {
-              id: o.id,
-              date: (o.created_at ? o.created_at.split("T")[0] : new Date().toISOString().split("T")[0]) || "2026-11-08",
-              status,
-              city: o.city,
-              address: { district: o.district, street: o.street },
-              deliveryWindow: o.delivery_slot,
-              total: Number(o.total || 0),
-              items: parsedItems.length > 0 ? parsedItems : [{ name: "باقة ورد مبردة", sku: "FLR-001", qty: 1, unit: "باقة" }],
-              events: [
-                { label: "استلام الطلب", at: o.created_at || new Date().toISOString(), detail: "تم تأكيد الطلب وحجز المخزون في Supabase." },
-              ],
+          if (userProfile) {
+            data.profile = {
+              name: userProfile.full_name || data.profile.name || "عميل أطياب الزهور",
+              company: userProfile.company_name || data.profile.company || "",
+              phone: userProfile.phone || data.profile.phone || "",
+              email: userProfile.email || authData.user.email || data.profile.email || "",
+              city: userProfile.city || data.profile.city || "الرياض",
+              district: userProfile.district || data.profile.district || "الملقا",
+              address: data.profile.address || "",
             };
-          });
-
-          // Remote orders take precedence: replace any demo orders with live data
-          data = { ...data, orders: remoteOrders };
+            targetPhone = data.profile.phone;
+          }
         }
 
-        if (!ticketsRes.error && ticketsRes.data && ticketsRes.data.length > 0) {
-          const remoteTickets = ticketsRes.data.map((t) => ({
-            id: t.id,
-            subject: t.subject,
-            category: (["order", "delivery", "account", "other"].includes(t.category) ? t.category : "order") as TicketInput["category"],
-            orderId: t.order_id || "",
-            message: Array.isArray(t.replies) && t.replies[0] && typeof t.replies[0].message === "string" ? t.replies[0].message : t.subject,
-            createdAt: t.created_at,
-            status: (t.status === "closed" ? "closed" : t.status === "answered" ? "pending" : "open") as "draft" | "open" | "pending" | "closed",
-            origin: "local" as const,
-            replies: Array.isArray(t.replies) ? (t.replies as any) : [],
-          }));
+        if (targetPhone) {
+          const [ordersRes, ticketsRes] = await Promise.all([
+            supabase
+              .from("orders")
+              .select("*")
+              .eq("client_phone", targetPhone)
+              .order("created_at", { ascending: false }),
+            supabase
+              .from("tickets")
+              .select("*")
+              .eq("client_phone", targetPhone)
+              .order("created_at", { ascending: false }),
+          ]);
 
-          data = { ...data, tickets: remoteTickets };
+          if (!ordersRes.error && ordersRes.data && ordersRes.data.length > 0) {
+            const remoteOrders: ClientOrder[] = ordersRes.data.map((o) => {
+              const rawItems = Array.isArray(o.items) ? o.items : [];
+              const parsedItems = rawItems.map((item: any) => ({
+                name: String(item.name || "صنف زهور"),
+                sku: String(item.sku || "FLR-001"),
+                qty: Number(item.qty || 1),
+                unit: String(item.unit || "باقة"),
+              }));
+
+              const status = (["received", "preparing", "ready", "shipping", "delivered", "cancelled"].includes(o.status)
+                ? o.status
+                : "received") as ClientOrder["status"];
+
+              return {
+                id: o.id,
+                date: (o.created_at ? o.created_at.split("T")[0] : new Date().toISOString().split("T")[0]) || "2026-11-08",
+                status,
+                city: o.city,
+                address: { district: o.district, street: o.street },
+                deliveryWindow: o.delivery_slot,
+                total: Number(o.total || 0),
+                paymentMethod: o.payment_method || undefined,
+                items: parsedItems.length > 0 ? parsedItems : [{ name: "باقة ورد مبردة", sku: "FLR-001", qty: 1, unit: "باقة" }],
+                events: [
+                  { label: "استلام الطلب", at: o.created_at || new Date().toISOString(), detail: "تم تأكيد الطلب وحجز المخزون في Supabase." },
+                  ...(o.status === "shipping" || o.status === "delivered" ? [{ label: "خروج للتوصيل", at: o.delivery_date || new Date().toISOString(), detail: "مع كابتن التوصيل والأسطول المبرد" }] : []),
+                  ...(o.status === "delivered" ? [{ label: "تم التسليم", at: o.delivery_date || new Date().toISOString(), detail: "تم تسليم الشحنة للعميل بنجاح" }] : []),
+                ],
+              };
+            });
+
+            // Remote orders take precedence: replace any demo orders with live data
+            data = { ...data, orders: remoteOrders };
+          }
+
+          if (!ticketsRes.error && ticketsRes.data && ticketsRes.data.length > 0) {
+            const remoteTickets = ticketsRes.data.map((t) => ({
+              id: t.id,
+              subject: t.subject,
+              category: (["order", "delivery", "account", "other"].includes(t.category) ? t.category : "order") as TicketInput["category"],
+              orderId: t.order_id || "",
+              message: Array.isArray(t.replies) && t.replies[0] && typeof t.replies[0].message === "string" ? t.replies[0].message : t.subject,
+              createdAt: t.created_at,
+              status: (t.status === "closed" ? "closed" : t.status === "answered" ? "pending" : "open") as "draft" | "open" | "pending" | "closed",
+              origin: "local" as const,
+              replies: Array.isArray(t.replies) ? (t.replies as any) : [],
+            }));
+
+            data = { ...data, tickets: remoteTickets };
+          }
         }
 
         localStorage.setItem(CLIENT_STORAGE_KEY, JSON.stringify(data));
@@ -182,8 +211,22 @@ export const clientRepository: ClientRepository = {
       // Asynchronous background profile sync with Supabase
       if (!import.meta.env["TEST"] && parsed.profile.phone) {
         import("@/integrations/supabase/client")
-          .then(({ supabase }) => {
-            supabase
+          .then(async ({ supabase }) => {
+            const { data: authData } = await supabase.auth.getUser();
+            if (authData?.user) {
+              await supabase
+                .from("profiles")
+                .update({
+                  full_name: parsed.profile.name,
+                  company_name: parsed.profile.company || null,
+                  phone: parsed.profile.phone,
+                  city: parsed.profile.city,
+                  district: parsed.profile.district,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", authData.user.id);
+            }
+            await supabase
               .from("clients")
               .upsert(
                 {
@@ -196,16 +239,37 @@ export const clientRepository: ClientRepository = {
                   address: parsed.profile.address || null,
                 },
                 { onConflict: "phone" },
-              )
-              .then(({ error }) => {
-                if (error) console.warn("Supabase clients upsert notice:", error);
-              });
+              );
           })
           .catch(() => {});
       }
     }
   },
 };
+
+export async function cancelClientOrder(orderId: string, reason = "طلب إلغاء من لوحة العميل"): Promise<boolean> {
+  if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("id", orderId);
+      if (!error) {
+        await supabase.from("security_logs").insert({
+          event_type: "client_order_cancelled",
+          description: `قام العميل بإلغاء الطلب #${orderId} مباشرة (${reason})`,
+          severity: "info",
+          tone: "destructive",
+        });
+        return true;
+      }
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
 
 export function demonstrationOrders(): ClientOrder[] {
   const items = [

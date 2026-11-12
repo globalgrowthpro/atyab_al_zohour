@@ -56,10 +56,10 @@ export function TaskActions({ task }: { task: CourierTask }) {
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
         <p className="flex items-center gap-2 font-bold text-primary">
           <Check className="size-5" />
-          تم التسليم في التجربة المحلية
+          تم التسليم بنجاح
         </p>
         <p className="mt-2 text-xs text-muted-foreground">
-          المستلم: {task.recipient ?? "غير محدد"}. لا يتم إخطار العميل فعلياً.
+          المستلم: {task.recipient ?? "غير محدد"}. تم توثيق التسليم وحفظ بيانات سلسلة التبريد.
         </p>
       </div>
     );

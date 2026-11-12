@@ -29,10 +29,9 @@ function ProfileForm() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl">الملف الشخصي</h2>
+        <h2 className="text-2xl">الملف الشخصي للمنشأة</h2>
         <p className="mt-2 text-sm leading-7 text-muted-foreground">
-          بيانات التجربة محفوظة في هذا المتصفح. هذا النموذج لا ينشئ حساباً ولا يغيّر بيانات حساب
-          فعلي.
+          إدارة بيانات المنشأة وعناوين التوريد والتوصيل المعتمدة لطلبات الجملة.
         </p>
       </div>
       <form
