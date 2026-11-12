@@ -31,14 +31,14 @@ export function renderErrorPage(): string {
       <h1 id="title">جارٍ تحميل الصفحة…</h1>
       <p id="msg">لحظات من فضلك، نعيد المحاولة تلقائيًا.</p>
       <div class="actions">
-        <button class="primary" onclick="location.reload()">إعادة المحاولة</button>
+        <button class="primary" onclick="try{sessionStorage.removeItem('atyab:auto-retry');}catch(e){}location.reload()">إعادة المحاولة</button>
         <a class="secondary" href="/">الرئيسية</a>
       </div>
     </div>
     <script>
       (function () {
         var KEY = "atyab:auto-retry";
-        var MAX = 4;
+        var MAX = 8;
         var now = Date.now();
         var state = { n: 0, t: now };
         try { state = JSON.parse(sessionStorage.getItem(KEY) || "") || state; } catch (e) {}
@@ -46,12 +46,24 @@ export function renderErrorPage(): string {
         if (state.n < MAX) {
           state.n += 1; state.t = now;
           try { sessionStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
-          setTimeout(function () { location.reload(); }, 1500 * state.n);
+          var delay = Math.min(1000 * state.n, 3000);
+          setTimeout(function () {
+            fetch(window.location.href, { method: "HEAD", cache: "no-store" })
+              .then(function (res) {
+                if (res.ok) {
+                  try { sessionStorage.removeItem(KEY); } catch (e) {}
+                }
+                location.reload();
+              })
+              .catch(function () {
+                location.reload();
+              });
+          }, delay);
         } else {
           try { sessionStorage.removeItem(KEY); } catch (e) {}
           document.getElementById("spin").className = "hidden";
           document.getElementById("title").textContent = "تعذّر تحميل الصفحة";
-          document.getElementById("msg").textContent = "حدث خطأ ما. حاول التحديث أو العودة للرئيسية.";
+          document.getElementById("msg").textContent = "الخادم قيد التحديث أو إعادة التشغيل. اضغط على 'إعادة المحاولة' للمتابعة.";
         }
       })();
     </script>

@@ -21,9 +21,9 @@ const categories = {
 } as const;
 const ticketStatuses = {
   draft: "مسودة محلية · لم تُرسل",
-  open: "مفتوحة · مثال",
-  pending: "قيد المتابعة · مثال",
-  closed: "مغلقة · مثال",
+  open: "مفتوحة · جاري المعالجة",
+  pending: "قيد المتابعة من الدعم",
+  closed: "مغلقة",
 } as const;
 export function SupportPage({ initialOrder = "" }: { initialOrder?: string }) {
   const { data, saving, save } = useClientData();
@@ -47,15 +47,49 @@ export function SupportPage({ initialOrder = "" }: { initialOrder?: string }) {
       setError("اختر طلباً موجوداً أو استفساراً عاماً.");
       return;
     }
+    const ticketId = `TK-${Math.floor(1000 + Math.random() * 9000)}`;
+    const nowIso = new Date().toISOString();
+    const initialReply = {
+      author: "client" as const,
+      message: parsed.data.message,
+      at: nowIso,
+    };
     const draft = {
       ...parsed.data,
-      id: `LOCAL-${crypto.randomUUID()}`,
-      createdAt: new Date().toISOString(),
+      id: ticketId,
+      createdAt: nowIso,
       status: "draft" as const,
       origin: "local" as const,
-      replies: [],
+      replies: [initialReply],
     };
     setError("");
+
+    // Live Supabase persist
+    if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
+      import("@/integrations/supabase/client").then(async ({ supabase }) => {
+        try {
+          await supabase.from("tickets").insert({
+            id: ticketId,
+            client_phone: data.profile.phone || "0500000000",
+            category: parsed.data.category,
+            order_id: parsed.data.orderId || null,
+            subject: parsed.data.subject,
+            status: "open",
+            replies: [initialReply],
+          });
+          await supabase.from("security_logs").insert({
+            actor_name: data.profile.name || "عميل مسجل",
+            event_type: "client_ticket_created",
+            severity: "info",
+            tone: "forest",
+            description: `قام العميل بإنشاء تذكرة دعم فني جديدة برقم ${ticketId} (${parsed.data.subject})`,
+          });
+        } catch (err) {
+          console.warn("Ticket Supabase insert notice:", err);
+        }
+      }).catch(() => {});
+    }
+
     if (await save({ ...data, tickets: [draft, ...data.tickets] })) {
       setSelected(draft.id);
       setForm({ subject: "", category: "order", orderId: "", message: "" });

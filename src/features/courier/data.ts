@@ -322,7 +322,7 @@ export const courierRepository: CourierRepository = {
           .then(async ({ supabase }) => {
             // Find recent task transitions and sync them
             for (const task of parsed.tasks) {
-              if (["out_for_delivery", "delivered", "failed"].includes(task.status)) {
+              if (["assigned", "accepted", "out_for_delivery", "delivered", "failed"].includes(task.status)) {
                 await supabase
                   .from("delivery_tasks")
                   .update({

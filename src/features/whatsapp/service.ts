@@ -673,6 +673,23 @@ class WhatsAppHubStore {
       created_at: new Date().toISOString(),
     });
 
+    if (typeof window !== 'undefined' && !import.meta.env['TEST']) {
+      import('@/integrations/supabase/client').then(async ({ supabase }) => {
+        try {
+          await supabase.from('whatsapp_logs').insert({
+            event_type: category.toLowerCase(),
+            recipient_phone: contact.phone_e164,
+            message_body: bodyText,
+            meta_message_id: newMessage.meta_msg_id,
+            status: 'delivered',
+            cost_sar: costLocal,
+          });
+        } catch (err) {
+          console.warn('WhatsApp Supabase log notice:', err);
+        }
+      }).catch(() => {});
+    }
+
     return { success: true, message: newMessage };
   }
 

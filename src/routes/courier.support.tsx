@@ -34,11 +34,38 @@ export function CourierSupport({ initialTask = "" }: { initialTask?: string }) {
       return;
     }
     setError("");
+    const ticketId = `CR-TK-${Math.floor(1000 + Math.random() * 9000)}`;
+    const nowIso = new Date().toISOString();
+
+    if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
+      import("@/integrations/supabase/client").then(async ({ supabase }) => {
+        try {
+          await supabase.from("tickets").insert({
+            id: ticketId,
+            client_phone: data.profile.phone || "0590000000",
+            category: "delivery",
+            order_id: parsed.data.taskId || null,
+            subject: `[كابتن التوصيل ${data.profile.name}] ${parsed.data.subject}`,
+            status: "open",
+            replies: [
+              {
+                author: "client",
+                message: parsed.data.message,
+                at: nowIso,
+              },
+            ],
+          });
+        } catch (err) {
+          console.warn("Courier ticket Supabase sync notice:", err);
+        }
+      }).catch(() => {});
+    }
+
     if (
       await save({
         ...data,
         support: [
-          { ...parsed.data, id: `LOCAL-${crypto.randomUUID()}`, at: new Date().toISOString() },
+          { ...parsed.data, id: ticketId, at: nowIso },
           ...data.support,
         ],
       })

@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 export type FlowerOrigin = "هولندا" | "الإكوادور" | "كينيا" | "كولومبيا";
 
@@ -272,11 +272,49 @@ export function useFlowerBatches() {
   const batches = useSyncExternalStore(subscribe, () => batchesState, () => initialBatches);
   const reservations = useSyncExternalStore(subscribe, () => reservationsState, () => []);
 
+  useEffect(() => {
+    void syncBatchesFromSupabase();
+  }, []);
+
   // إضافة شحنة زهور مستوردة جديدة
   const addBatch = (newBatch: Omit<FlowerBatch, "id">) => {
     const id = `LOT-${newBatch.origin === "هولندا" ? "NL" : newBatch.origin === "كينيا" ? "KE" : "EC"}-${Math.floor(1000 + Math.random() * 9000)}`;
     batchesState = [{ ...newBatch, id }, ...batchesState];
     notify();
+
+    if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
+      import("@/integrations/supabase/client").then(async ({ supabase }) => {
+        try {
+          await supabase.from("perishable_batches").insert({
+            id,
+            product_slug: newBatch.productSlug,
+            product_name: newBatch.productName,
+            sku: newBatch.sku,
+            origin: newBatch.origin,
+            farm: newBatch.farm,
+            airway_bill: newBatch.airwayBill,
+            flight_number: newBatch.flightNumber,
+            arrival_date: newBatch.arrivalDate,
+            expiry_date: newBatch.expiryDate,
+            vase_life_days: newBatch.vaseLifeDays,
+            cold_storage_temp: newBatch.coldStorageTemp,
+            unit: newBatch.unit,
+            on_hand_qty: newBatch.onHandQty,
+            reserved_qty: newBatch.reservedQty || 0,
+            status: newBatch.status,
+          });
+          await supabase.from("security_logs").insert({
+            actor_name: "مدير المستودع والعمليات",
+            event_type: "batch_inflow_created",
+            severity: "info",
+            tone: "forest",
+            description: `تم تسجيل شحنة زهور جديدة برقم ${id} لصنف ${newBatch.productName} بكمية ${newBatch.onHandQty} ${newBatch.unit}`,
+          });
+        } catch (err) {
+          console.warn("Supabase insert batch notice:", err);
+        }
+      }).catch(() => {});
+    }
   };
 
   // حجز كمية لعرض سعر (منع البيع المزدوج)

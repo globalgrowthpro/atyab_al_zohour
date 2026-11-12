@@ -104,14 +104,21 @@ export const clientRepository: ClientRepository = {
     if (typeof window !== "undefined" && !import.meta.env["TEST"] && data.profile.phone) {
       try {
         const { supabase } = await import("@/integrations/supabase/client");
-        const { data: dbOrders, error } = await supabase
-          .from("orders")
-          .select("*")
-          .eq("client_phone", data.profile.phone)
-          .order("created_at", { ascending: false });
+        const [ordersRes, ticketsRes] = await Promise.all([
+          supabase
+            .from("orders")
+            .select("*")
+            .eq("client_phone", data.profile.phone)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("tickets")
+            .select("*")
+            .eq("client_phone", data.profile.phone)
+            .order("created_at", { ascending: false }),
+        ]);
 
-        if (!error && dbOrders && dbOrders.length > 0) {
-          const remoteOrders: ClientOrder[] = dbOrders.map((o) => {
+        if (!ordersRes.error && ordersRes.data && ordersRes.data.length > 0) {
+          const remoteOrders: ClientOrder[] = ordersRes.data.map((o) => {
             const rawItems = Array.isArray(o.items) ? o.items : [];
             const parsedItems = rawItems.map((item: any) => ({
               name: String(item.name || "صنف زهور"),
@@ -141,8 +148,25 @@ export const clientRepository: ClientRepository = {
 
           // Remote orders take precedence: replace any demo orders with live data
           data = { ...data, orders: remoteOrders };
-          localStorage.setItem(CLIENT_STORAGE_KEY, JSON.stringify(data));
         }
+
+        if (!ticketsRes.error && ticketsRes.data && ticketsRes.data.length > 0) {
+          const remoteTickets = ticketsRes.data.map((t) => ({
+            id: t.id,
+            subject: t.subject,
+            category: (["order", "delivery", "account", "other"].includes(t.category) ? t.category : "order") as TicketInput["category"],
+            orderId: t.order_id || "",
+            message: Array.isArray(t.replies) && t.replies[0] && typeof t.replies[0].message === "string" ? t.replies[0].message : t.subject,
+            createdAt: t.created_at,
+            status: (t.status === "closed" ? "closed" : t.status === "answered" ? "pending" : "open") as "draft" | "open" | "pending" | "closed",
+            origin: "local" as const,
+            replies: Array.isArray(t.replies) ? (t.replies as any) : [],
+          }));
+
+          data = { ...data, tickets: remoteTickets };
+        }
+
+        localStorage.setItem(CLIENT_STORAGE_KEY, JSON.stringify(data));
       } catch (err) {
         console.warn("Client data Supabase sync notice:", err);
       }
