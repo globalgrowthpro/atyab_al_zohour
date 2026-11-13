@@ -258,12 +258,13 @@ export const courierRepository: CourierRepository = {
     if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
       try {
         const { supabase } = await import("@/integrations/supabase/client");
+        const { data: authData } = await supabase.auth.getUser();
         const { data: remoteTasks, error } = await supabase
           .from("delivery_tasks")
           .select("*")
           .order("delivery_date", { ascending: false });
 
-        if (!error && remoteTasks && remoteTasks.length > 0) {
+        if (!error && remoteTasks) {
           const formatted: CourierTask[] = remoteTasks.map((t) => {
             const items = (Array.isArray(t.items) ? t.items : []).map((item: any) => ({
               sku: String(item?.sku || "FLR-001"),
@@ -302,9 +303,11 @@ export const courierRepository: CourierRepository = {
             };
           });
 
-          // Remote tasks take precedence: replace any demo tasks with live data
-          data = { ...data, tasks: formatted };
-          localStorage.setItem(COURIER_STORAGE_KEY, JSON.stringify(data));
+          // Remote tasks take precedence: replace demo tasks with live data for authenticated courier
+          if (authData?.user || remoteTasks.length > 0) {
+            data = { ...data, tasks: formatted };
+            localStorage.setItem(COURIER_STORAGE_KEY, JSON.stringify(data));
+          }
         }
       } catch (err) {
         console.warn("Courier tasks Supabase fetch notice:", err);

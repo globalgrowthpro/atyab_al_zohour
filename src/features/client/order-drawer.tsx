@@ -67,7 +67,7 @@ export function OrderDrawer({
             <bdi>{order?.id ?? "طلب غير موجود"}</bdi>
           </SheetTitle>
           <SheetDescription className="mt-3 !text-start">
-            كل معلومات طلبك في مكان واحد. بيانات العرض توضيحية.
+            متابعة حالة الطلب وتفاصيل التوريد وسلسلة التبريد.
           </SheetDescription>
           {order && (
             <div className="mt-4">
@@ -203,15 +203,15 @@ export function OrderDrawer({
                   const receiptData: ReceiptOrderData = {
                     id: order.id,
                     date: order.date,
-                    clientName: order.city ? `عميل ${order.city}` : "عميل أطياب الزهور",
-                    clientPhone: "+966 50 123 4567",
-                    city: order.city || "الرياض",
-                    district: order.address?.district || "السلي",
-                    street: order.address?.street || "طريق هارون الرشيد",
+                    clientName: data.profile.company || data.profile.name || (order.city ? `عميل ${order.city}` : "عميل أطياب الزهور"),
+                    clientPhone: data.profile.phone || "+966 50 000 0000",
+                    city: order.city || data.profile.city || "الرياض",
+                    district: order.address?.district || data.profile.district || "السلي",
+                    street: order.address?.street || data.profile.address || "طريق التوريد الرئيسي",
                     deliveryMethodLabel: "توصيل مبرد سريع (2°C — 4°C)",
                     deliverySlotLabel: order.deliveryWindow || "الفترة الصباحية (8:00 ص — 12:00 م)",
                     paymentMethodLabel: paymentLabel,
-                    clientTierLabel: "عميل معتمد",
+                    clientTierLabel: "عميل جملة معتمد",
                     total: order.total || 1500,
                     items: order.items.map((it) => ({
                       name: it.name,
