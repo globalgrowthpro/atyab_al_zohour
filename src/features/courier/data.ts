@@ -266,16 +266,16 @@ export const courierRepository: CourierRepository = {
         if (!error && remoteTasks && remoteTasks.length > 0) {
           const formatted: CourierTask[] = remoteTasks.map((t) => {
             const items = (Array.isArray(t.items) ? t.items : []).map((item: any) => ({
-              sku: String(item.sku || "FLR-001"),
-              name: String(item.name || "باقة زهور"),
-              qty: Number(item.qty || 1),
-              unit: String(item.unit || "باقة"),
+              sku: String(item?.sku || "FLR-001"),
+              name: String(item?.name || "باقة زهور"),
+              qty: Number(item?.qty || 1),
+              unit: String(item?.unit || "باقة"),
             }));
 
             const timeline = (Array.isArray(t.timeline) ? t.timeline : []).map((event: any) => ({
-              at: String(event.at || new Date().toISOString()),
-              label: String(event.label || "تحديث المهمة"),
-              note: String(event.note || ""),
+              at: String(event?.at || new Date().toISOString()),
+              label: String(event?.label || "تحديث المهمة"),
+              note: String(event?.note || ""),
             }));
 
             const status = (["assigned", "accepted", "out_for_delivery", "delivered", "failed"].includes(t.status)
@@ -285,18 +285,18 @@ export const courierRepository: CourierRepository = {
             return {
               id: t.id,
               orderId: t.order_id || t.id,
-              date: t.delivery_date,
-              slot: t.delivery_slot,
-              customer: t.customer_name,
+              date: String(t.delivery_date || new Date().toISOString().split("T")[0]),
+              slot: String(t.delivery_slot || "الفترة الصباحية (8 - 12)"),
+              customer: String(t.customer_name || "عميل مسجل"),
               customerPhone: t.customer_phone || undefined,
-              city: t.city,
-              district: t.district,
-              street: t.street,
-              instruction: t.instruction || "التسليم مع مراعاة سلسلة التبريد المباشر.",
+              city: String(t.city || "الرياض"),
+              district: String(t.district || "الملقا"),
+              street: String(t.street || "طريق الإمام"),
+              instruction: String(t.instruction || "التسليم مع مراعاة سلسلة التبريد المباشر."),
               status,
               priority: (t.priority === "high" ? "high" : "normal") as CourierTask["priority"],
               items: items.length > 0 ? items : [{ sku: "ROSE-RD-001", name: "ورد أحمر هولندي", qty: 5, unit: "باقة" }],
-              events: timeline.length > 0 ? timeline : [{ at: t.created_at, label: "تم إسناد المهمة", note: "مسجلة في Supabase" }],
+              events: timeline.length > 0 ? timeline : [{ at: t.created_at || new Date().toISOString(), label: "تم إسناد المهمة", note: "مسجلة في Supabase" }],
               recipient: t.recipient_name || undefined,
               failureReason: (t.failure_reason as CourierTask["failureReason"]) || undefined,
             };

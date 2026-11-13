@@ -1,6 +1,7 @@
 import { type ClientOrder, progressIndex } from "./data";
 
-export function formatOrderDate(value: string) {
+export function formatOrderDate(value?: string | null) {
+  if (!value || typeof value !== "string") return "—";
   const date = new Date(value.slice(0, 10) + "T12:00:00Z");
   return Number.isNaN(date.getTime())
     ? value
@@ -13,16 +14,22 @@ export function formatOrderDate(value: string) {
       }).format(date);
 }
 export function orderQuantity(order: ClientOrder) {
+  if (!order || !Array.isArray(order.items)) return "0 باقة";
   const units = order.items.reduce<Record<string, number>>((result, item) => {
-    result[item.unit] = (result[item.unit] ?? 0) + item.qty;
+    if (item && item.unit) {
+      result[item.unit] = (result[item.unit] ?? 0) + (Number(item.qty) || 0);
+    }
     return result;
   }, {});
   return Object.entries(units)
     .map(([unit, qty]) => `${qty} ${unit}`)
-    .join("، ");
+    .join("، ") || "0 باقة";
 }
 export function orderAddress(order: ClientOrder) {
-  const demo = order.id.startsWith("DEMO-");
+  if (!order) {
+    return { city: "الرياض", district: "غير محدد", street: "غير محدد", example: false };
+  }
+  const demo = Boolean(order.id && order.id.startsWith("DEMO-"));
   const address =
     order.address ??
     (demo
@@ -42,16 +49,17 @@ export function orderAddress(order: ClientOrder) {
         }
       : undefined);
   return {
-    city: order.city,
+    city: order.city || "الرياض",
     district: address?.district ?? "غير محدد",
     street: address?.street ?? "غير محدد",
     example: demo,
   };
 }
 export function orderAmount(order: ClientOrder) {
+  if (!order) return "—";
   return order.total === undefined
     ? "بانتظار التسعير"
-    : `${new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 2 }).format(order.total)} ر.س`;
+    : `${new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 2 }).format(Number(order.total) || 0)} ر.س`;
 }
 
 export type Coordinate = [number, number];

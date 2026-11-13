@@ -146,10 +146,10 @@ export const clientRepository: ClientRepository = {
             const remoteOrders: ClientOrder[] = ordersRes.data.map((o) => {
               const rawItems = Array.isArray(o.items) ? o.items : [];
               const parsedItems = rawItems.map((item: any) => ({
-                name: String(item.name || "صنف زهور"),
-                sku: String(item.sku || "FLR-001"),
-                qty: Number(item.qty || 1),
-                unit: String(item.unit || "باقة"),
+                name: String(item?.name || "صنف زهور"),
+                sku: String(item?.sku || "FLR-001"),
+                qty: Number(item?.qty || 1),
+                unit: String(item?.unit || "باقة"),
               }));
 
               const status = (["received", "preparing", "ready", "shipping", "delivered", "cancelled"].includes(o.status)
@@ -160,8 +160,8 @@ export const clientRepository: ClientRepository = {
                 id: o.id,
                 date: (o.created_at ? o.created_at.split("T")[0] : new Date().toISOString().split("T")[0]) || "2026-11-08",
                 status,
-                city: o.city,
-                address: { district: o.district, street: o.street },
+                city: o.city || "الرياض",
+                address: { district: o.district || "الملقا", street: o.street || "طريق الإمام" },
                 deliveryWindow: o.delivery_slot,
                 total: Number(o.total || 0),
                 paymentMethod: o.payment_method || undefined,
@@ -179,17 +179,29 @@ export const clientRepository: ClientRepository = {
           }
 
           if (!ticketsRes.error && ticketsRes.data && ticketsRes.data.length > 0) {
-            const remoteTickets = ticketsRes.data.map((t) => ({
-              id: t.id,
-              subject: t.subject,
-              category: (["order", "delivery", "account", "other"].includes(t.category) ? t.category : "order") as TicketInput["category"],
-              orderId: t.order_id || "",
-              message: Array.isArray(t.replies) && t.replies[0] && typeof t.replies[0].message === "string" ? t.replies[0].message : t.subject,
-              createdAt: t.created_at,
-              status: (t.status === "closed" ? "closed" : t.status === "answered" ? "pending" : "open") as "draft" | "open" | "pending" | "closed",
-              origin: "local" as const,
-              replies: Array.isArray(t.replies) ? (t.replies as any) : [],
-            }));
+            const remoteTickets = ticketsRes.data.map((t) => {
+              const subject = String(t.subject || "استفسار دعم");
+              const safeSubject = subject.length < 4 ? `${subject} - استفسار` : subject;
+              const rawReplies = Array.isArray(t.replies) ? t.replies : [];
+              const rawMsg = rawReplies[0] && typeof rawReplies[0].message === "string" ? rawReplies[0].message : safeSubject;
+              const safeMsg = rawMsg.length < 10 ? `${rawMsg} (تفاصيل الاستفسار الكاملة)` : rawMsg;
+
+              return {
+                id: t.id,
+                subject: safeSubject,
+                category: (["order", "delivery", "account", "other"].includes(t.category) ? t.category : "order") as TicketInput["category"],
+                orderId: t.order_id || "",
+                message: safeMsg,
+                createdAt: t.created_at,
+                status: (t.status === "closed" ? "closed" : t.status === "answered" ? "pending" : "open") as "draft" | "open" | "pending" | "closed",
+                origin: "local" as const,
+                replies: rawReplies.map((r: any) => ({
+                  author: (r.author === "support" ? "support" : "client") as "client" | "support",
+                  message: String(r.message || ""),
+                  at: String(r.at || new Date().toISOString()),
+                })),
+              };
+            });
 
             data = { ...data, tickets: remoteTickets };
           }
