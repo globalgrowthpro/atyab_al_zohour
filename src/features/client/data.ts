@@ -142,7 +142,7 @@ export const clientRepository: ClientRepository = {
               .order("created_at", { ascending: false }),
           ]);
 
-          if (!ordersRes.error && ordersRes.data && ordersRes.data.length > 0) {
+          if (!ordersRes.error && ordersRes.data) {
             const remoteOrders: ClientOrder[] = ordersRes.data.map((o) => {
               const rawItems = Array.isArray(o.items) ? o.items : [];
               const parsedItems = rawItems.map((item: any) => ({
@@ -174,11 +174,13 @@ export const clientRepository: ClientRepository = {
               };
             });
 
-            // Remote orders take precedence: replace any demo orders with live data
-            data = { ...data, orders: remoteOrders };
+            // Remote orders take precedence: replace demo orders with live data for authenticated user
+            if (authData?.user || remoteOrders.length > 0) {
+              data = { ...data, orders: remoteOrders };
+            }
           }
 
-          if (!ticketsRes.error && ticketsRes.data && ticketsRes.data.length > 0) {
+          if (!ticketsRes.error && ticketsRes.data) {
             const remoteTickets = ticketsRes.data.map((t) => {
               const subject = String(t.subject || "استفسار دعم");
               const safeSubject = subject.length < 4 ? `${subject} - استفسار` : subject;
@@ -203,7 +205,9 @@ export const clientRepository: ClientRepository = {
               };
             });
 
-            data = { ...data, tickets: remoteTickets };
+            if (authData?.user || remoteTickets.length > 0) {
+              data = { ...data, tickets: remoteTickets };
+            }
           }
         }
 
