@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Award, Handshake, Leaf, ShieldCheck } from "lucide-react";
 import { PageBanner } from "@/components/site/PageBanner";
+import { useCmsPage } from "@/features/cms/data";
 import warehouse from "@/assets/warehouse.jpg";
 
 export const Route = createFileRoute("/about")({
@@ -25,15 +26,16 @@ const values = [
 ];
 
 function AboutPage() {
+  const { page } = useCmsPage("about");
   return (
     <>
-      <PageBanner title="من نحن" crumb="من نحن" subtitle="أطيب الزهور — شريكك في توريد الورود الطبيعية بالجملة." />
+      <PageBanner title="من نحن" crumb="من نحن" subtitle={page.subtitle} />
       <section className="container-x grid items-center gap-12 py-16 lg:grid-cols-2">
         <div className="space-y-5">
           <span className="eyebrow">قصتنا</span>
-          <h2 className="text-3xl md:text-4xl">نوصل جمال الطبيعة إلى أعمالكم</h2>
+          <h2 className="text-3xl md:text-4xl">{page.title}</h2>
           <p className="leading-9 text-muted-foreground">
-            أطيب الزهور متخصصة في توريد الورود والزهور الطبيعية ومستلزمات التنسيق بالجملة لمحلات الورد والفنادق والمطاعم والشركات ومنظمي المناسبات في المملكة العربية السعودية.
+            {page.content}
           </p>
           <p className="leading-9 text-muted-foreground">
             نعمل على توفير تشكيلة واسعة من الزهور من مصادر متعددة، مع الاهتمام بالحفظ والتبريد والتسليم لتصل الزهور بأفضل حال.

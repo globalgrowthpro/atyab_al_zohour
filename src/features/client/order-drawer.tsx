@@ -11,6 +11,7 @@ import {
   openReceiptPrintWindow,
   type ReceiptOrderData,
 } from "@/features/receipt/receipt-pdf-template";
+import { downloadZatcaXml } from "@/features/receipt/zatca-phase2";
 
 export function OrderDrawer({
   order,
@@ -227,6 +228,45 @@ export function OrderDrawer({
               >
                 <Printer className="size-4" />
                 تحميل / طباعة إيصال الفاتورة الرسمية PDF
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const paymentLabel =
+                    order.paymentMethod === "cash_on_delivery"
+                      ? "الدفع عند الاستلام المبرد (COD)"
+                      : order.paymentMethod === "bank_transfer"
+                      ? "تحويل بنكي رسمي"
+                      : order.paymentMethod === "credit_terms"
+                      ? "دفع آجل 30 يوماً"
+                      : "بطاقة مدى / فيزا";
+                  const receiptData: ReceiptOrderData = {
+                    id: order.id,
+                    date: order.date,
+                    clientName: data.profile.company || data.profile.name || (order.city ? `عميل ${order.city}` : "عميل أطياب الزهور"),
+                    clientPhone: data.profile.phone || "+966 50 000 0000",
+                    city: order.city || data.profile.city || "الرياض",
+                    district: order.address?.district || data.profile.district || "السلي",
+                    street: order.address?.street || data.profile.address || "طريق التوريد الرئيسي",
+                    deliveryMethodLabel: "توصيل مبرد سريع (2°C — 4°C)",
+                    deliverySlotLabel: order.deliveryWindow || "الفترة الصباحية (8:00 ص — 12:00 م)",
+                    paymentMethodLabel: paymentLabel,
+                    clientTierLabel: "عميل جملة معتمد",
+                    total: order.total || 1500,
+                    items: order.items.map((it) => ({
+                      name: it.name,
+                      sku: it.sku,
+                      qty: it.qty,
+                      unit: it.unit,
+                      price: Math.round((order.total || 1500) / (order.items.length || 1) / it.qty),
+                    })),
+                  };
+                  downloadZatcaXml(receiptData);
+                  toast.success("تم تنزيل ملف الفاتورة الإلكترونية XML بنجاح (معيار ZATCA المرحلة الثانية)");
+                }}
+                className="btn btn-outline sm:col-span-2 flex items-center justify-center gap-2 font-bold !py-2.5 text-primary border-primary/30 hover:bg-primary/5 text-xs"
+              >
+                تنزيل الفاتورة الإلكترونية المعتمدة (ZATCA UBL XML Phase 2)
               </button>
               {(order.status === "received" || order.status === "preparing") && (
                 <button

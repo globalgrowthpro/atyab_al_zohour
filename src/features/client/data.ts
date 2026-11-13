@@ -47,6 +47,17 @@ export const ticketInputSchema = z.object({
   orderId: z.string().max(80),
   message: z.string().trim().min(10, "اكتب تفاصيل لا تقل عن 10 أحرف").max(3000),
 });
+export const clientAddressSchema = z.object({
+  id: z.string(),
+  label: z.string().trim().min(2, "أدخل اسماً للعنوان (مثل: الفرع الرئيسي)").max(100),
+  city: z.string().trim().min(2, "أدخل المدينة").max(100),
+  district: z.string().trim().min(2, "أدخل الحي").max(100),
+  street: z.string().trim().min(2, "أدخل اسم الشارع").max(200),
+  building: z.string().trim().max(100).optional().default(""),
+  notes: z.string().trim().max(500).optional().default(""),
+  isDefault: z.boolean().default(false),
+});
+export type ClientAddress = z.infer<typeof clientAddressSchema>;
 const stateSchema = z.object({
   version: z.literal(1),
   profile: z.object({
@@ -59,6 +70,7 @@ const stateSchema = z.object({
     address: z.string(),
   }),
   orders: z.array(orderSchema),
+  addresses: z.array(clientAddressSchema).default([]),
   tickets: z.array(
     ticketInputSchema.extend({
       id: z.string(),
@@ -85,6 +97,7 @@ export const emptyClientData = (): ClientData => ({
   version: 1,
   profile: { name: "", company: "", phone: "", email: "", city: "", district: "", address: "" },
   orders: [],
+  addresses: [],
   tickets: [],
 });
 export const CLIENT_STORAGE_KEY = "atyab-client-demo-v1";
@@ -129,7 +142,7 @@ export const clientRepository: ClientRepository = {
         }
 
         if (targetPhone) {
-          const [ordersRes, ticketsRes] = await Promise.all([
+          const [ordersRes, ticketsRes, addressesRes] = await Promise.all([
             supabase
               .from("orders")
               .select("*")
@@ -137,6 +150,11 @@ export const clientRepository: ClientRepository = {
               .order("created_at", { ascending: false }),
             supabase
               .from("tickets")
+              .select("*")
+              .eq("client_phone", targetPhone)
+              .order("created_at", { ascending: false }),
+            supabase
+              .from("client_addresses")
               .select("*")
               .eq("client_phone", targetPhone)
               .order("created_at", { ascending: false }),
@@ -209,6 +227,20 @@ export const clientRepository: ClientRepository = {
               data = { ...data, tickets: remoteTickets };
             }
           }
+
+          if (!addressesRes.error && addressesRes.data) {
+            const remoteAddresses: ClientAddress[] = addressesRes.data.map((a: any) => ({
+              id: String(a.id),
+              label: String(a.label || "عنوان إضافي"),
+              city: String(a.city || "الرياض"),
+              district: String(a.district || "الملقا"),
+              street: String(a.street || "الشارع الرئيسي"),
+              building: String(a.building || ""),
+              notes: String(a.notes || ""),
+              isDefault: Boolean(a.is_default),
+            }));
+            data = { ...data, addresses: remoteAddresses };
+          }
         }
 
         localStorage.setItem(CLIENT_STORAGE_KEY, JSON.stringify(data));
@@ -280,6 +312,43 @@ export async function cancelClientOrder(orderId: string, reason = "طلب إلغ
         });
         return true;
       }
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
+export async function upsertClientAddress(address: ClientAddress, clientPhone: string): Promise<boolean> {
+  if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { error } = await supabase.from("client_addresses").upsert({
+        id: address.id,
+        client_phone: clientPhone,
+        label: address.label,
+        city: address.city,
+        district: address.district,
+        street: address.street,
+        building: address.building || null,
+        notes: address.notes || null,
+        is_default: address.isDefault,
+        updated_at: new Date().toISOString(),
+      });
+      return !error;
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
+export async function deleteClientAddress(addressId: string): Promise<boolean> {
+  if (typeof window !== "undefined" && !import.meta.env["TEST"]) {
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { error } = await supabase.from("client_addresses").delete().eq("id", addressId);
+      return !error;
     } catch {
       return false;
     }
