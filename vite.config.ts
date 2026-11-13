@@ -13,6 +13,9 @@ export default defineConfig({
     }),
     viteReact(),
   ],
+  resolve: {
+    dedupe: ["react", "react-dom"],
+  },
   optimizeDeps: {
     include: ["react-is", "recharts"],
   },
