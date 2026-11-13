@@ -105,3 +105,4 @@ export function useRealtimeSubscription<T = any>(options: RealtimeSubscriptionOp
     };
   }, [options.table, options.filter, options.schema, options.event, options.enabled]);
 }
+

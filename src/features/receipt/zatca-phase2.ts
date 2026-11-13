@@ -215,3 +215,4 @@ export function downloadZatcaXml(order: ReceiptOrderData): void {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+

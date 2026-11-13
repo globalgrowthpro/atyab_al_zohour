@@ -45,3 +45,4 @@ CREATE POLICY "Public Read store-assets" ON storage.objects
 
 CREATE POLICY "Admin Upload store-assets" ON storage.objects
   FOR ALL USING (bucket_id = 'store-assets');
+

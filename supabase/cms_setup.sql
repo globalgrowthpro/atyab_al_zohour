@@ -21,3 +21,4 @@ CREATE POLICY "Allow public read cms_pages" ON public.cms_pages
 
 CREATE POLICY "Allow admin manage cms_pages" ON public.cms_pages
   FOR ALL USING (true);
+

@@ -85,3 +85,4 @@ export async function deleteFromStorage(bucket: StorageBucket, path: string): Pr
     return false;
   }
 }
+

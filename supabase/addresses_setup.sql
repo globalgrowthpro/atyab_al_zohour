@@ -32,3 +32,4 @@ CREATE POLICY "Allow public update own addresses" ON public.client_addresses
 
 CREATE POLICY "Allow public delete own addresses" ON public.client_addresses
   FOR DELETE USING (true);
+

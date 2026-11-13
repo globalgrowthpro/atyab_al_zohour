@@ -56,3 +56,4 @@ export function dispatchLocalNotification(title: string, options?: NotificationO
     return false;
   }
 }
+

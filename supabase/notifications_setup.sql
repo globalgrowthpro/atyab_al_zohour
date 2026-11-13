@@ -20,3 +20,4 @@ CREATE POLICY "Allow public insert subscriptions" ON public.notification_subscri
 
 CREATE POLICY "Allow public read subscriptions" ON public.notification_subscriptions
   FOR SELECT USING (true);
+
